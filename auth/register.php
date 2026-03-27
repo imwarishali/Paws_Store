@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?php
 session_start();
 
@@ -64,6 +65,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   }
 }
 ?>
+=======
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
 <!DOCTYPE html>
 <html lang="en">
 
@@ -176,6 +179,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       font-weight: 500;
       text-decoration: none;
     }
+<<<<<<< HEAD
 
     .message {
       padding: 10px;
@@ -196,12 +200,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       background-color: #d4edda;
       border: 1px solid #c3e6cb;
     }
+=======
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
   </style>
 </head>
 
 <body>
   <div class="register-wrap">
     <h1>Create account</h1>
+<<<<<<< HEAD
     <p class="sub">Join us and find your new best friend!</p>
 
     <?php if ($error != ""): ?>
@@ -235,6 +242,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <button type="submit" class="btn">Register</button>
     </form>
     <p class="login-link">Already have an account? <a href="login.php">Login here</a></p>
+=======
+    <form>
+      <div class="form-group">
+        <label>username</label>
+        <input type="text" placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Phone number</label>
+        <input type="tel" placeholder="+91 98765 43210">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" placeholder="Min 8 characters">
+      </div>
+      <button type="submit" class="btn">Register</button>
+    </form>
+    <p class="login-link">Already have an account? <a href="login.php">Login</a></p>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
   </div>
 </body>
 

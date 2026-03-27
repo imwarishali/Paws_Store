@@ -805,7 +805,11 @@ session_start();
         class="ps-nl-input"
         type="email"
         placeholder="Enter your email address" />
+<<<<<<< HEAD
       <button class="ps-nl-btn" id="subscribe-btn">Subscribe</button>
+=======
+      <button class="ps-nl-btn">Subscribe</button>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
     </div>
   </div>
 
@@ -828,7 +832,13 @@ session_start();
         </div>
         <div class="ps-footer-col">
           <h4>Support</h4>
+<<<<<<< HEAD
           <a href="FAQ.php">FAQ</a>
+=======
+          <a href="#">FAQ</a>
+          <a href="#">Shipping</a>
+          <a href="#">Returns</a>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
           <a href="order_history.php">Track Order</a>
         </div>
         <div class="ps-footer-col">
@@ -886,6 +896,21 @@ session_start();
       }
 
       addToCartButtons.forEach(button => {
+<<<<<<< HEAD
+=======
+        const buyBtn = document.createElement('button');
+        buyBtn.className = 'ps-pet-buy';
+        buyBtn.textContent = 'Buy Now';
+
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.gap = '5px';
+
+        button.parentNode.insertBefore(wrapper, button);
+        wrapper.appendChild(button);
+        wrapper.appendChild(buyBtn);
+
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
         function addToCart(petCard) {
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
@@ -912,6 +937,14 @@ session_start();
           const petName = addToCart(this.closest('.ps-pet-card'));
           alert(petName + " added to cart!");
         });
+<<<<<<< HEAD
+=======
+
+        buyBtn.addEventListener('click', function() {
+          addToCart(this.closest('.ps-pet-card'));
+          window.location.href = 'cart.php';
+        });
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
       });
 
       // WISHLIST SYSTEM
@@ -1096,6 +1129,7 @@ session_start();
         startInterval();
       }
 
+<<<<<<< HEAD
       // NEWSLETTER SUBSCRIPTION
       const subscribeBtn = document.getElementById('subscribe-btn');
       const newsletterInput = document.querySelector('.ps-nl-input');
@@ -1112,6 +1146,8 @@ session_start();
         });
       }
 
+=======
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
       // INIT
       updateCartCount();
       updateWishlistIcons();

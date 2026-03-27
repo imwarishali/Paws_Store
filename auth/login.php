@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+<<<<<<< HEAD
 if (isset($_SESSION["user"])) {
   header("Location: ../index.php");
   exit();
@@ -54,6 +55,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     mysqli_close($conn);
+=======
+$error = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  $username = $_POST["username"];
+  $email = $_POST["username"]; /* For demo, username is email */
+  $password = $_POST["password"];
+
+  /* Demo credentials */
+  $demo_user = "admin";
+  $demo_email = "admin@example.com";
+  $demo_pass = "12345";
+
+  if (($username == $demo_user || $username == $demo_email) && $password == $demo_pass) {
+    $_SESSION["user"] = $username;
+    /* redirect to homepage */
+    header("Location: ../index.php");
+    exit();
+  } else {
+    $error = "Invalid username or password";
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
   }
 }
 ?>
@@ -63,7 +85,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
   <title>Login - Paws Store</title>
+=======
+  <title>Login - Paw Haven Pet Shop</title>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -186,6 +212,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       background: #8b6914;
     }
 
+<<<<<<< HEAD
     .message {
       padding: 10px;
       border-radius: 5px;
@@ -198,13 +225,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       color: #721c24;
       background-color: #f8d7da;
       border: 1px solid #f5c6cb;
+=======
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-bottom: 10px;
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
     }
 
     .register-link {
       margin-top: 1rem;
       font-size: 1rem;
       color: var(--text-muted);
+<<<<<<< HEAD
       text-align: center;
+=======
+      align-self: center;
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
     }
 
     @media(max-width:600px) {
@@ -219,7 +256,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
   <div class="login-wrap">
     <div class="login-left">
+<<<<<<< HEAD
       <h1>Paws Store</h1>
+=======
+      <h1>Paw Haven</h1>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
       <p>Your one-stop pet shop for adoption, food, and care.</p>
       <div class="art">🐕 🐈 🐹</div>
     </div>
@@ -228,6 +269,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <h2>Welcome back</h2>
       <p class="sub">Sign in to your account to continue</p>
 
+<<<<<<< HEAD
       <?php if (!empty($error)): ?>
         <p class="message error"><?php echo htmlspecialchars($error); ?></p>
       <?php endif; ?>
@@ -240,6 +282,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="form-group">
           <label>Password</label>
           <input type="password" name="password" placeholder="Enter your password" required>
+=======
+      <?php if ($error != "") { ?>
+        <p class="error"><?php echo $error; ?></p>
+      <?php } ?>
+
+      <form method="POST">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="admin@example.com" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="12345" required>
+>>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
         </div>
         <button type="submit" class="btn">Sign In</button>
       </form>

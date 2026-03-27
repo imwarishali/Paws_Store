@@ -7,18 +7,11 @@ if (!isset($_SESSION["user"])) {
     exit();
 }
 
-<<<<<<< HEAD
 // User data is stored in the session as an array
 $user = $_SESSION["user"];
 $userEmail = $user["email"] ?? "";
 $userName = $user["username"] ?? "";
 $userPhone = $user["phone"] ?? "";
-=======
-// Dummy user data for display purposes
-$userEmail = $_SESSION["user"] ?? "";
-$userName = ""; // Default placeholder
-$userPhone = ""; // Default placeholder
->>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
 ?>
 <!doctype html>
 <html lang="en">

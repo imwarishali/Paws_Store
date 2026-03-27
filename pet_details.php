@@ -3,7 +3,6 @@ session_start();
 
 // Pet Data (Mock Database mapped directly to your assets)
 $petDB = [
-<<<<<<< HEAD
     1 => ['name' => 'Max — Labrador', 'price' => 15000, 'image' => 'Assets/Dog/Labrador (Max).jpg', 'category' => 'Dogs', 'desc' => 'Max is a highly energetic and loyal Labrador. He loves playing fetch, swimming, and is incredibly gentle with kids.'],
     4 => ['name' => 'Charlie — Pug', 'price' => 10000, 'image' => 'Assets/Dog/Pug (Charlie).jpg', 'category' => 'Dogs', 'desc' => 'Charlie is an adorable little Pug with a big personality. He enjoys short walks and long naps on the couch.'],
     5 => ['name' => 'Rocky — German Shepherd', 'price' => 18000, 'image' => 'Assets/Dog/Golden Retriever (Bella).jpg', 'category' => 'Dogs', 'desc' => 'Rocky is a highly intelligent and protective German Shepherd. He is eager to learn and makes a fantastic guard dog and loyal companion.'],
@@ -33,37 +32,6 @@ $petDB = [
     30 => ['name' => 'Phoenix — Lovebird', 'price' => 6000, 'image' => 'Assets/Birds/Lovebird (Phoenix).jpg', 'category' => 'Birds', 'desc' => 'Phoenix is a vibrant, social Lovebird. Known for forming deep bonds, he is playful, active, and enjoys having plenty of toys in his cage.'],
     31 => ['name' => 'Zeus — Eagle', 'price' => 75000, 'image' => 'Assets/Birds/Eagle (Zeus).jpg', 'category' => 'Birds', 'desc' => 'Zeus is a majestic Eagle with a commanding presence. Handled by experienced falconers only, he requires specialized care, licensing, and training.'],
     32 => ['name' => 'Sky — Swan', 'price' => 35000, 'image' => 'Assets/Birds/Swan (Sky).jpg', 'category' => 'Birds', 'desc' => 'Sky is a graceful Swan, perfect for large, private ponds or estates. She is elegant, majestic, and adds serene beauty to any natural water setting.']
-=======
-    1 => ['name' => 'Max — Labrador', 'price' => 15000, 'image' => 'Assets/Dog/Labrador (Max).jpg', 'category' => 'Dogs'],
-    4 => ['name' => 'Charlie — Pug', 'price' => 10000, 'image' => 'Assets/Dog/Pug (Charlie).jpg', 'category' => 'Dogs'],
-    5 => ['name' => 'Rocky — German Shepherd', 'price' => 18000, 'image' => 'Assets/Dog/Golden Retriever (Bella).jpg', 'category' => 'Dogs'],
-    7 => ['name' => 'Daisy — Bulldog', 'price' => 16000, 'image' => 'Assets/Dog/Bulldog(Daisy).jpg', 'category' => 'Dogs'],
-    8 => ['name' => 'Teddy — Shih Tzu', 'price' => 14000, 'image' => 'Assets/Dog/Shih_Tzu(Teddy).jpg', 'category' => 'Dogs'],
-    9 => ['name' => 'Coco — Pomeranian', 'price' => 22000, 'image' => 'Assets/Dog/Pomeranian (Coco).jpg', 'category' => 'Dogs'],
-    10 => ['name' => 'Bruno — Rottweiler', 'price' => 19000, 'image' => 'Assets/Dog/Rottweiler Puppy (Bruno).jpg', 'category' => 'Dogs'],
-    11 => ['name' => 'Milo — Husky', 'price' => 25000, 'image' => 'Assets/Dog/Siberian Husky Puppy (Milo).jpg', 'category' => 'Dogs'],
-    12 => ['name' => 'Luna — British Shorthair', 'price' => 18500, 'image' => 'Assets/Cat/British Shorthair (Luna).jpg', 'category' => 'Cats'],
-    13 => ['name' => 'Whiskers — Persian', 'price' => 22000, 'image' => 'Assets/Cat/Persian Cat (Whiskers).jpg', 'category' => 'Cats'],
-    14 => ['name' => 'Shadow — Maine Coon', 'price' => 20000, 'image' => 'Assets/Cat/Maine Coon (Shadow).jpg', 'category' => 'Cats'],
-    15 => ['name' => 'Misty — Ragdoll', 'price' => 24000, 'image' => 'Assets/Cat/Ragdoll (Misty).jpg', 'category' => 'Cats'],
-    16 => ['name' => 'Tiger — Bengal', 'price' => 19000, 'image' => 'Assets/Cat/Bengal Cat (Tiger).jpg', 'category' => 'Cats'],
-    17 => ['name' => 'Smudge — Siamese', 'price' => 17000, 'image' => 'Assets/Cat/Siamese Cat (Smudge).jpg', 'category' => 'Cats'],
-    18 => ['name' => 'Nala — Abyssinian', 'price' => 21000, 'image' => 'Assets/Cat/Abyssinian Cat (Nala).jpg', 'category' => 'Cats'],
-    19 => ['name' => 'Goldie — Goldfish', 'price' => 500, 'image' => 'Assets/Fish/Goldfish (Goldie).jpg', 'category' => 'Fish'],
-    20 => ['name' => 'Nemo — Clownfish', 'price' => 800, 'image' => 'Assets/Fish/Clownfish (Nemo).jpg', 'category' => 'Fish'],
-    21 => ['name' => 'Bubbles — Betta', 'price' => 600, 'image' => 'Assets/Fish/Betta Fish (Bubbles).jpg', 'category' => 'Fish'],
-    22 => ['name' => 'Finley — Guppy', 'price' => 400, 'image' => 'Assets/Fish/Guppy (Finley).jpg', 'category' => 'Fish'],
-    23 => ['name' => 'Coral — Angelfish', 'price' => 1200, 'image' => 'Assets/Fish/Angelfish (Coral).jpg', 'category' => 'Fish'],
-    24 => ['name' => 'Splash — Tetra', 'price' => 300, 'image' => 'Assets/Fish/Tetra Fish (Splash).jpg', 'category' => 'Fish'],
-    25 => ['name' => 'Pearl — Molly', 'price' => 450, 'image' => 'Assets/Fish/Molly Fish (Pearl).jpg', 'category' => 'Fish'],
-    26 => ['name' => 'Rio — African Grey', 'price' => 45000, 'image' => 'Assets/Birds/African Grey Parrot (Rio).jpg', 'category' => 'Birds'],
-    27 => ['name' => 'Sunny — Macaw', 'price' => 55000, 'image' => 'Assets/Birds/Macaw Parrot (Sunny).jpg', 'category' => 'Birds'],
-    28 => ['name' => 'Tweety — Canary', 'price' => 8000, 'image' => 'Assets/Birds/Canary (Tweety).jpg', 'category' => 'Birds'],
-    29 => ['name' => 'Coco — Cockatiel', 'price' => 12000, 'image' => 'Assets/Birds/Cockatiel (Coco).jpg', 'category' => 'Birds'],
-    30 => ['name' => 'Phoenix — Lovebird', 'price' => 6000, 'image' => 'Assets/Birds/Lovebird (Phoenix).jpg', 'category' => 'Birds'],
-    31 => ['name' => 'Zeus — Eagle', 'price' => 75000, 'image' => 'Assets/Birds/Eagle (Zeus).jpg', 'category' => 'Birds'],
-    32 => ['name' => 'Sky — Swan', 'price' => 35000, 'image' => 'Assets/Birds/Swan (Sky).jpg', 'category' => 'Birds']
->>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
 ];
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
@@ -76,10 +44,6 @@ if (!$pet) {
 // Set defaults for missing dynamic properties
 $pet['status'] = 'Available for Adoption';
 $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
-<<<<<<< HEAD
-=======
-$pet['desc'] = "Looking for a loving home! This beautiful " . strtolower($pet['category']) . " is healthy, vet-checked, and ready to become your new best friend. Comes completely vaccinated and dewormed with up-to-date health records. Known for an affectionate personality and great temperament, making for a perfect family companion.";
->>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
 
 ?>
 <!doctype html>

@@ -581,21 +581,6 @@ if ($category === 'birds') $pageTitle = "Birds";
             }
 
             document.querySelectorAll('.ps-pet-add').forEach(button => {
-<<<<<<< HEAD
-=======
-                const buyBtn = document.createElement('button');
-                buyBtn.className = 'ps-pet-buy';
-                buyBtn.textContent = 'Buy Now';
-
-                const wrapper = document.createElement('div');
-                wrapper.style.display = 'flex';
-                wrapper.style.gap = '5px';
-
-                button.parentNode.insertBefore(wrapper, button);
-                wrapper.appendChild(button);
-                wrapper.appendChild(buyBtn);
-
->>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
                 function addToCart(petCard) {
                     const petId = petCard.getAttribute('data-pet-id');
                     const petName = petCard.querySelector('.ps-pet-name').textContent;
@@ -623,14 +608,6 @@ if ($category === 'birds') $pageTitle = "Birds";
                     const petName = addToCart(this.closest('.ps-pet-card'));
                     alert(petName + " added to cart!");
                 });
-<<<<<<< HEAD
-=======
-
-                buyBtn.addEventListener('click', function() {
-                    addToCart(this.closest('.ps-pet-card'));
-                    window.location.href = 'cart.php';
-                });
->>>>>>> 6915c4197beae6453652ee6418ca4caff90fc71f
             });
 
             document.querySelectorAll('.ps-pet-wish').forEach(button => {

@@ -209,7 +209,7 @@ session_start();
     <footer id="contact">
         <div class="ps-footer">
             <div class="ps-footer-bottom" style="text-align: center; color: white;">
-                © 2026 Paws Store. Made with 🐾 in India.
+                &copy; 2026 Paws Store. Made with 🐾 in India.
             </div>
         </div>
     </footer>

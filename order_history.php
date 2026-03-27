@@ -6,10 +6,22 @@ if (!isset($_SESSION["user"])) {
     exit();
 }
 
-$orders = isset($_SESSION['orders']) ? $_SESSION['orders'] : [];
+$host = 'localhost';
+$dbname = 'pet_store'; // Replace with your actual database name
+$username = 'root';
+$password = '';
 
-// Show latest orders first
-$orders = array_reverse($orders);
+$orders = [];
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt->execute([$_SESSION['user']['id']]);
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -154,11 +166,11 @@ $orders = array_reverse($orders);
             <?php else: ?>
                 <?php foreach ($orders as $order): ?>
                     <div class="order-card">
-                        <h3>Order #<?php echo htmlspecialchars($order['id']); ?></h3>
+                        <h3>Order #<?php echo htmlspecialchars($order['order_number']); ?></h3>
 
                         <div class="order-meta">
                             <span><strong>Placed:</strong> <?php echo date('d M Y, H:i', strtotime($order['created_at'])); ?></span>
-                            <span><strong>Status:</strong> <span class="status-processing"><?php echo htmlspecialchars($order['status']); ?></span></span>
+                            <span><strong>Status:</strong> <span class="status-processing"><?php echo htmlspecialchars($order['order_status']); ?></span></span>
                             <span><strong>Paid with:</strong> <?php echo htmlspecialchars(ucfirst($order['payment_method'] ?? 'N/A')); ?></span>
                             <span><strong>Txn ID:</strong> <?php echo htmlspecialchars($order['transaction_id']); ?></span>
                         </div>
@@ -166,13 +178,13 @@ $orders = array_reverse($orders);
                         <div class="order-details">
                             <div class="detail-row">
                                 <strong>Total Amount:</strong>
-                                <span>₹<?php echo number_format($order['total']); ?></span>
+                                <span>₹<?php echo number_format($order['total_amount']); ?></span>
                             </div>
                             <div class="detail-row">
                                 <strong>Delivery Address:</strong>
                                 <span>
                                     <?php
-                                    $address = $order['address'] ?? '';
+                                    $address = $order['shipping_address'] ?? '';
                                     if (is_string($address)) {
                                         $decoded = json_decode($address, true);
                                         $address = is_array($decoded) ? $decoded : $address;

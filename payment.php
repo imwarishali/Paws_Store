@@ -548,4 +548,3 @@ if (empty($cart)) {
 </body>
 
 </html>
-</content>

@@ -134,7 +134,7 @@ session_start();
                 <div class="ps-pet-body">
                   <div class="ps-pet-name">${pet.name}</div>
                   <div class="ps-pet-row" style="margin-top: 15px;">
-                    <span class="ps-pet-price">${pet.price}</span>
+                    <span class="ps-pet-price">₹${pet.price.toLocaleString('en-IN')}</span>
                     <button class="ps-pet-add" data-index="${index}">Add to Cart</button>
                   </div>
                 </div>

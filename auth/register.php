@@ -10,57 +10,47 @@ $error = "";
 $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  require_once "database.php";
+  $host = 'localhost';
+  $dbname = 'pet_store';
+  $db_user = 'root';
+  $db_pass = '';
 
-  $username = $_POST["username"];
-  $email = $_POST["email"];
-  $phone = $_POST["phone"];
-  $password = $_POST["password"];
-  $confirm_password = $_POST["confirm_password"];
+  try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-  if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
-    $error = "All fields are required.";
-  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $error = "Invalid email format.";
-  } elseif ($password !== $confirm_password) {
-    $error = "Passwords do not match.";
-  } elseif (strlen($password) < 8) {
-    $error = "Password must be at least 8 characters long.";
-  } else {
-    $sql = "SELECT id FROM users WHERE email = ? OR username = ?";
-    $stmt = mysqli_stmt_init($conn);
+    $username = trim($_POST["username"]);
+    $email = trim($_POST["email"]);
+    $phone = trim($_POST["phone"]);
+    $password = $_POST["password"];
+    $confirm_password = $_POST["confirm_password"];
 
-    if (mysqli_stmt_prepare($stmt, $sql)) {
-      mysqli_stmt_bind_param($stmt, "ss", $email, $username);
-      mysqli_stmt_execute($stmt);
-      mysqli_stmt_store_result($stmt);
+    if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
+      $error = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      $error = "Invalid email format.";
+    } elseif ($password !== $confirm_password) {
+      $error = "Passwords do not match.";
+    } elseif (strlen($password) < 8) {
+      $error = "Password must be at least 8 characters long.";
+    } else {
+      $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
+      $stmt->execute([$email, $username]);
 
-      if (mysqli_stmt_num_rows($stmt) > 0) {
+      if ($stmt->rowCount() > 0) {
         $error = "An account with this email or username already exists.";
       } else {
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql_insert = "INSERT INTO users (username, email, phone, password) VALUES (?, ?, ?, ?)";
-        $stmt_insert = mysqli_stmt_init($conn);
-
-        if (mysqli_stmt_prepare($stmt_insert, $sql_insert)) {
-          mysqli_stmt_bind_param($stmt_insert, "ssss", $username, $email, $phone, $password_hash);
-
-          if (mysqli_stmt_execute($stmt_insert)) {
-            $success = "Registration successful! Redirecting to login...";
-            echo "<script>setTimeout(function(){ window.location.href = 'login.php'; }, 2000);</script>";
-          } else {
-            $error = "Registration failed: " . mysqli_error($conn);
-          }
-        } else {
-          $error = "Database error: " . mysqli_error($conn);
+        $insert_stmt = $pdo->prepare("INSERT INTO users (username, email, phone, password) VALUES (?, ?, ?, ?)");
+        if ($insert_stmt->execute([$username, $email, $phone, $password_hash])) {
+          $success = "Registration successful! Redirecting to login...";
+          echo "<script>setTimeout(function(){ window.location.href = 'login.php'; }, 2000);</script>";
         }
       }
-    } else {
-      $error = "Database error: " . mysqli_error($conn);
     }
-
-    mysqli_close($conn);
+  } catch (PDOException $e) {
+    $error = "Database error: " . $e->getMessage();
   }
 }
 ?>

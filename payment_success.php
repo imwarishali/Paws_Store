@@ -9,12 +9,21 @@ if (!isset($_SESSION["user"])) {
 $order_id = $_GET['order_id'] ?? '';
 $order = null;
 
-if ($order_id && isset($_SESSION['orders'])) {
-    foreach ($_SESSION['orders'] as $o) {
-        if ($o['id'] === $order_id) {
-            $order = $o;
-            break;
-        }
+$host = 'localhost';
+$dbname = 'pet_store';
+$username = 'root';
+$password = '';
+
+if ($order_id) {
+    try {
+        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? AND user_id = ?");
+        $stmt->execute([$order_id, $_SESSION['user']['id']]);
+        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        die("Database error: " . $e->getMessage());
     }
 }
 
@@ -177,7 +186,7 @@ if (!$order) {
                 <h3>Order Details</h3>
                 <div class="detail-row">
                     <strong>Order ID:</strong>
-                    <span><?php echo htmlspecialchars($order['id']); ?></span>
+                    <span><?php echo htmlspecialchars($order['order_number']); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Transaction ID:</strong>
@@ -193,16 +202,16 @@ if (!$order) {
                 </div>
                 <div class="detail-row">
                     <strong>Payment Date:</strong>
-                    <span><?php echo date('d M Y, H:i', strtotime($order['created_at'])); ?></span>
+                    <span><?php echo date('d M Y, H:i', strtotime($order['created_at'] ?? 'now')); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Total Amount:</strong>
-                    <span>₹<?php echo number_format($order['total']); ?></span>
+                    <span>₹<?php echo number_format($order['total_amount']); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Delivery Address:</strong>
                     <span><?php
-                            $address = $order['address'] ?? '';
+                            $address = $order['shipping_address'] ?? '';
                             if (is_string($address)) {
                                 $decoded = json_decode($address, true);
                                 $address = is_array($decoded) ? $decoded : $address;

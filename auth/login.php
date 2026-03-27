@@ -2,7 +2,11 @@
 session_start();
 
 if (isset($_SESSION["user"])) {
-  header("Location: ../index.php");
+  if (isset($_SESSION["user"]["is_admin"]) && $_SESSION["user"]["is_admin"] == 1) {
+    header("Location: ../admin_orders.php");
+  } else {
+    header("Location: ../index.php");
+  }
   exit();
 }
 
@@ -10,50 +14,40 @@ $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-  require_once "database.php";
-  $login_id = $_POST["username"];
-  $password = $_POST["password"];
+  $host = 'localhost';
+  $dbname = 'pet_store';
+  $db_user = 'root';
+  $db_pass = '';
 
-  if (empty($login_id) || empty($password)) {
-    $error = "Please enter both username/email and password.";
-  } else {
-    $sql = "SELECT id, username, email, phone, password FROM users WHERE username = ? OR email = ?";
-    $stmt = mysqli_stmt_init($conn);
+  try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    if (mysqli_stmt_prepare($stmt, $sql)) {
-      mysqli_stmt_bind_param($stmt, "ss", $login_id, $login_id);
-      mysqli_stmt_execute($stmt);
+    $login_id = trim($_POST["username"]);
+    $pass = $_POST["password"];
 
-      mysqli_stmt_store_result($stmt);
+    if (empty($login_id) || empty($pass)) {
+      $error = "Please enter both username/email and password.";
+    } else {
+      $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+      $stmt->execute([$login_id, $login_id]);
+      $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-      if (mysqli_stmt_num_rows($stmt) > 0) {
+      if ($user && password_verify($pass, $user["password"])) {
+        $_SESSION["user"] = $user;
 
-        mysqli_stmt_bind_result($stmt, $id, $username_db, $email_db, $phone_db, $password_db);
-        mysqli_stmt_fetch($stmt);
-
-        $user = [
-          "id" => $id,
-          "username" => $username_db,
-          "email" => $email_db,
-          "phone" => $phone_db,
-          "password" => $password_db
-        ];
-
-        if (password_verify($password, $user["password"])) {
-          $_SESSION["user"] = $user;
-          header("Location: ../index.php");
-          exit();
+        if ($user["is_admin"] == 1) {
+          header("Location: ../admin_orders.php");
         } else {
-          $error = "Invalid username/email or password";
+          header("Location: ../index.php");
         }
+        exit();
       } else {
         $error = "Invalid username/email or password";
       }
-    } else {
-      $error = "Database error: " . mysqli_error($conn);
     }
-
-    mysqli_close($conn);
+  } catch (PDOException $e) {
+    $error = "Database error: " . $e->getMessage();
   }
 }
 ?>

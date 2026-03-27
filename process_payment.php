@@ -35,32 +35,67 @@ if (isset($_FILES['payment_screenshot']) && $_FILES['payment_screenshot']['error
     }
 }
 
-// In a real application, you would save this to a database
-// For now, we'll store in session
-$order = [
-    'id' => 'ORD' . time() . rand(100, 999),
-    'user_id' => $_SESSION['user']['id'] ?? 1,
-    'cart' => $cart,
-    'address' => $address,
-    'total' => $total,
-    'transaction_id' => $transaction_id,
-    'screenshot' => $screenshot_path,
-    'payment_method' => $payment_method,
-    'payment_status' => 'Completed',
-    'status' => 'processing',
-    'created_at' => date('Y-m-d H:i:s')
-];
+// Connect to database (update credentials as needed)
+$host = 'localhost';
+$dbname = 'pet_store'; // Replace with your actual database name
+$username = 'root';
+$password = '';
 
-// Store order in session (in real app, save to database)
-if (!isset($_SESSION['orders'])) {
-    $_SESSION['orders'] = [];
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // 1. Insert into orders table
+    $order_number = 'ORD' . time() . rand(100, 999);
+    $user_id = $_SESSION['user']['id'] ?? 1;
+    $shipping_address = json_encode($address); // Store JSON array as string
+
+    $stmt = $pdo->prepare("
+        INSERT INTO orders (order_number, user_id, total_amount, shipping_address, transaction_id, payment_screenshot, payment_method, payment_status, order_status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Completed', 'Processing')
+    ");
+
+    $stmt->execute([
+        $order_number,
+        $user_id,
+        $total,
+        $shipping_address,
+        $transaction_id,
+        $screenshot_path,
+        $payment_method
+    ]);
+
+    // Fetch the auto-incremented primary key of the new order
+    $order_id = $pdo->lastInsertId();
+
+    // 2. Insert into order_items table
+    if (!empty($cart)) {
+        $item_stmt = $pdo->prepare("
+            INSERT INTO order_items (order_id, pet_id, quantity, price_at_purchase) 
+            VALUES (?, ?, ?, ?)
+        ");
+
+        foreach ($cart as $item) {
+            // The price from the cart will now always be a clean number.
+            $price = $item['price'];
+            $quantity = $item['quantity'] ?? 1;
+
+            $item_stmt->execute([
+                $order_id,
+                $item['id'],
+                $quantity,
+                $price
+            ]);
+        }
+    }
+} catch (PDOException $e) {
+    die("Database error: " . $e->getMessage());
 }
-$_SESSION['orders'][] = $order;
 
 // Clear cart
 unset($_SESSION['cart']); // If using session cart
 
 // Redirect to success page
-header("Location: payment_success.php?order_id=" . $order['id']);
+header("Location: payment_success.php?order_id=" . $order_number);
 exit();
-?></content>
+?>

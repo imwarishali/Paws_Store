@@ -626,7 +626,7 @@ if ($category === 'birds') $pageTitle = "Birds";
                         wishlist.push({
                             id: petId,
                             name: petName,
-                            price: petPrice,
+                            price: parseInt(petPrice.replace(/[^0-9]/g, '')), // Parse the string to a raw number
                             image: petImage
                         });
                         alert(petName + " added to wishlist!");

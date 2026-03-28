@@ -5,6 +5,16 @@ if (!isset($_SESSION["user"])) {
     header("Location: auth/login.php");
     exit();
 }
+
+require_once 'db.php';
+
+$petData = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM pets");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $petData[$row['id']] = ['name' => $row['name'], 'price' => (float)$row['price'], 'image' => $row['image']];
+    }
+} catch (PDOException $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -352,169 +362,7 @@ if (!isset($_SESSION["user"])) {
         document.addEventListener('DOMContentLoaded', function() {
             const cartContent = document.getElementById('cart-content');
 
-            // Sample pet data (in a real app, this would come from a database)
-            const petData = {
-                1: {
-                    name: 'Max — Labrador',
-                    price: 15000,
-                    image: '🐶'
-                },
-                2: {
-                    name: 'Luna — British Shorthair',
-                    price: 18500,
-                    image: '🐱'
-                },
-                3: {
-                    name: 'Buddy — Beagle',
-                    price: 12000,
-                    image: '🐶'
-                },
-                4: {
-                    name: 'Charlie — Pug',
-                    price: 10000,
-                    image: '🐶'
-                },
-                5: {
-                    name: 'Bella — Golden Retriever',
-                    price: 20000,
-                    image: '🐶'
-                },
-                6: {
-                    name: 'Rocky — German Shepherd',
-                    price: 18000,
-                    image: '🐶'
-                },
-                7: {
-                    name: 'Daisy — Bulldog',
-                    price: 16000,
-                    image: '🐶'
-                },
-                8: {
-                    name: 'Teddy — Shih Tzu',
-                    price: 14000,
-                    image: '🐶'
-                },
-                9: {
-                    name: 'Coco — Pomeranian',
-                    price: 22000,
-                    image: '🐶'
-                },
-                10: {
-                    name: 'Bruno — Rottweiler',
-                    price: 19000,
-                    image: '🐶'
-                },
-                11: {
-                    name: 'Milo — Husky',
-                    price: 25000,
-                    image: '🐶'
-                },
-                12: {
-                    name: 'Luna — British Shorthair',
-                    price: 18500,
-                    image: '🐱'
-                },
-                13: {
-                    name: 'Whiskers — Persian',
-                    price: 22000,
-                    image: '🐱'
-                },
-                14: {
-                    name: 'Shadow — Maine Coon',
-                    price: 20000,
-                    image: '🐱'
-                },
-                15: {
-                    name: 'Misty — Ragdoll',
-                    price: 24000,
-                    image: '🐱'
-                },
-                16: {
-                    name: 'Tiger — Bengal',
-                    price: 19000,
-                    image: '🐱'
-                },
-                17: {
-                    name: 'Smudge — Siamese',
-                    price: 17000,
-                    image: '🐱'
-                },
-                18: {
-                    name: 'Nala — Abyssinian',
-                    price: 21000,
-                    image: '🐱'
-                },
-                19: {
-                    name: 'Goldie — Goldfish',
-                    price: 500,
-                    image: '🐠'
-                },
-                20: {
-                    name: 'Nemo — Clownfish',
-                    price: 800,
-                    image: '🐠'
-                },
-                21: {
-                    name: 'Bubbles — Betta',
-                    price: 600,
-                    image: '🐠'
-                },
-                22: {
-                    name: 'Finley — Guppy',
-                    price: 400,
-                    image: '🐠'
-                },
-                23: {
-                    name: 'Coral — Angelfish',
-                    price: 1200,
-                    image: '🐠'
-                },
-                24: {
-                    name: 'Splash — Tetra',
-                    price: 300,
-                    image: '🐠'
-                },
-                25: {
-                    name: 'Pearl — Molly',
-                    price: 450,
-                    image: '🐠'
-                },
-                26: {
-                    name: 'Rio — African Grey',
-                    price: 45000,
-                    image: '🐦'
-                },
-                27: {
-                    name: 'Sunny — Macaw',
-                    price: 55000,
-                    image: '🐦'
-                },
-                28: {
-                    name: 'Tweety — Canary',
-                    price: 8000,
-                    image: '🐦'
-                },
-                29: {
-                    name: 'Coco — Cockatiel',
-                    price: 12000,
-                    image: '🐦'
-                },
-                30: {
-                    name: 'Phoenix — Lovebird',
-                    price: 6000,
-                    image: '🐦'
-                },
-                31: {
-                    name: 'Zeus — Eagle',
-                    price: 75000,
-                    image: '🐦'
-                },
-                32: {
-                    name: 'Sky — Swan',
-                    price: 35000,
-                    image: '🐦'
-                }
-            };
+            const petData = <?php echo json_encode($petData); ?>;
 
             let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
 
@@ -573,7 +421,7 @@ if (!isset($_SESSION["user"])) {
                 </div>
                 <div class="form-group">
                   <label>Phone Number</label>
-                  <input type="tel" id="phone" placeholder="Enter your phone number">
+                  <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
                 <div class="form-group">
                   <label>Address</label>
@@ -600,7 +448,7 @@ if (!isset($_SESSION["user"])) {
                 </div>
                 <div class="form-group">
                   <label>PIN Code</label>
-                  <input type="text" id="pincode" placeholder="Enter PIN code">
+                  <input type="text" id="pincode" placeholder="Enter 6-digit PIN code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
               </div>
 
@@ -750,6 +598,16 @@ if (!isset($_SESSION["user"])) {
                     return;
                 }
 
+                if (!/^\d{10}$/.test(phone)) {
+                    alert('Please enter a valid 10-digit phone number');
+                    return;
+                }
+
+                if (!/^\d{6}$/.test(pincode)) {
+                    alert('Please enter a valid 6-digit PIN code');
+                    return;
+                }
+
                 // Calculate final total
                 const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
                 let discount = 0;
@@ -802,6 +660,13 @@ if (!isset($_SESSION["user"])) {
                 totalInput.name = 'total';
                 totalInput.value = total;
                 form.appendChild(totalInput);
+
+                // Add special offer
+                const offerInput = document.createElement('input');
+                offerInput.type = 'hidden';
+                offerInput.name = 'special_offer';
+                offerInput.value = selectedOffer ? selectedOffer.value : 'none';
+                form.appendChild(offerInput);
 
                 document.body.appendChild(form);
                 form.submit();

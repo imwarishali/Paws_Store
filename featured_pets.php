@@ -7,6 +7,15 @@ if ($category === 'dogs') $pageTitle = "Dogs";
 if ($category === 'cats') $pageTitle = "Cats";
 if ($category === 'fish') $pageTitle = "Fish";
 if ($category === 'birds') $pageTitle = "Birds";
+
+require_once 'db.php';
+
+try {
+    $stmt = $pdo->query("SELECT * FROM pets ORDER BY id ASC");
+    $db_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $db_pets = [];
+}
 ?>
 <!doctype html>
 <html lang="en">

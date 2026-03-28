@@ -3,15 +3,9 @@ session_start();
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
 
-$host = 'localhost';
-$dbname = 'pet_store'; // Ensure this matches your database name
-$username = 'root';
-$password = '';
+require_once 'db.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
     $stmt = $pdo->prepare("SELECT * FROM pets WHERE id = ?");
     $stmt->execute([$id]);
     $pet = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -277,7 +271,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
             const petId = "<?php echo $id; ?>";
             const petName = "<?php echo addslashes($pet['name']); ?>";
-            const petPrice = <?php echo $pet['price']; ?>;
+            const petPrice = <?php echo floatval($pet['price'] ?? 0); ?>;
             const petImage = "<?php echo addslashes($pet['image']); ?>";
 
             const cartBtn = document.getElementById('add-to-cart');

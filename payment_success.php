@@ -9,17 +9,23 @@ if (!isset($_SESSION["user"])) {
 $order_id = $_GET['order_id'] ?? '';
 $order = null;
 
-$host = 'localhost';
-$dbname = 'pet_store';
-$username = 'root';
-$password = '';
+require_once 'db.php';
 
 if ($order_id) {
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_number = ? AND user_id = ?");
+        $stmt = $pdo->prepare("
+            SELECT 
+                o.order_number, 
+                o.total_amount, 
+                o.shipping_address,
+                p.transaction_id,
+                p.payment_method,
+                p.payment_status,
+                p.payment_date
+            FROM orders o
+            JOIN payments p ON o.id = p.order_id
+            WHERE o.order_number = ? AND o.user_id = ?
+        ");
         $stmt->execute([$order_id, $_SESSION['user']['id']]);
         $order = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -190,7 +196,7 @@ if (!$order) {
                 </div>
                 <div class="detail-row">
                     <strong>Transaction ID:</strong>
-                    <span><?php echo htmlspecialchars($order['transaction_id']); ?></span>
+                    <span><?php echo htmlspecialchars($order['transaction_id'] ?? 'N/A'); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Payment Method:</strong>
@@ -198,11 +204,11 @@ if (!$order) {
                 </div>
                 <div class="detail-row">
                     <strong>Payment Status:</strong>
-                    <span class="status-processing"><?php echo htmlspecialchars($order['payment_status'] ?? 'Processing'); ?></span>
+                    <span class="status-processing"><?php echo htmlspecialchars($order['payment_status'] ?? 'Completed'); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Payment Date:</strong>
-                    <span><?php echo date('d M Y, H:i', strtotime($order['created_at'] ?? 'now')); ?></span>
+                    <span><?php echo date('d M Y, H:i', strtotime($order['payment_date'] ?? 'now')); ?></span>
                 </div>
                 <div class="detail-row">
                     <strong>Total Amount:</strong>
@@ -212,11 +218,12 @@ if (!$order) {
                     <strong>Delivery Address:</strong>
                     <span><?php
                             $address = $order['shipping_address'] ?? '';
-                            if (is_string($address)) {
-                                $decoded = json_decode($address, true);
-                                $address = is_array($decoded) ? $decoded : $address;
+                            $decoded = json_decode($address, true);
+                            if (is_string($decoded)) {
+                                $decoded = json_decode($decoded, true);
                             }
-                            echo htmlspecialchars(is_array($address) ? implode(', ', $address) : $address);
+                            $address_array = is_array($decoded) ? $decoded : [$address];
+                            echo htmlspecialchars(implode(', ', $address_array));
                             ?></span>
                 </div>
             </div>

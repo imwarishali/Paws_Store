@@ -8,12 +8,24 @@ if (!isset($_SESSION["user"])) {
 
 // Get cart data from POST or session
 $cart = isset($_POST['cart']) ? json_decode($_POST['cart'], true) : [];
-$address = isset($_POST['address']) ? $_POST['address'] : [];
+$address = isset($_POST['address']) ? json_decode($_POST['address'], true) : [];
 $total = isset($_POST['total']) ? $_POST['total'] : 0;
+$special_offer = isset($_POST['special_offer']) ? $_POST['special_offer'] : 'none';
 
 if (empty($cart)) {
     header("Location: cart.php");
     exit();
+}
+
+require_once 'db.php';
+
+$petData = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM pets");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $petData[$row['id']] = ['name' => $row['name'], 'price' => (float)$row['price']];
+    }
+} catch (PDOException $e) {
 }
 ?>
 <!DOCTYPE html>
@@ -329,7 +341,7 @@ if (empty($cart)) {
 
                         <div class="form-group">
                             <label>Transaction ID / Reference Number</label>
-                            <input type="text" name="transaction_id" required placeholder="Enter transaction ID from your bank/UPI app">
+                            <input type="text" id="transaction_id" name="transaction_id" required pattern="^[Tt].*" title="Transaction ID must start with 'T'" placeholder="Enter transaction ID (Must start with 'T')">
                         </div>
 
                         <div class="form-group">
@@ -342,9 +354,9 @@ if (empty($cart)) {
                             </div>
                         </div>
 
-                        <input type="hidden" name="cart" value='<?php echo json_encode($cart); ?>'>
-                        <input type="hidden" name="address" value='<?php echo json_encode($address); ?>'>
-                        <input type="hidden" name="total" value="<?php echo $total; ?>">
+                        <input type="hidden" name="cart" value="<?php echo htmlspecialchars(json_encode($cart)); ?>">
+                        <input type="hidden" name="address" value="<?php echo htmlspecialchars(json_encode($address)); ?>">
+                        <input type="hidden" name="special_offer" value="<?php echo htmlspecialchars($special_offer); ?>">
                         <input type="hidden" name="payment_method" id="payment_method" value="qr">
 
                         <button type="submit" class="submit-btn">Confirm Payment</button>
@@ -355,137 +367,7 @@ if (empty($cart)) {
     </div>
 
     <script>
-        // Sample pet data (should match cart.php)
-        const petData = {
-            1: {
-                name: 'Max — Labrador',
-                price: 15000
-            },
-            2: {
-                name: 'Luna — British Shorthair',
-                price: 18500
-            },
-            3: {
-                name: 'Buddy — Beagle',
-                price: 12000
-            },
-            4: {
-                name: 'Charlie — Pug',
-                price: 10000
-            },
-            5: {
-                name: 'Bella — Golden Retriever',
-                price: 20000
-            },
-            6: {
-                name: 'Rocky — German Shepherd',
-                price: 18000
-            },
-            7: {
-                name: 'Daisy — Bulldog',
-                price: 16000
-            },
-            8: {
-                name: 'Teddy — Shih Tzu',
-                price: 14000
-            },
-            9: {
-                name: 'Coco — Pomeranian',
-                price: 22000
-            },
-            10: {
-                name: 'Bruno — Rottweiler',
-                price: 19000
-            },
-            11: {
-                name: 'Milo — Husky',
-                price: 25000
-            },
-            12: {
-                name: 'Luna — British Shorthair',
-                price: 18500
-            },
-            13: {
-                name: 'Whiskers — Persian',
-                price: 22000
-            },
-            14: {
-                name: 'Shadow — Maine Coon',
-                price: 20000
-            },
-            15: {
-                name: 'Misty — Ragdoll',
-                price: 24000
-            },
-            16: {
-                name: 'Tiger — Bengal',
-                price: 19000
-            },
-            17: {
-                name: 'Smudge — Siamese',
-                price: 17000
-            },
-            18: {
-                name: 'Nala — Abyssinian',
-                price: 21000
-            },
-            19: {
-                name: 'Goldie — Goldfish',
-                price: 500
-            },
-            20: {
-                name: 'Nemo — Clownfish',
-                price: 800
-            },
-            21: {
-                name: 'Bubbles — Betta',
-                price: 600
-            },
-            22: {
-                name: 'Finley — Guppy',
-                price: 400
-            },
-            23: {
-                name: 'Coral — Angelfish',
-                price: 1200
-            },
-            24: {
-                name: 'Splash — Tetra',
-                price: 300
-            },
-            25: {
-                name: 'Pearl — Molly',
-                price: 450
-            },
-            26: {
-                name: 'Rio — African Grey',
-                price: 45000
-            },
-            27: {
-                name: 'Sunny — Macaw',
-                price: 55000
-            },
-            28: {
-                name: 'Tweety — Canary',
-                price: 8000
-            },
-            29: {
-                name: 'Coco — Cockatiel',
-                price: 12000
-            },
-            30: {
-                name: 'Phoenix — Lovebird',
-                price: 6000
-            },
-            31: {
-                name: 'Zeus — Eagle',
-                price: 75000
-            },
-            32: {
-                name: 'Sky — Swan',
-                price: 35000
-            }
-        };
+        const petData = <?php echo json_encode($petData); ?>;
 
         const cart = <?php echo json_encode($cart); ?>;
 
@@ -529,6 +411,14 @@ if (empty($cart)) {
             if (file) {
                 const label = document.querySelector('.file-upload-label');
                 label.textContent = '📎 ' + file.name;
+            }
+        });
+
+        document.getElementById('payment-form').addEventListener('submit', function(e) {
+            const txnId = document.getElementById('transaction_id').value.trim();
+            if (!/^[Tt]/.test(txnId)) {
+                e.preventDefault();
+                alert('Please enter a valid Transaction ID starting with the letter "T".');
             }
         });
 

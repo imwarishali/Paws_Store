@@ -1,5 +1,14 @@
 <?php
 session_start();
+
+require_once 'db.php';
+
+try {
+  $stmt = $pdo->query("SELECT * FROM pets ORDER BY id ASC");
+  $db_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+  $db_pets = [];
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -889,7 +898,7 @@ session_start();
         function addToCart(petCard) {
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
-          const petPrice = petCard.querySelector('.ps-pet-price').textContent;
+          const petPrice = petCard.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '');
           const petImage = petCard.querySelector('img').src;
 
           const existingPet = cart.find(item => item.id === petId);
@@ -899,7 +908,7 @@ session_start();
             cart.push({
               id: petId,
               name: petName,
-              price: petPrice,
+              price: parseInt(petPrice),
               image: petImage,
               quantity: 1
             });
@@ -937,7 +946,7 @@ session_start();
           const petCard = this.closest('.ps-pet-card');
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
-          const petPrice = petCard.querySelector('.ps-pet-price').textContent;
+          const petPrice = petCard.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '');
           const petImage = petCard.querySelector('img').src;
 
           const existingIndex = wishlist.findIndex(item => item.id === petId);
@@ -948,7 +957,7 @@ session_start();
             wishlist.push({
               id: petId,
               name: petName,
-              price: petPrice,
+              price: parseInt(petPrice),
               image: petImage
             });
             alert(petName + " added to wishlist!");

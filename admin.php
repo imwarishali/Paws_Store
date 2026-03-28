@@ -83,12 +83,23 @@ try {
     $edit_pet = null;
     $search_query = $_GET['search_query'] ?? '';
 
+    // Initialize all view variables to prevent IDE "Undefined Variable" warnings
+    $total_revenue = 0;
+    $total_orders = 0;
+    $total_pets = 0;
+    $pending_orders = 0;
+    $total_users = 0;
+    $recent_orders = [];
+    $all_orders = [];
+    $all_pets = [];
+    $all_users = [];
+
     if ($page === 'dashboard') {
-        $total_revenue = $pdo->query("SELECT SUM(total_amount) as r FROM orders WHERE order_status != 'Cancelled'")->fetchColumn() ?? 0;
-        $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn() ?? 0;
-        $total_pets = $pdo->query("SELECT COUNT(*) FROM pets")->fetchColumn() ?? 0;
-        $pending_orders = $pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'Processing'")->fetchColumn() ?? 0;
-        $total_users = $pdo->query("SELECT COUNT(*) FROM users WHERE is_admin = 0 OR is_admin IS NULL")->fetchColumn() ?? 0;
+        $total_revenue = (float)$pdo->query("SELECT SUM(total_amount) FROM orders WHERE order_status != 'Cancelled'")->fetchColumn();
+        $total_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+        $total_pets = (int)$pdo->query("SELECT COUNT(*) FROM pets")->fetchColumn();
+        $pending_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'Processing'")->fetchColumn();
+        $total_users = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE is_admin = 0 OR is_admin IS NULL")->fetchColumn();
 
         $chart_stmt = $pdo->query("SELECT DATE(created_at) as order_date, SUM(total_amount) as daily_revenue FROM orders WHERE order_status != 'Cancelled' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC");
         foreach ($chart_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {

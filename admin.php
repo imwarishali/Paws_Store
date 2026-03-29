@@ -1,8 +1,9 @@
 <?php
 session_start();
 
-if (!isset($_SESSION["user"])) {
-    header("Location: auth/login.php");
+// If admin is not logged in, redirect to the new admin login page
+if (!isset($_SESSION["admin_user"])) {
+    header("Location: admin_login.php");
     exit();
 }
 
@@ -12,17 +13,6 @@ $success_message = null;
 $error_message = null;
 
 try {
-    // Check if the logged-in user is an admin
-    $user_id = $_SESSION["user"]["id"] ?? 0;
-    $admin_stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
-    $admin_stmt->execute([$user_id]);
-    $user_data = $admin_stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$user_data || empty($user_data['is_admin'])) {
-        header("Location: index.php");
-        exit();
-    }
-
     // Determine which section to show (default is dashboard)
     $page = $_GET['page'] ?? 'dashboard';
 
@@ -37,6 +27,11 @@ try {
             $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
             $update_stmt->execute([$new_status, $order_id]);
             $success_message = "Order #{$order_id} status updated to '{$new_status}' successfully!";
+        } elseif (isset($_POST['confirm_order'])) {
+            $order_id = $_POST['order_id'];
+            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE id = ?");
+            $update_stmt->execute([$order_id]);
+            $success_message = "Order #{$order_id} status updated to 'Confirmed' successfully!";
         }
         // --- Pets Actions ---
         elseif (isset($_POST['edit_pet'])) {
@@ -55,23 +50,29 @@ try {
         // --- Users Actions ---
         elseif (isset($_POST['delete_user'])) {
             $delete_id = $_POST['user_id'];
-            if ($delete_id != $user_id) {
-                $delete_stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-                $delete_stmt->execute([$delete_id]);
-                $success_message = "User deleted successfully!";
+            $delete_stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $delete_stmt->execute([$delete_id]);
+            $success_message = "User deleted successfully!";
+        }
+        // --- Admin Actions ---
+        elseif (isset($_POST['add_admin'])) {
+            $new_username = trim($_POST['username']);
+            $new_password = $_POST['password'];
+
+            $check_stmt = $pdo->prepare("SELECT COUNT(*) FROM admin WHERE username = ?");
+            $check_stmt->execute([$new_username]);
+            if ($check_stmt->fetchColumn() > 0) {
+                $error_message = "Username already exists!";
             } else {
-                $error_message = "You cannot delete your own admin account!";
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $insert_stmt = $pdo->prepare("INSERT INTO admin (username, password) VALUES (?, ?)");
+                $insert_stmt->execute([$new_username, $hashed_password]);
+                $success_message = "Admin user '{$new_username}' added successfully!";
             }
-        } elseif (isset($_POST['update_role'])) {
-            $update_id = $_POST['user_id'];
-            $new_role = $_POST['new_role'];
-            if ($update_id != $user_id) {
-                $role_stmt = $pdo->prepare("UPDATE users SET is_admin = ? WHERE id = ?");
-                $role_stmt->execute([$new_role, $update_id]);
-                $success_message = "User role updated successfully!";
-            } else {
-                $error_message = "You cannot change your own role!";
-            }
+        } elseif (isset($_POST['delete_admin'])) {
+            $delete_stmt = $pdo->prepare("DELETE FROM admin WHERE id = ? AND id != ?");
+            $delete_stmt->execute([$_POST['admin_id'], $_SESSION['admin_user']['id']]);
+            $success_message = "Admin account deleted successfully!";
         }
     }
 
@@ -93,13 +94,14 @@ try {
     $all_orders = [];
     $all_pets = [];
     $all_users = [];
+    $all_admins = [];
 
     if ($page === 'dashboard') {
         $total_revenue = (float)$pdo->query("SELECT SUM(total_amount) FROM orders WHERE order_status != 'Cancelled'")->fetchColumn();
         $total_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
         $total_pets = (int)$pdo->query("SELECT COUNT(*) FROM pets")->fetchColumn();
         $pending_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'Processing'")->fetchColumn();
-        $total_users = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE is_admin = 0 OR is_admin IS NULL")->fetchColumn();
+        $total_users = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
         $chart_stmt = $pdo->query("SELECT DATE(created_at) as order_date, SUM(total_amount) as daily_revenue FROM orders WHERE order_status != 'Cancelled' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC");
         foreach ($chart_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -120,6 +122,26 @@ try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $all_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Handle CSV Export
+        if (isset($_GET['export_csv']) && $_GET['export_csv'] == '1') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=orders_export_' . date('Y-m-d') . '.csv');
+            $output = fopen('php://output', 'w');
+            fputcsv($output, ['Order ID', 'User ID', 'Pets Ordered', 'Date Placed', 'Amount (INR)', 'Status']);
+            foreach ($all_orders as $order) {
+                fputcsv($output, [
+                    $order['order_number'],
+                    $order['user_id'],
+                    $order['pet_names'] ? $order['pet_names'] : 'N/A',
+                    date('d M Y H:i:s', strtotime($order['created_at'])),
+                    $order['total_amount'],
+                    $order['order_status']
+                ]);
+            }
+            fclose($output);
+            exit();
+        }
     } elseif ($page === 'pets') {
         if (isset($_GET['edit_id'])) {
             $stmt = $pdo->prepare("SELECT * FROM pets WHERE id = ?");
@@ -139,6 +161,8 @@ try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $all_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($page === 'admins') {
+        $all_admins = $pdo->query("SELECT id, username FROM admin ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
@@ -157,12 +181,96 @@ try {
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <?php endif; ?>
     <style>
+        body {
+            margin: 0;
+            background: #faf7f2;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            background: #fff;
+            border-right: 1px solid #e8e0d4;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 20px;
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c1a0e;
+            border-bottom: 1px solid #e8e0d4;
+            text-align: center;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .sidebar-nav a, .sidebar-bottom a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 25px;
+            color: #555;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover, .sidebar-bottom a:hover {
+            background: #fdfaf6;
+            color: #b5860d;
+        }
+
+        .sidebar-nav a.active {
+            background: #fef9f0;
+            color: #b5860d;
+            border-right: 4px solid #b5860d;
+        }
+
+        .sidebar-bottom {
+            padding: 20px 0;
+            border-top: 1px solid #e8e0d4;
+        }
+
+        .sidebar-bottom .logout-link {
+            color: #dc3545;
+        }
+
+        .sidebar-bottom .logout-link:hover {
+            background: #fdf5f5;
+            color: #c82333;
+        }
+
+        .admin-main {
+            flex: 1;
+            margin-left: 250px;
+            padding: 40px 30px;
+            background: #faf7f2;
+        }
+
         /* Unified Admin UI Styles */
         .admin-dashboard,
         .admin-container {
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 0 auto 40px;
         }
 
         .admin-container {
@@ -473,35 +581,37 @@ try {
             .form-group.full-width {
                 grid-column: 1;
             }
+
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            
+            .admin-main {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
 
 <body>
-    <nav class="fk-nav-header">
-        <div class="fk-nav-top">
-            <a href="admin.php?page=dashboard" class="fk-logo">🐾 Paws Store Admin</a>
-            <div class="fk-nav-right" style="margin-left: auto;">
-                <a href="admin.php?page=dashboard" class="fk-cart-btn" style="margin-right: 15px; <?php echo $page === 'dashboard' ? 'color:#2a55e5;' : ''; ?>">
-                    <span class="fk-cart-icon">📊</span> Dashboard
-                </a>
-                <a href="admin.php?page=orders" class="fk-cart-btn" style="margin-right: 15px; <?php echo $page === 'orders' ? 'color:#2a55e5;' : ''; ?>">
-                    <span class="fk-cart-icon">📦</span> Orders
-                </a>
-                <a href="admin.php?page=pets" class="fk-cart-btn" style="margin-right: 15px; <?php echo $page === 'pets' ? 'color:#2a55e5;' : ''; ?>">
-                    <span class="fk-cart-icon">🐶</span> Pets
-                </a>
-                <a href="admin.php?page=users" class="fk-cart-btn" style="margin-right: 15px; <?php echo $page === 'users' ? 'color:#2a55e5;' : ''; ?>">
-                    <span class="fk-cart-icon">👥</span> Users
-                </a>
-                <a href="index.php" class="fk-cart-btn">
-                    <span class="fk-cart-icon">🏠</span> Store Home
-                </a>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="sidebar-logo">🐾 Admin Panel</div>
+            <nav class="sidebar-nav">
+                <a href="admin.php?page=dashboard" class="<?php echo $page === 'dashboard' ? 'active' : ''; ?>"><span>📊</span> Dashboard</a>
+                <a href="admin.php?page=orders" class="<?php echo $page === 'orders' ? 'active' : ''; ?>"><span>📦</span> Orders</a>
+                <a href="admin.php?page=pets" class="<?php echo $page === 'pets' ? 'active' : ''; ?>"><span>🐶</span> Pets</a>
+                <a href="admin.php?page=users" class="<?php echo $page === 'users' ? 'active' : ''; ?>"><span>👥</span> Users</a>
+                <a href="admin.php?page=admins" class="<?php echo $page === 'admins' ? 'active' : ''; ?>"><span>🛡️</span> Admins</a>
+            </nav>
+            <div class="sidebar-bottom">
+                <a href="index.php"><span>🏠</span> Store Home</a>
+                <a href="admin_logout.php" class="logout-link"><span>🚪</span> Logout</a>
             </div>
-        </div>
-    </nav>
+        </aside>
 
-    <div class="ps-wrap">
+        <main class="admin-main">
         <?php if (isset($success_message)): ?>
             <div class="admin-dashboard" style="padding-bottom: 0; margin-bottom: 0;">
                 <div class="msg-success"><?php echo htmlspecialchars($success_message); ?></div>
@@ -602,6 +712,7 @@ try {
                     <?php if (!empty($search_query)): ?>
                         <a href="admin.php?page=orders">Clear Search</a>
                     <?php endif; ?>
+                    <button type="submit" name="export_csv" value="1" style="background-color: #28a745; margin-left: auto;">Export CSV</button>
                 </form>
                 <table>
                     <thead>
@@ -635,11 +746,15 @@ try {
                                                 <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                                 <select name="new_status" class="status-select" style="padding: 6px;">
                                                     <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                                                    <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
                                                     <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
                                                     <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
                                                     <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                                 </select>
                                                 <button type="submit" name="update_status" class="update-btn">Update</button>
+                                                <?php if ($order['order_status'] === 'Processing'): ?>
+                                                    <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
+                                                <?php endif; ?>
                                             </form>
                                             <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn">Invoice</a>
                                             <?php if (!empty($order['payment_screenshot'])): ?>
@@ -753,7 +868,6 @@ try {
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
-                            <th>Role</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -770,29 +884,12 @@ try {
                                     <td><?php echo htmlspecialchars($u['email'] ?? 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($u['phone'] ?? 'N/A'); ?></td>
                                     <td>
-                                        <?php if (!empty($u['is_admin'])): ?>
-                                            <span class="role-badge role-admin">Admin</span>
-                                        <?php else: ?>
-                                            <span class="role-badge role-user">Customer</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($u['id'] != $user_id): ?>
-                                            <div style="display: flex; gap: 10px; align-items: center;">
-                                                <form method="POST" style="margin: 0; display: flex; gap: 8px; align-items: center;">
-                                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
-                                                    <select name="new_role" class="status-select" style="padding: 6px;">
-                                                        <option value="1" <?php echo !empty($u['is_admin']) ? 'selected' : ''; ?>>Admin</option>
-                                                        <option value="0" <?php echo empty($u['is_admin']) ? 'selected' : ''; ?>>Customer</option>
-                                                    </select>
-                                                    <button type="submit" name="update_role" class="update-btn" style="background: #b5860d;">Update Role</button>
-                                                </form>
-                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');" style="margin: 0;">
-                                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
-                                                    <button type="submit" name="delete_user" class="delete-btn">Delete</button>
-                                                </form>
-                                            </div>
-                                        <?php endif; ?>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <form method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');" style="margin: 0;">
+                                                <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                                <button type="submit" name="delete_user" class="delete-btn">Delete</button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -800,8 +897,65 @@ try {
                     </tbody>
                 </table>
             </div>
+
+            <!-- ========================================== -->
+            <!-- ADMINS SECTION -->
+            <!-- ========================================== -->
+        <?php elseif ($page === 'admins'): ?>
+            <div class="admin-container">
+                <div class="admin-header">
+                    <h2>Add New Admin</h2>
+                </div>
+                <form method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="username" placeholder="Enter new username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+                    <button type="submit" name="add_admin" class="submit-btn">+ Create Admin Account</button>
+                </form>
+            </div>
+
+            <div class="admin-container">
+                <div class="admin-header">
+                    <h2>Manage Admin Accounts</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Admin ID</th>
+                            <th>Username</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($all_admins as $admin): ?>
+                            <tr>
+                                <td><strong>#<?php echo htmlspecialchars($admin['id']); ?></strong></td>
+                                <td><?php echo htmlspecialchars($admin['username']); ?></td>
+                                <td>
+                                    <?php if ($admin['id'] != $_SESSION['admin_user']['id']): ?>
+                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this admin account?');" style="margin: 0;">
+                                            <input type="hidden" name="admin_id" value="<?php echo $admin['id']; ?>">
+                                            <button type="submit" name="delete_admin" class="delete-btn">Delete</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span style="color: #666; font-style: italic;">Current User</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endif; ?>
 
+        </main>
     </div>
 
     <!-- Load Chart.js logic only if on dashboard -->

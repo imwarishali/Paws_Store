@@ -109,6 +109,11 @@ try {
             color: #856404 !important;
         }
 
+        .status-Confirmed {
+            background: #d1ecf1 !important;
+            color: #0c5460 !important;
+        }
+
         .status-Shipped {
             background: #cce5ff !important;
             color: #004085 !important;
@@ -302,7 +307,7 @@ try {
                         </div>
 
                         <div class="order-actions" style="gap: 10px;">
-                            <?php if (!in_array($order['order_status'], ['Shipped', 'Delivered', 'Cancelled'])): ?>
+                            <?php if (!in_array($order['order_status'], ['Confirmed', 'Shipped', 'Delivered', 'Cancelled'])): ?>
                                 <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" style="margin: 0;">
                                     <input type="hidden" name="cancel_order_id" value="<?php echo $order['id']; ?>">
                                     <button type="submit" class="btn-cancel-order">Cancel Order</button>

@@ -16,12 +16,7 @@ $user_id = $_SESSION['user']['id'];
 require_once 'db.php';
 
 try {
-    // Check if the logged-in user is an admin
-    $admin_stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
-    $admin_stmt->execute([$user_id]);
-    $user_data = $admin_stmt->fetch(PDO::FETCH_ASSOC);
-    $is_admin = ($user_data && !empty($user_data['is_admin']));
-
+    $is_admin = isset($_SESSION['admin_user']);
     // Build the query dynamically based on user role
     $sql = "
         SELECT o.*, p.name AS pet_name, p.price AS pet_price, pm.transaction_id, pm.payment_method AS pm_method, pm.payment_date

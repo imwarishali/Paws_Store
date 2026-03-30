@@ -53,6 +53,14 @@ try {
             $delete_stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
             $delete_stmt->execute([$delete_id]);
             $success_message = "User deleted successfully!";
+        } elseif (isset($_POST['update_user_password'])) {
+            $user_id = $_POST['user_id'];
+            $new_password = $_POST['new_password'];
+
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $update_stmt->execute([$hashed_password, $user_id]);
+            $success_message = "User password updated successfully!";
         }
         // --- Admin Actions ---
         elseif (isset($_POST['add_admin'])) {
@@ -222,7 +230,8 @@ try {
             gap: 5px;
         }
 
-        .sidebar-nav a, .sidebar-bottom a {
+        .sidebar-nav a,
+        .sidebar-bottom a {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -234,7 +243,8 @@ try {
             transition: all 0.2s;
         }
 
-        .sidebar-nav a:hover, .sidebar-bottom a:hover {
+        .sidebar-nav a:hover,
+        .sidebar-bottom a:hover {
             background: #fdfaf6;
             color: #b5860d;
         }
@@ -586,7 +596,7 @@ try {
                 transform: translateX(-100%);
                 transition: transform 0.3s;
             }
-            
+
             .admin-main {
                 margin-left: 0;
             }
@@ -612,348 +622,360 @@ try {
         </aside>
 
         <main class="admin-main">
-        <?php if (isset($success_message)): ?>
-            <div class="admin-dashboard" style="padding-bottom: 0; margin-bottom: 0;">
-                <div class="msg-success"><?php echo htmlspecialchars($success_message); ?></div>
-            </div>
-        <?php endif; ?>
-        <?php if (isset($error_message)): ?>
-            <div class="admin-dashboard" style="padding-bottom: 0; margin-bottom: 0;">
-                <div class="msg-error"><?php echo htmlspecialchars($error_message); ?></div>
-            </div>
-        <?php endif; ?>
+            <?php if (isset($success_message)): ?>
+                <div class="admin-dashboard" style="padding-bottom: 0; margin-bottom: 0;">
+                    <div class="msg-success"><?php echo htmlspecialchars($success_message); ?></div>
+                </div>
+            <?php endif; ?>
+            <?php if (isset($error_message)): ?>
+                <div class="admin-dashboard" style="padding-bottom: 0; margin-bottom: 0;">
+                    <div class="msg-error"><?php echo htmlspecialchars($error_message); ?></div>
+                </div>
+            <?php endif; ?>
 
-        <!-- ========================================== -->
-        <!-- DASHBOARD SECTION -->
-        <!-- ========================================== -->
-        <?php if ($page === 'dashboard'): ?>
-            <div class="admin-dashboard">
-                <div class="dashboard-header">
-                    <h1>Overview Dashboard</h1>
-                    <div style="font-weight: 600; color: #666;"><?php echo date('l, F j, Y'); ?></div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-info">
-                            <h3>Total Revenue</h3>
-                            <div class="stat-value">₹<?php echo number_format($total_revenue); ?></div>
+            <!-- ========================================== -->
+            <!-- DASHBOARD SECTION -->
+            <!-- ========================================== -->
+            <?php if ($page === 'dashboard'): ?>
+                <div class="admin-dashboard">
+                    <div class="dashboard-header">
+                        <h1>Overview Dashboard</h1>
+                        <div style="font-weight: 600; color: #666;"><?php echo date('l, F j, Y'); ?></div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3>Total Revenue</h3>
+                                <div class="stat-value">₹<?php echo number_format($total_revenue); ?></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-info">
+                                <h3>Total Orders</h3>
+                                <div class="stat-value"><?php echo number_format($total_orders); ?></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-info">
+                                <h3>Pending Orders</h3>
+                                <div class="stat-value"><?php echo number_format($pending_orders); ?></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🐾</div>
+                            <div class="stat-info">
+                                <h3>Total Pets</h3>
+                                <div class="stat-value"><?php echo number_format($total_pets); ?></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <h3>Total Customers</h3>
+                                <div class="stat-value"><?php echo number_format($total_users); ?></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">📦</div>
-                        <div class="stat-info">
-                            <h3>Total Orders</h3>
-                            <div class="stat-value"><?php echo number_format($total_orders); ?></div>
+                    <div class="dashboard-content">
+                        <div class="chart-container">
+                            <h2>Revenue Last 7 Days</h2>
+                            <canvas id="revenueChart" height="100"></canvas>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-info">
-                            <h3>Pending Orders</h3>
-                            <div class="stat-value"><?php echo number_format($pending_orders); ?></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🐾</div>
-                        <div class="stat-info">
-                            <h3>Total Pets</h3>
-                            <div class="stat-value"><?php echo number_format($total_pets); ?></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-info">
-                            <h3>Total Customers</h3>
-                            <div class="stat-value"><?php echo number_format($total_users); ?></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="dashboard-content">
-                    <div class="chart-container">
-                        <h2>Revenue Last 7 Days</h2>
-                        <canvas id="revenueChart" height="100"></canvas>
-                    </div>
-                    <div class="recent-orders">
-                        <h2>Recent Orders</h2>
-                        <?php if (empty($recent_orders)): ?>
-                            <p style="color: #666;">No recent orders found.</p>
-                        <?php else: ?>
-                            <?php foreach ($recent_orders as $order): ?>
-                                <div class="recent-order-item">
-                                    <div>
-                                        <strong style="display:block; color:#2c1a0e;">#<?php echo htmlspecialchars($order['order_number']); ?></strong>
-                                        <small style="color:#888;"><?php echo date('M d', strtotime($order['created_at'])); ?> - <?php echo htmlspecialchars($order['username'] ?? 'Guest'); ?></small>
+                        <div class="recent-orders">
+                            <h2>Recent Orders</h2>
+                            <?php if (empty($recent_orders)): ?>
+                                <p style="color: #666;">No recent orders found.</p>
+                            <?php else: ?>
+                                <?php foreach ($recent_orders as $order): ?>
+                                    <div class="recent-order-item">
+                                        <div>
+                                            <strong style="display:block; color:#2c1a0e;">#<?php echo htmlspecialchars($order['order_number']); ?></strong>
+                                            <small style="color:#888;"><?php echo date('M d', strtotime($order['created_at'])); ?> - <?php echo htmlspecialchars($order['username'] ?? 'Guest'); ?></small>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div class="recent-order-amount">₹<?php echo number_format($order['total_amount']); ?></div>
+                                            <small style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:11px;"><?php echo htmlspecialchars($order['order_status']); ?></small>
+                                        </div>
                                     </div>
-                                    <div style="text-align: right;">
-                                        <div class="recent-order-amount">₹<?php echo number_format($order['total_amount']); ?></div>
-                                        <small style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:11px;"><?php echo htmlspecialchars($order['order_status']); ?></small>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                            <div style="text-align: center; margin-top: 15px;"><a href="admin.php?page=orders" style="color: #b5860d; text-decoration: none; font-weight: bold;">View All Orders &rarr;</a></div>
+                                <?php endforeach; ?>
+                                <div style="text-align: center; margin-top: 15px;"><a href="admin.php?page=orders" style="color: #b5860d; text-decoration: none; font-weight: bold;">View All Orders &rarr;</a></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- ORDERS SECTION -->
+                <!-- ========================================== -->
+            <?php elseif ($page === 'orders'): ?>
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h1>Manage Customer Orders</h1>
+                    </div>
+                    <form method="GET" class="search-form" action="admin.php">
+                        <input type="hidden" name="page" value="orders">
+                        <input type="text" name="search_query" placeholder="Search by Order ID or User ID..." value="<?php echo htmlspecialchars($search_query); ?>">
+                        <button type="submit" style="padding:10px 20px;">Search</button>
+                        <?php if (!empty($search_query)): ?>
+                            <a href="admin.php?page=orders">Clear Search</a>
+                        <?php endif; ?>
+                        <button type="submit" name="export_csv" value="1" style="background-color: #28a745; margin-left: auto;">Export CSV</button>
+                    </form>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>User ID</th>
+                                <th>Pets Ordered</th>
+                                <th>Date Placed</th>
+                                <th>Amount</th>
+                                <th>Current Status</th>
+                                <th style="width: 320px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($all_orders)): ?>
+                                <tr>
+                                    <td colspan="7" style="text-align: center;">No orders found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($all_orders as $order): ?>
+                                    <tr>
+                                        <td><strong><?php echo htmlspecialchars($order['order_number']); ?></strong></td>
+                                        <td><?php echo htmlspecialchars($order['user_id']); ?></td>
+                                        <td style="font-size: 14px;"><?php echo $order['pet_names'] ? strip_tags($order['pet_names'], '<br>') : 'N/A'; ?></td>
+                                        <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
+                                        <td>₹<?php echo number_format($order['total_amount']); ?></td>
+                                        <td><span class="status-processing"><?php echo htmlspecialchars($order['order_status']); ?></span></td>
+                                        <td>
+                                            <div style="display: flex; gap: 8px; align-items: center;">
+                                                <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0;">
+                                                    <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                                    <select name="new_status" class="status-select" style="padding: 6px;">
+                                                        <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                                                        <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                                                        <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
+                                                        <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
+                                                        <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                                    </select>
+                                                    <button type="submit" name="update_status" class="update-btn">Update</button>
+                                                    <?php if ($order['order_status'] === 'Processing'): ?>
+                                                        <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
+                                                    <?php endif; ?>
+                                                </form>
+                                                <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn">Invoice</a>
+                                                <?php if (!empty($order['payment_screenshot'])): ?>
+                                                    <a href="<?php echo htmlspecialchars($order['payment_screenshot']); ?>" target="_blank" class="screenshot-btn">Screenshot</a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- PETS SECTION -->
+                <!-- ========================================== -->
+            <?php elseif ($page === 'pets'): ?>
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h2 style="display: inline-block;"><?php echo $edit_pet ? 'Edit Pet #' . $edit_pet['id'] : 'Add New Pet'; ?></h2>
+                        <?php if ($edit_pet): ?>
+                            <a href="admin.php?page=pets" style="color: #dc3545; text-decoration: none; font-weight: bold; margin-left: 15px; font-size: 14px;">(Cancel Edit)</a>
                         <?php endif; ?>
                     </div>
-                </div>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- ORDERS SECTION -->
-            <!-- ========================================== -->
-        <?php elseif ($page === 'orders'): ?>
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h1>Manage Customer Orders</h1>
-                </div>
-                <form method="GET" class="search-form" action="admin.php">
-                    <input type="hidden" name="page" value="orders">
-                    <input type="text" name="search_query" placeholder="Search by Order ID or User ID..." value="<?php echo htmlspecialchars($search_query); ?>">
-                    <button type="submit" style="padding:10px 20px;">Search</button>
-                    <?php if (!empty($search_query)): ?>
-                        <a href="admin.php?page=orders">Clear Search</a>
-                    <?php endif; ?>
-                    <button type="submit" name="export_csv" value="1" style="background-color: #28a745; margin-left: auto;">Export CSV</button>
-                </form>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order ID</th>
-                            <th>User ID</th>
-                            <th>Pets Ordered</th>
-                            <th>Date Placed</th>
-                            <th>Amount</th>
-                            <th>Current Status</th>
-                            <th style="width: 320px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($all_orders)): ?>
-                            <tr>
-                                <td colspan="7" style="text-align: center;">No orders found.</td>
-                            </tr>
+                    <form method="POST">
+                        <?php if ($edit_pet): ?>
+                            <input type="hidden" name="pet_id" value="<?php echo $edit_pet['id']; ?>">
+                        <?php endif; ?>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Pet Name & Breed</label><input type="text" name="name" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['name']) : ''; ?>" required></div>
+                            <div class="form-group"><label>Category</label>
+                                <select name="category" required>
+                                    <option value="Dogs" <?php echo ($edit_pet && $edit_pet['category'] === 'Dogs') ? 'selected' : ''; ?>>Dogs</option>
+                                    <option value="Cats" <?php echo ($edit_pet && $edit_pet['category'] === 'Cats') ? 'selected' : ''; ?>>Cats</option>
+                                    <option value="Fish" <?php echo ($edit_pet && $edit_pet['category'] === 'Fish') ? 'selected' : ''; ?>>Fish</option>
+                                    <option value="Birds" <?php echo ($edit_pet && $edit_pet['category'] === 'Birds') ? 'selected' : ''; ?>>Birds</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Price (₹)</label><input type="number" name="price" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['price']) : ''; ?>" required min="0"></div>
+                            <div class="form-group"><label>Status</label><input type="text" name="status" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['status']) : 'Available for Adoption'; ?>" required></div>
+                            <div class="form-group full-width"><label>Image Path</label><input type="text" name="image" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['image']) : ''; ?>" required></div>
+                            <div class="form-group full-width"><label>Description</label><textarea name="description" rows="3" required><?php echo $edit_pet ? htmlspecialchars($edit_pet['description']) : ''; ?></textarea></div>
+                        </div>
+                        <?php if ($edit_pet): ?>
+                            <button type="submit" name="edit_pet" class="submit-btn" style="background: #28a745;">Update Pet Details</button>
                         <?php else: ?>
-                            <?php foreach ($all_orders as $order): ?>
+                            <button type="submit" name="add_pet" class="submit-btn">+ Add Pet to Store</button>
+                        <?php endif; ?>
+                    </form>
+                </div>
+
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h2>Current Pets Database</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($all_pets as $pet): ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars($order['order_number']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($order['user_id']); ?></td>
-                                    <td style="font-size: 14px;"><?php echo $order['pet_names'] ? strip_tags($order['pet_names'], '<br>') : 'N/A'; ?></td>
-                                    <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
-                                    <td>₹<?php echo number_format($order['total_amount']); ?></td>
-                                    <td><span class="status-processing"><?php echo htmlspecialchars($order['order_status']); ?></span></td>
+                                    <td>#<?php echo $pet['id']; ?></td>
+                                    <td><img src="<?php echo htmlspecialchars($pet['image']); ?>" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" alt="pet"></td>
+                                    <td><strong><?php echo htmlspecialchars($pet['name']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($pet['category']); ?></td>
+                                    <td>₹<?php echo number_format($pet['price']); ?></td>
+                                    <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><?php echo htmlspecialchars($pet['status']); ?></span></td>
                                     <td>
-                                        <div style="display: flex; gap: 8px; align-items: center;">
-                                            <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0;">
-                                                <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                                <select name="new_status" class="status-select" style="padding: 6px;">
-                                                    <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
-                                                    <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
-                                                    <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
-                                                    <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
-                                                    <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                                </select>
-                                                <button type="submit" name="update_status" class="update-btn">Update</button>
-                                                <?php if ($order['order_status'] === 'Processing'): ?>
-                                                    <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
-                                                <?php endif; ?>
-                                            </form>
-                                            <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn">Invoice</a>
-                                            <?php if (!empty($order['payment_screenshot'])): ?>
-                                                <a href="<?php echo htmlspecialchars($order['payment_screenshot']); ?>" target="_blank" class="screenshot-btn">Screenshot</a>
-                                            <?php endif; ?>
-                                        </div>
+                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this pet?');" style="display: flex; align-items: center; margin: 0;">
+                                            <a href="admin.php?page=pets&edit_id=<?php echo $pet['id']; ?>" class="edit-btn">Edit</a>
+                                            <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
+                                            <button type="submit" name="delete_pet" class="delete-btn">Delete</button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- PETS SECTION -->
-            <!-- ========================================== -->
-        <?php elseif ($page === 'pets'): ?>
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h2 style="display: inline-block;"><?php echo $edit_pet ? 'Edit Pet #' . $edit_pet['id'] : 'Add New Pet'; ?></h2>
-                    <?php if ($edit_pet): ?>
-                        <a href="admin.php?page=pets" style="color: #dc3545; text-decoration: none; font-weight: bold; margin-left: 15px; font-size: 14px;">(Cancel Edit)</a>
-                    <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
-                <form method="POST">
-                    <?php if ($edit_pet): ?>
-                        <input type="hidden" name="pet_id" value="<?php echo $edit_pet['id']; ?>">
-                    <?php endif; ?>
-                    <div class="form-grid">
-                        <div class="form-group"><label>Pet Name & Breed</label><input type="text" name="name" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['name']) : ''; ?>" required></div>
-                        <div class="form-group"><label>Category</label>
-                            <select name="category" required>
-                                <option value="Dogs" <?php echo ($edit_pet && $edit_pet['category'] === 'Dogs') ? 'selected' : ''; ?>>Dogs</option>
-                                <option value="Cats" <?php echo ($edit_pet && $edit_pet['category'] === 'Cats') ? 'selected' : ''; ?>>Cats</option>
-                                <option value="Fish" <?php echo ($edit_pet && $edit_pet['category'] === 'Fish') ? 'selected' : ''; ?>>Fish</option>
-                                <option value="Birds" <?php echo ($edit_pet && $edit_pet['category'] === 'Birds') ? 'selected' : ''; ?>>Birds</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label>Price (₹)</label><input type="number" name="price" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['price']) : ''; ?>" required min="0"></div>
-                        <div class="form-group"><label>Status</label><input type="text" name="status" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['status']) : 'Available for Adoption'; ?>" required></div>
-                        <div class="form-group full-width"><label>Image Path</label><input type="text" name="image" value="<?php echo $edit_pet ? htmlspecialchars($edit_pet['image']) : ''; ?>" required></div>
-                        <div class="form-group full-width"><label>Description</label><textarea name="description" rows="3" required><?php echo $edit_pet ? htmlspecialchars($edit_pet['description']) : ''; ?></textarea></div>
+
+                <!-- ========================================== -->
+                <!-- USERS SECTION -->
+                <!-- ========================================== -->
+            <?php elseif ($page === 'users'): ?>
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h1>Manage Registered Users</h1>
                     </div>
-                    <?php if ($edit_pet): ?>
-                        <button type="submit" name="edit_pet" class="submit-btn" style="background: #28a745;">Update Pet Details</button>
-                    <?php else: ?>
-                        <button type="submit" name="add_pet" class="submit-btn">+ Add Pet to Store</button>
-                    <?php endif; ?>
-                </form>
-            </div>
-
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h2>Current Pets Database</h2>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Image</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($all_pets as $pet): ?>
+                    <form method="GET" class="search-form" action="admin.php">
+                        <input type="hidden" name="page" value="users">
+                        <input type="text" name="search_query" placeholder="Search by name or email..." value="<?php echo htmlspecialchars($search_query); ?>">
+                        <button type="submit" style="padding:10px 20px;">Search</button>
+                        <?php if (!empty($search_query)): ?>
+                            <a href="admin.php?page=users">Clear Search</a>
+                        <?php endif; ?>
+                    </form>
+                    <table>
+                        <thead>
                             <tr>
-                                <td>#<?php echo $pet['id']; ?></td>
-                                <td><img src="<?php echo htmlspecialchars($pet['image']); ?>" style="width:50px; height:50px; object-fit:cover; border-radius:6px;" alt="pet"></td>
-                                <td><strong><?php echo htmlspecialchars($pet['name']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($pet['category']); ?></td>
-                                <td>₹<?php echo number_format($pet['price']); ?></td>
-                                <td><span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><?php echo htmlspecialchars($pet['status']); ?></span></td>
-                                <td>
-                                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this pet?');" style="display: flex; align-items: center; margin: 0;">
-                                        <a href="admin.php?page=pets&edit_id=<?php echo $pet['id']; ?>" class="edit-btn">Edit</a>
-                                        <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
-                                        <button type="submit" name="delete_pet" class="delete-btn">Delete</button>
-                                    </form>
-                                </td>
+                                <th>User ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Action</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- USERS SECTION -->
-            <!-- ========================================== -->
-        <?php elseif ($page === 'users'): ?>
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h1>Manage Registered Users</h1>
-                </div>
-                <form method="GET" class="search-form" action="admin.php">
-                    <input type="hidden" name="page" value="users">
-                    <input type="text" name="search_query" placeholder="Search by name or email..." value="<?php echo htmlspecialchars($search_query); ?>">
-                    <button type="submit" style="padding:10px 20px;">Search</button>
-                    <?php if (!empty($search_query)): ?>
-                        <a href="admin.php?page=users">Clear Search</a>
-                    <?php endif; ?>
-                </form>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($all_users)): ?>
-                            <tr>
-                                <td colspan="6" style="text-align: center;">No users found.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($all_users as $u): ?>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($all_users)): ?>
                                 <tr>
-                                    <td><strong>#<?php echo htmlspecialchars($u['id']); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($u['username'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($u['email'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($u['phone'] ?? 'N/A'); ?></td>
+                                    <td colspan="6" style="text-align: center;">No users found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($all_users as $u): ?>
+                                    <tr>
+                                        <td><strong>#<?php echo htmlspecialchars($u['id']); ?></strong></td>
+                                        <td><?php echo htmlspecialchars($u['username'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($u['email'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($u['phone'] ?? 'N/A'); ?></td>
+                                        <td>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');" style="margin: 0;">
+                                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                                    <button type="submit" name="delete_user" class="delete-btn">Delete</button>
+                                                </form>
+                                                <form method="POST" style="margin: 0; display: flex; gap: 5px; align-items: center;">
+                                                    <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                                    <input type="password" name="new_password" placeholder="New Password" required style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 150px; font-family: 'Nunito', sans-serif;">
+                                                    <button type="submit" name="update_user_password" class="edit-btn" style="background-color: #17a2b8;">Update Password</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- ADMINS SECTION -->
+                <!-- ========================================== -->
+            <?php elseif ($page === 'admins'): ?>
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h2>Add New Admin</h2>
+                    </div>
+                    <form method="POST">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" name="username" placeholder="Enter new username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" name="password" placeholder="Enter password" required>
+                            </div>
+                        </div>
+                        <button type="submit" name="add_admin" class="submit-btn">+ Create Admin Account</button>
+                    </form>
+                </div>
+
+                <div class="admin-container">
+                    <div class="admin-header">
+                        <h2>Manage Admin Accounts</h2>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Admin ID</th>
+                                <th>Username</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($all_admins as $admin): ?>
+                                <tr>
+                                    <td><strong>#<?php echo htmlspecialchars($admin['id']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($admin['username']); ?></td>
                                     <td>
                                         <div style="display: flex; gap: 10px; align-items: center;">
-                                            <form method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');" style="margin: 0;">
-                                                <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
-                                                <button type="submit" name="delete_user" class="delete-btn">Delete</button>
+                                            <?php if ($admin['id'] != $_SESSION['admin_user']['id']): ?>
+                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this admin account?');" style="margin: 0;">
+                                                    <input type="hidden" name="admin_id" value="<?php echo $admin['id']; ?>">
+                                                    <button type="submit" name="delete_admin" class="delete-btn">Delete</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <span style="color: #666; font-style: italic; min-width: 82px;">Current User</span>
+                                            <?php endif; ?>
+                                            <form method="POST" style="margin: 0; display: flex; gap: 5px; align-items: center;">
+                                                <input type="hidden" name="admin_id" value="<?php echo $admin['id']; ?>">
+                                                <input type="password" name="new_password" placeholder="New Password" required style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 150px; font-family: 'Nunito', sans-serif;">
+                                                <button type="submit" name="update_admin_password" class="edit-btn" style="background-color: #17a2b8;">Update Password</button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- ADMINS SECTION -->
-            <!-- ========================================== -->
-        <?php elseif ($page === 'admins'): ?>
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h2>Add New Admin</h2>
+                        </tbody>
+                    </table>
                 </div>
-                <form method="POST">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Username</label>
-                            <input type="text" name="username" placeholder="Enter new username" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" name="password" placeholder="Enter password" required>
-                        </div>
-                    </div>
-                    <button type="submit" name="add_admin" class="submit-btn">+ Create Admin Account</button>
-                </form>
-            </div>
-
-            <div class="admin-container">
-                <div class="admin-header">
-                    <h2>Manage Admin Accounts</h2>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Admin ID</th>
-                            <th>Username</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($all_admins as $admin): ?>
-                            <tr>
-                                <td><strong>#<?php echo htmlspecialchars($admin['id']); ?></strong></td>
-                                <td><?php echo htmlspecialchars($admin['username']); ?></td>
-                                <td>
-                                    <?php if ($admin['id'] != $_SESSION['admin_user']['id']): ?>
-                                        <form method="POST" onsubmit="return confirm('Are you sure you want to delete this admin account?');" style="margin: 0;">
-                                            <input type="hidden" name="admin_id" value="<?php echo $admin['id']; ?>">
-                                            <button type="submit" name="delete_admin" class="delete-btn">Delete</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <span style="color: #666; font-style: italic;">Current User</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
 
         </main>
     </div>

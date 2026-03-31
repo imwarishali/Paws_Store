@@ -57,30 +57,62 @@ try {
             $user_id = $_POST['user_id'];
             $new_password = $_POST['new_password'];
 
-            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-            $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-            $update_stmt->execute([$hashed_password, $user_id]);
-            $success_message = "User password updated successfully!";
+            if (strlen($new_password) < 8) {
+                $error_message = "Password must be at least 8 characters long.";
+            } elseif (!preg_match('/[0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one number.";
+            } elseif (!preg_match('/[^a-zA-Z0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one special character.";
+            } else {
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                $update_stmt->execute([$hashed_password, $user_id]);
+                $success_message = "User password updated successfully!";
+            }
         }
         // --- Admin Actions ---
         elseif (isset($_POST['add_admin'])) {
             $new_username = trim($_POST['username']);
             $new_password = $_POST['password'];
 
-            $check_stmt = $pdo->prepare("SELECT COUNT(*) FROM admin WHERE username = ?");
-            $check_stmt->execute([$new_username]);
-            if ($check_stmt->fetchColumn() > 0) {
-                $error_message = "Username already exists!";
+            if (strlen($new_password) < 8) {
+                $error_message = "Password must be at least 8 characters long.";
+            } elseif (!preg_match('/[0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one number.";
+            } elseif (!preg_match('/[^a-zA-Z0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one special character.";
             } else {
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $insert_stmt = $pdo->prepare("INSERT INTO admin (username, password) VALUES (?, ?)");
-                $insert_stmt->execute([$new_username, $hashed_password]);
-                $success_message = "Admin user '{$new_username}' added successfully!";
+                $check_stmt = $pdo->prepare("SELECT COUNT(*) FROM admin WHERE username = ?");
+                $check_stmt->execute([$new_username]);
+                if ($check_stmt->fetchColumn() > 0) {
+                    $error_message = "Username already exists!";
+                } else {
+                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                    $insert_stmt = $pdo->prepare("INSERT INTO admin (username, password) VALUES (?, ?)");
+                    $insert_stmt->execute([$new_username, $hashed_password]);
+                    $success_message = "Admin user '{$new_username}' added successfully!";
+                }
             }
         } elseif (isset($_POST['delete_admin'])) {
             $delete_stmt = $pdo->prepare("DELETE FROM admin WHERE id = ? AND id != ?");
             $delete_stmt->execute([$_POST['admin_id'], $_SESSION['admin_user']['id']]);
             $success_message = "Admin account deleted successfully!";
+        } elseif (isset($_POST['update_admin_password'])) {
+            $admin_id = $_POST['admin_id'];
+            $new_password = $_POST['new_password'];
+
+            if (strlen($new_password) < 8) {
+                $error_message = "Password must be at least 8 characters long.";
+            } elseif (!preg_match('/[0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one number.";
+            } elseif (!preg_match('/[^a-zA-Z0-9]/', $new_password)) {
+                $error_message = "Password must contain at least one special character.";
+            } else {
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_stmt = $pdo->prepare("UPDATE admin SET password = ? WHERE id = ?");
+                $update_stmt->execute([$hashed_password, $admin_id]);
+                $success_message = "Admin password updated successfully!";
+            }
         }
     }
 
@@ -928,8 +960,11 @@ try {
                                 <input type="text" name="username" placeholder="Enter new username" required>
                             </div>
                             <div class="form-group">
-                                <label>Password</label>
-                                <input type="password" name="password" placeholder="Enter password" required>
+                                <label for="admin_password">Password</label>
+                                <div class="ps-password-wrapper">
+                                    <input type="password" id="admin_password" name="password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+                                    <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('admin_password', this)">👁️</button>
+                                </div>
                             </div>
                         </div>
                         <button type="submit" name="add_admin" class="submit-btn">+ Create Admin Account</button>
@@ -1026,6 +1061,19 @@ try {
             });
         </script>
     <?php endif; ?>
+
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+    </script>
 </body>
 
 </html>

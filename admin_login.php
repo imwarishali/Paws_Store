@@ -134,6 +134,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             text-align: center;
         }
+
+        .ps-password-wrapper {
+            position: relative;
+            display: block;
+        }
+
+        .ps-password-wrapper input {
+            padding-right: 40px;
+        }
+
+        .ps-password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+        }
     </style>
 </head>
 
@@ -156,11 +177,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="ps-form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <div class="ps-password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+                </div>
             </div>
             <button type="submit" class="ps-btn-save">Login</button>
         </form>
     </div>
+
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+    </script>
 </body>
 
 </html>

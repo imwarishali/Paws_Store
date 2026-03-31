@@ -206,6 +206,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         display: none;
       }
     }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper input {
+      padding-right: 45px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
   </style>
 
 </head>
@@ -228,12 +248,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <form method="POST">
         <div class="form-group">
-          <label>Username or Email</label>
-          <input type="text" name="username" placeholder="Enter username or email" required>
+          <label for="username">Username or Email</label>
+          <input type="text" id="username" name="username" placeholder="Enter username or email" required>
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" name="password" placeholder="Enter your password" required>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <label for="password" style="margin-bottom: 0;">Password</label>
+            <a href="forgot_password.php" style="font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+          </div>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+          </div>
         </div>
         <button type="submit" class="btn">Sign In</button>
       </form>
@@ -241,6 +267,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <p class="register-link">Don't have an account? <a href="register.php">Register here</a></p>
     </div>
   </div>
+
+  <script>
+    function togglePasswordVisibility(inputId, button) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+      }
+    }
+  </script>
 </body>
 
 </html>

@@ -7,6 +7,81 @@ if (!isset($_SESSION["user"])) {
     exit();
 }
 
+require_once 'db.php';
+
+$success_message = null;
+$error_message = null;
+
+// Handle profile update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_changes'])) {
+    $new_username = $_POST['username'] ?? '';
+    $new_email = $_POST['email'] ?? '';
+    $new_phone = $_POST['phone'] ?? '';
+    $user_id = $_SESSION['user']['id'];
+
+    // Basic validation
+    if (empty($new_username) || empty($new_email)) {
+        $error_message = "Username and Email cannot be empty.";
+    } else {
+        try {
+            // Check if email is already taken by another user
+            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+            $stmt->execute([$new_email, $user_id]);
+            if ($stmt->fetch()) {
+                $error_message = "This email address is already in use by another account.";
+            } else {
+                // Update user in the database
+                $update_stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?");
+                $update_stmt->execute([$new_username, $new_email, $new_phone, $user_id]);
+
+                // Update session data
+                $_SESSION['user']['username'] = $new_username;
+                $_SESSION['user']['email'] = $new_email;
+                $_SESSION['user']['phone'] = $new_phone;
+
+                $success_message = "Profile updated successfully!";
+            }
+        } catch (PDOException $e) {
+            $error_message = "Database error: " . $e->getMessage();
+        }
+    }
+}
+// Handle password change
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    $current_password = $_POST['current_password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    $user_id = $_SESSION['user']['id'];
+
+    try {
+        // Fetch current user's hashed password
+        $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Verify current password, and validate new password
+        if (!$user_data || !password_verify($current_password, $user_data['password'])) {
+            $error_message = "Your current password is not correct.";
+        } elseif (empty($new_password) || strlen($new_password) < 8) {
+            $error_message = "New password must be at least 8 characters long.";
+        } elseif (!preg_match('/[0-9]/', $new_password)) {
+            $error_message = "Password must contain at least one number.";
+        } elseif (!preg_match('/[^a-zA-Z0-9]/', $new_password)) {
+            $error_message = "Password must contain at least one special character.";
+        } elseif ($new_password !== $confirm_password) {
+            $error_message = "New password and confirmation do not match.";
+        } else {
+            // Hash and update new password
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $update_stmt->execute([$hashed_password, $user_id]);
+            $success_message = "Your password has been updated successfully!";
+        }
+    } catch (PDOException $e) {
+        $error_message = "Database error: " . $e->getMessage();
+    }
+}
+
 // User data is stored in the session as an array
 $user = $_SESSION["user"];
 $userEmail = $user["email"] ?? "";
@@ -134,6 +209,27 @@ $userPhone = $user["phone"] ?? "";
             background: #f9f9f9;
             border-color: #ccc;
         }
+
+        .ps-password-wrapper {
+            position: relative;
+            display: block;
+        }
+
+        .ps-password-wrapper input {
+            padding-right: 40px;
+        }
+
+        .ps-password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+        }
     </style>
 </head>
 
@@ -162,25 +258,69 @@ $userPhone = $user["phone"] ?? "";
                 <p style="color: #666;">Update your personal details below.</p>
             </div>
 
-            <form onsubmit="event.preventDefault(); alert('Profile updated successfully!');">
+            <?php if (isset($success_message)): ?>
+                <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
+                    <?php echo htmlspecialchars($success_message); ?>
+                </div>
+            <?php endif; ?>
+            <?php if (isset($error_message)): ?>
+                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
+                    <?php echo htmlspecialchars($error_message); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="profile.php">
                 <div class="ps-form-group">
                     <label for="fullName">Full Name</label>
-                    <input type="text" id="fullName" value="<?php echo htmlspecialchars($userName); ?>" placeholder="Enter your full name" required>
+                    <input type="text" id="fullName" name="username" value="<?php echo htmlspecialchars($userName); ?>" placeholder="Enter your full name" required>
                 </div>
 
                 <div class="ps-form-group">
                     <label for="emailId">Email ID</label>
-                    <input type="email" id="emailId" value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Enter your email address" required>
+                    <input type="email" id="emailId" name="email" value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Enter your email address" required>
                 </div>
 
                 <div class="ps-form-group">
                     <label for="mobileNo">Mobile Number</label>
-                    <input type="tel" id="mobileNo" value="<?php echo htmlspecialchars($userPhone); ?>" placeholder="Enter your 10-digit mobile number" required>
+                    <input type="tel" id="mobileNo" name="phone" value="<?php echo htmlspecialchars($userPhone); ?>" placeholder="Enter your 10-digit mobile number" required>
                 </div>
 
                 <div class="ps-profile-actions">
                     <a href="index.php" class="ps-btn-cancel">Cancel</a>
-                    <button type="submit" class="ps-btn-save">Save Changes</button>
+                    <button type="submit" name="save_changes" class="ps-btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="ps-profile-container" style="margin-top: 30px;">
+            <div class="ps-profile-header" style="margin-bottom: 20px;">
+                <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; color: #2c1a0e;">Change Password</h2>
+            </div>
+
+            <form method="POST" action="profile.php">
+                <div class="ps-form-group">
+                    <label for="current_password">Current Password</label>
+                    <div class="ps-password-wrapper">
+                        <input type="password" id="current_password" name="current_password" placeholder="Enter your current password" required>
+                        <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('current_password', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="ps-form-group">
+                    <label for="new_password">New Password</label>
+                    <div class="ps-password-wrapper">
+                        <input type="password" id="new_password" name="new_password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+                        <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('new_password', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="ps-form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <div class="ps-password-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your new password" required>
+                        <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
+                    </div>
+                </div>
+                <div class="ps-profile-actions">
+                    <button type="submit" name="change_password" class="ps-btn-save" style="flex: none; width: 100%;">Update Password</button>
                 </div>
             </form>
         </div>
@@ -209,6 +349,17 @@ $userPhone = $user["phone"] ?? "";
             }
 
             updateCartCount();
+
+            window.togglePasswordVisibility = function(inputId, button) {
+                const input = document.getElementById(inputId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    button.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    button.textContent = '👁️';
+                }
+            };
         });
     </script>
 </body>

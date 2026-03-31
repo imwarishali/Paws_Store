@@ -33,6 +33,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $error = "Passwords do not match.";
     } elseif (strlen($password) < 8) {
       $error = "Password must be at least 8 characters long.";
+    } elseif (!preg_match('/[0-9]/', $password)) {
+      $error = "Password must contain at least one number.";
+    } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+      $error = "Password must contain at least one special character.";
     } else {
       $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
       $stmt->execute([$email, $username]);
@@ -186,6 +190,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       background-color: #d4edda;
       border: 1px solid #c3e6cb;
     }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper input {
+      padding-right: 45px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 
@@ -203,29 +227,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <form method="POST" action="register.php">
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="username" placeholder="Your name" required>
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Your name" required>
       </div>
       <div class="form-group">
-        <label>Email address</label>
-        <input type="email" name="email" placeholder="you@example.com" required>
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
-        <label>Phone number</label>
-        <input type="tel" name="phone" placeholder="+91 98765 43210">
+        <label for="phone">Phone number</label>
+        <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210">
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" placeholder="Min 8 characters" required>
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+        </div>
       </div>
       <div class="form-group">
-        <label>Confirm Password</label>
-        <input type="password" name="confirm_password" placeholder="Re-enter your password" required>
+        <label for="confirm_password">Confirm Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required>
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
+        </div>
       </div>
       <button type="submit" class="btn">Register</button>
     </form>
     <p class="login-link">Already have an account? <a href="login.php">Login here</a></p>
   </div>
+  <script>
+    function togglePasswordVisibility(inputId, button) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+      }
+    }
+  </script>
 </body>
 
 </html>

@@ -104,38 +104,56 @@ try {
     $order_number = 'ORD' . time() . rand(100, 999);
     $shipping_address = is_array($address) ? implode(', ', $address) : (string)$address; // Store as a clean, comma-separated string
 
-    // Extract pet_id and quantity from the first item in the cart
-    $pet_id = !empty($cart) ? $cart[0]['id'] : 0;
-    $quantity = !empty($cart) ? ($cart[0]['quantity'] ?? 1) : 1;
+    $remaining_total = $total;
+    $items_count = count($cart);
+    $current_item = 0;
 
-    $stmt = $pdo->prepare("
-        INSERT INTO orders (order_number, user_id, pet_id, quantity, total_amount, shipping_address, payment_screenshot, order_status) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'Processing')
-    ");
+    foreach ($cart as $item) {
+        $current_item++;
+        $pet_id = $item['id'];
+        $quantity = $item['quantity'] ?? 1;
+        $price = $db_prices[$pet_id] ?? 0;
+        
+        $item_subtotal = $price * $quantity;
+        if ($subtotal > 0) {
+            $item_proportion = $item_subtotal / $subtotal;
+            $item_total = round($total * $item_proportion);
+        } else {
+            $item_total = 0;
+        }
+        
+        if ($current_item === $items_count) {
+            $item_total = $remaining_total;
+        }
+        $remaining_total -= $item_total;
 
-    $stmt->execute([
-        $order_number,
-        $user_id,
-        $pet_id,
-        $quantity,
-        $total,
-        $shipping_address,
-        $screenshot_path,
-    ]);
+        $stmt = $pdo->prepare("
+            INSERT INTO orders (order_number, user_id, pet_id, quantity, total_amount, shipping_address, payment_screenshot, order_status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Processing')
+        ");
 
-    // Fetch the auto-incremented primary key of the new order
-    $order_id = $pdo->lastInsertId();
+        $stmt->execute([
+            $order_number,
+            $user_id,
+            $pet_id,
+            $quantity,
+            $item_total,
+            $shipping_address,
+            $screenshot_path,
+        ]);
 
-    // 2. Insert into the dedicated payments table
-    $payment_stmt = $pdo->prepare("
-        INSERT INTO payments (order_id, transaction_id, payment_method, payment_status) 
-        VALUES (?, ?, ?, 'Completed')
-    ");
-    $payment_stmt->execute([
-        $order_id,
-        $transaction_id,
-        $payment_method
-    ]);
+        $order_id = $pdo->lastInsertId();
+
+        $payment_stmt = $pdo->prepare("
+            INSERT INTO payments (order_id, transaction_id, payment_method, payment_status) 
+            VALUES (?, ?, ?, 'Completed')
+        ");
+        $payment_stmt->execute([
+            $order_id,
+            $transaction_id,
+            $payment_method
+        ]);
+    }
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
 }

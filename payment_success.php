@@ -27,7 +27,15 @@ if ($order_id) {
             WHERE o.order_number = ? AND o.user_id = ?
         ");
         $stmt->execute([$order_id, $_SESSION['user']['id']]);
-        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        $order_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($order_rows)) {
+            $order = $order_rows[0];
+            $grand_total = 0;
+            foreach ($order_rows as $row) {
+                $grand_total += $row['total_amount'];
+            }
+            $order['total_amount'] = $grand_total;
+        }
     } catch (PDOException $e) {
         die("Database error: " . $e->getMessage());
     }

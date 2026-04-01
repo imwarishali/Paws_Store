@@ -35,10 +35,15 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    $order = $stmt->fetch(PDO::FETCH_ASSOC);
+    $order_rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if (!$order) {
+    if (empty($order_rows)) {
         die("Order not found or access denied.");
+    }
+    $order = $order_rows[0];
+    $grand_total = 0;
+    foreach ($order_rows as $row) {
+        $grand_total += $row['total_amount'];
     }
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
@@ -273,15 +278,21 @@ if (!empty($order['shipping_address'])) {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td><?php echo htmlspecialchars($order['pet_name'] ?? 'Pet'); ?></td>
-                    <td><?php echo htmlspecialchars($order['quantity'] ?? 1); ?></td>
-                    <td>₹<?php echo number_format($order['pet_price'] ?? $order['total_amount']); ?></td>
-                    <?php $base_subtotal = ($order['pet_price'] ?? $order['total_amount']) * ($order['quantity'] ?? 1); ?>
-                    <td>₹<?php echo number_format($base_subtotal); ?></td>
-                </tr>
+                <?php 
+                $base_subtotal_all = 0;
+                foreach ($order_rows as $row): 
+                    $row_base = ($row['pet_price'] ?? 0) * ($row['quantity'] ?? 1);
+                    $base_subtotal_all += $row_base;
+                ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['pet_name'] ?? 'Pet'); ?></td>
+                        <td><?php echo htmlspecialchars($row['quantity'] ?? 1); ?></td>
+                        <td>₹<?php echo number_format($row['pet_price'] ?? 0); ?></td>
+                        <td>₹<?php echo number_format($row_base); ?></td>
+                    </tr>
+                <?php endforeach; ?>
                 <?php
-                $fees_and_discounts = $order['total_amount'] - $base_subtotal;
+                $fees_and_discounts = $grand_total - $base_subtotal_all;
                 if ($fees_and_discounts != 0):
                 ?>
                     <tr>
@@ -291,7 +302,7 @@ if (!empty($order['shipping_address'])) {
                 <?php endif; ?>
                 <tr class="total-row">
                     <td colspan="3" style="text-align: right;">Grand Total (Including Taxes & Shipping):</td>
-                    <td>₹<?php echo number_format($order['total_amount']); ?></td>
+                    <td>₹<?php echo number_format($grand_total); ?></td>
                 </tr>
             </tbody>
         </table>

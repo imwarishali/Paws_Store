@@ -11,13 +11,13 @@ require_once 'db.php';
 $orders = [];
 try {
     // Handle order cancellation
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order_id'])) {
-        $cancel_id = $_POST['cancel_order_id'];
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_order_number'])) {
+        $cancel_num = $_POST['cancel_order_number'];
         $user_id = $_SESSION['user']['id'];
 
         // Update the order status to Cancelled
-        $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE id = ? AND user_id = ?");
-        $update_stmt->execute([$cancel_id, $user_id]);
+        $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE order_number = ? AND user_id = ?");
+        $update_stmt->execute([$cancel_num, $user_id]);
 
         $success_message = "Your order has been successfully cancelled. A refund has been initiated!";
     }
@@ -31,7 +31,26 @@ try {
         ORDER BY o.created_at DESC
     ");
     $stmt->execute([$_SESSION['user']['id']]);
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $raw_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $grouped_orders = [];
+    foreach ($raw_orders as $row) {
+        $onum = $row['order_number'];
+        if (!isset($grouped_orders[$onum])) {
+            $grouped_orders[$onum] = $row;
+            $grouped_orders[$onum]['pets'] = [];
+            $grouped_orders[$onum]['grand_total'] = 0;
+        }
+        $grouped_orders[$onum]['pets'][] = [
+            'pet_id' => $row['pet_id'],
+            'name' => $row['pet_name'],
+            'price' => $row['pet_price'],
+            'image' => $row['pet_image'],
+            'quantity' => $row['quantity']
+        ];
+        $grouped_orders[$onum]['grand_total'] += $row['total_amount'];
+    }
+    $orders = array_values($grouped_orders);
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
 }
@@ -303,12 +322,16 @@ try {
 
                         <div class="order-details">
                             <div class="detail-row">
-                                <strong>Pet Ordered:</strong>
-                                <span><?php echo htmlspecialchars($order['pet_name'] ?? 'N/A'); ?> (x<?php echo htmlspecialchars($order['quantity']); ?>)</span>
+                                <strong>Pets Ordered:</strong>
+                                <div style="text-align: right;">
+                                    <?php foreach($order['pets'] as $p): ?>
+                                        <div><?php echo htmlspecialchars($p['name'] ?? 'N/A'); ?> (x<?php echo htmlspecialchars($p['quantity']); ?>)</div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                             <div class="detail-row">
                                 <strong>Total Amount:</strong>
-                                <span>₹<?php echo number_format($order['total_amount']); ?></span>
+                                <span>₹<?php echo number_format($order['grand_total']); ?></span>
                             </div>
                             <div class="detail-row">
                                 <strong>Delivery Address:</strong>
@@ -330,7 +353,7 @@ try {
                             <div class="refund-notice">
                                 <span style="font-size: 26px;">💸</span>
                                 <div>
-                                    <strong>Refund Initiated!</strong> Your amount of ₹<?php echo number_format($order['total_amount']); ?> is being securely processed and will reflect in your original payment method within 3-5 business days.
+                                    <strong>Refund Initiated!</strong> Your amount of ₹<?php echo number_format($order['grand_total']); ?> is being securely processed and will reflect in your original payment method within 3-5 business days.
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -338,11 +361,13 @@ try {
                         <div class="order-actions" style="gap: 10px;">
                             <?php if (!in_array($order['order_status'], ['Confirmed', 'Shipped', 'Delivered', 'Cancelled'])): ?>
                                 <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" style="margin: 0;">
-                                    <input type="hidden" name="cancel_order_id" value="<?php echo $order['id']; ?>">
+                                    <input type="hidden" name="cancel_order_number" value="<?php echo $order['order_number']; ?>">
                                     <button type="submit" class="btn-cancel-order">Cancel Order</button>
                                 </form>
                             <?php endif; ?>
-                            <button type="button" class="btn-reorder" onclick="reorderPet('<?php echo $order['pet_id']; ?>', '<?php echo addslashes(htmlspecialchars($order['pet_name'] ?? 'Pet')); ?>', <?php echo (float)($order['pet_price'] ?? 0); ?>, '<?php echo addslashes(htmlspecialchars($order['pet_image'] ?? '')); ?>', <?php echo (int)$order['quantity']; ?>)">Reorder</button>
+                            <?php foreach($order['pets'] as $p): ?>
+                                <button type="button" class="btn-reorder" onclick="reorderPet('<?php echo $p['pet_id']; ?>', '<?php echo addslashes(htmlspecialchars($p['name'] ?? 'Pet')); ?>', <?php echo (float)($p['price'] ?? 0); ?>, '<?php echo addslashes(htmlspecialchars($p['image'] ?? '')); ?>', <?php echo (int)$p['quantity']; ?>)">Reorder <?php echo htmlspecialchars($p['name'] ?? 'Pet'); ?></button>
+                            <?php endforeach; ?>
                             <?php if ($order['order_status'] !== 'Cancelled'): ?>
                                 <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="btn-invoice">Invoice</a>
                             <?php endif; ?>

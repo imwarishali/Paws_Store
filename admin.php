@@ -32,16 +32,21 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // --- Orders Actions ---
         if (isset($_POST['update_status'])) {
-            $order_id = $_POST['order_id'];
+            $order_num = $_POST['order_number'];
             $new_status = $_POST['new_status'];
-            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
-            $update_stmt->execute([$new_status, $order_id]);
-            $success_message = "Order #{$order_id} status updated to '{$new_status}' successfully!";
+            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE order_number = ?");
+            $update_stmt->execute([$new_status, $order_num]);
+            $success_message = "Order #{$order_num} status updated to '{$new_status}' successfully!";
         } elseif (isset($_POST['confirm_order'])) {
-            $order_id = $_POST['order_id'];
-            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE id = ?");
-            $update_stmt->execute([$order_id]);
-            $success_message = "Order #{$order_id} status updated to 'Confirmed' successfully!";
+            $order_num = $_POST['order_number'];
+            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE order_number = ?");
+            $update_stmt->execute([$order_num]);
+            $success_message = "Order #{$order_num} status updated to 'Confirmed' successfully!";
+        } elseif (isset($_POST['delete_order'])) {
+            $order_num = $_POST['order_number'];
+            $pdo->prepare("DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE order_number = ?)")->execute([$order_num]);
+            $pdo->prepare("DELETE FROM orders WHERE order_number = ?")->execute([$order_num]);
+            $success_message = "Order #{$order_num} has been deleted successfully!";
         }
         // --- Pets Actions ---
         elseif (isset($_POST['edit_pet'])) {
@@ -133,6 +138,8 @@ try {
     $revenues = [];
     $edit_pet = null;
     $search_query = $_GET['search_query'] ?? '';
+    $status_filter = $_GET['status_filter'] ?? '';
+    $pet_category_filter = $_GET['pet_category_filter'] ?? '';
 
     // Initialize all view variables to prevent IDE "Undefined Variable" warnings
     $total_revenue = 0;
@@ -140,6 +147,7 @@ try {
     $total_pets = 0;
     $pending_orders = 0;
     $total_users = 0;
+    $monthly_sales = ['Dogs' => 0, 'Cats' => 0, 'Fish' => 0, 'Birds' => 0];
     $recent_orders = [];
     $all_orders = [];
     $all_pets = [];
@@ -159,16 +167,51 @@ try {
             $revenues[] = (float)$row['daily_revenue'];
         }
 
+        $sales_stmt = $pdo->query("
+            SELECT p.category, SUM(o.quantity) as sold_count
+            FROM orders o
+            JOIN pets p ON o.pet_id = p.id
+            WHERE o.order_status != 'Cancelled'
+              AND MONTH(o.created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+            GROUP BY p.category
+        ");
+        foreach ($sales_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (isset($monthly_sales[$row['category']])) {
+                $monthly_sales[$row['category']] = (int)$row['sold_count'];
+            }
+        }
+
         $recent_orders = $pdo->query("SELECT o.order_number, o.total_amount, o.order_status, o.created_at, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($page === 'orders') {
-        $sql = "SELECT o.*, CONCAT(p.name, ' (x', o.quantity, ')') AS pet_names FROM orders o LEFT JOIN pets p ON o.pet_id = p.id";
+        $sql = "SELECT 
+                    o.order_number, 
+                    o.user_id, 
+                    o.created_at, 
+                    o.order_status, 
+                    SUM(o.total_amount) as total_amount, 
+                    GROUP_CONCAT(CONCAT(p.name, ' (x', o.quantity, ')') SEPARATOR '<br>') AS pet_names,
+                    MAX(o.payment_screenshot) as payment_screenshot
+                FROM orders o 
+                LEFT JOIN pets p ON o.pet_id = p.id";
+
+        $where_clauses = [];
         $params = [];
+
         if (!empty($search_query)) {
-            $sql .= " WHERE o.order_number LIKE ? OR o.user_id LIKE ?";
+            $where_clauses[] = "(o.order_number LIKE ? OR o.user_id LIKE ?)";
             $params[] = '%' . $search_query . '%';
             $params[] = '%' . $search_query . '%';
         }
-        $sql .= " ORDER BY o.created_at DESC";
+        if (!empty($status_filter) && $status_filter !== 'All') {
+            $where_clauses[] = "o.order_status = ?";
+            $params[] = $status_filter;
+        }
+        if (count($where_clauses) > 0) {
+            $sql .= " WHERE " . implode(' AND ', $where_clauses);
+        }
+
+        $sql .= " GROUP BY o.order_number, o.user_id, o.created_at, o.order_status ORDER BY o.created_at DESC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $all_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -198,7 +241,32 @@ try {
             $stmt->execute([$_GET['edit_id']]);
             $edit_pet = $stmt->fetch(PDO::FETCH_ASSOC);
         }
-        $all_pets = $pdo->query("SELECT * FROM pets ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $sql = "SELECT * FROM pets";
+        $count_sql = "SELECT COUNT(*) FROM pets";
+        $params = [];
+        if (!empty($pet_category_filter) && $pet_category_filter !== 'All') {
+            $sql .= " WHERE category = ?";
+            $count_sql .= " WHERE category = ?";
+            $params[] = $pet_category_filter;
+        }
+        $sql .= " ORDER BY id DESC";
+
+        // Pagination logic
+        $pets_per_page = 10;
+        $current_page = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
+        $offset = ($current_page - 1) * $pets_per_page;
+
+        $count_stmt = $pdo->prepare($count_sql);
+        $count_stmt->execute($params);
+        $total_rows = $count_stmt->fetchColumn();
+        $total_pages = ceil($total_rows / $pets_per_page);
+
+        $sql .= " LIMIT " . (int)$pets_per_page . " OFFSET " . (int)$offset;
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $all_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($page === 'users') {
         $sql = "SELECT * FROM users";
         $params = [];
@@ -623,6 +691,33 @@ try {
             white-space: nowrap;
         }
 
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .page-link {
+            padding: 8px 14px;
+            background: #f0f0f0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .page-link:hover {
+            background: #e0e0e0;
+        }
+
+        .page-link.active {
+            background: #b5860d;
+            color: white;
+        }
+
         @media (max-width: 900px) {
 
             .dashboard-content,
@@ -726,25 +821,47 @@ try {
                             <h2>Revenue Last 7 Days</h2>
                             <canvas id="revenueChart" height="100"></canvas>
                         </div>
-                        <div class="recent-orders">
-                            <h2>Recent Orders</h2>
-                            <?php if (empty($recent_orders)): ?>
-                                <p style="color: #666;">No recent orders found.</p>
-                            <?php else: ?>
-                                <?php foreach ($recent_orders as $order): ?>
-                                    <div class="recent-order-item">
-                                        <div>
-                                            <strong style="display:block; color:#2c1a0e;">#<?php echo htmlspecialchars($order['order_number']); ?></strong>
-                                            <small style="color:#888;"><?php echo date('M d', strtotime($order['created_at'])); ?> - <?php echo htmlspecialchars($order['username'] ?? 'Guest'); ?></small>
+                        <div style="display: flex; flex-direction: column; gap: 30px;">
+                            <div class="recent-orders">
+                                <h2>Recent Orders</h2>
+                                <?php if (empty($recent_orders)): ?>
+                                    <p style="color: #666;">No recent orders found.</p>
+                                <?php else: ?>
+                                    <?php foreach ($recent_orders as $order): ?>
+                                        <div class="recent-order-item">
+                                            <div>
+                                                <strong style="display:block; color:#2c1a0e;">#<?php echo htmlspecialchars($order['order_number']); ?></strong>
+                                                <small style="color:#888;"><?php echo date('M d', strtotime($order['created_at'])); ?> - <?php echo htmlspecialchars($order['username'] ?? 'Guest'); ?></small>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div class="recent-order-amount">₹<?php echo number_format($order['total_amount']); ?></div>
+                                                <small style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:11px;"><?php echo htmlspecialchars($order['order_status']); ?></small>
+                                            </div>
                                         </div>
-                                        <div style="text-align: right;">
-                                            <div class="recent-order-amount">₹<?php echo number_format($order['total_amount']); ?></div>
-                                            <small style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:11px;"><?php echo htmlspecialchars($order['order_status']); ?></small>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                                <div style="text-align: center; margin-top: 15px;"><a href="admin.php?page=orders" style="color: #b5860d; text-decoration: none; font-weight: bold;">View All Orders &rarr;</a></div>
-                            <?php endif; ?>
+                                    <?php endforeach; ?>
+                                    <div style="text-align: center; margin-top: 15px;"><a href="admin.php?page=orders" style="color: #b5860d; text-decoration: none; font-weight: bold;">View All Orders &rarr;</a></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="recent-orders">
+                                <h2>Pets Sold This Month</h2>
+                                <div class="recent-order-item">
+                                    <span style="font-weight: 600; color: #2c1a0e;">🐶 Dogs</span>
+                                    <strong style="font-size: 18px; color: #b5860d;"><?php echo $monthly_sales['Dogs']; ?></strong>
+                                </div>
+                                <div class="recent-order-item">
+                                    <span style="font-weight: 600; color: #2c1a0e;">🐱 Cats</span>
+                                    <strong style="font-size: 18px; color: #b5860d;"><?php echo $monthly_sales['Cats']; ?></strong>
+                                </div>
+                                <div class="recent-order-item">
+                                    <span style="font-weight: 600; color: #2c1a0e;">🐟 Fish</span>
+                                    <strong style="font-size: 18px; color: #b5860d;"><?php echo $monthly_sales['Fish']; ?></strong>
+                                </div>
+                                <div class="recent-order-item" style="border-bottom: none; padding-bottom: 0;">
+                                    <span style="font-weight: 600; color: #2c1a0e;">🦜 Birds</span>
+                                    <strong style="font-size: 18px; color: #b5860d;"><?php echo $monthly_sales['Birds']; ?></strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -760,9 +877,17 @@ try {
                     <form method="GET" class="search-form" action="admin.php">
                         <input type="hidden" name="page" value="orders">
                         <input type="text" name="search_query" placeholder="Search by Order ID or User ID..." value="<?php echo htmlspecialchars($search_query); ?>">
-                        <button type="submit" style="padding:10px 20px;">Search</button>
-                        <?php if (!empty($search_query)): ?>
-                            <a href="admin.php?page=orders">Clear Search</a>
+                        <select name="status_filter" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; font-size: 15px; outline: none; background: #fff;">
+                            <option value="All" <?php echo ($status_filter === 'All' || empty($status_filter)) ? 'selected' : ''; ?>>All Statuses</option>
+                            <option value="Processing" <?php echo $status_filter === 'Processing' ? 'selected' : ''; ?>>Processing</option>
+                            <option value="Confirmed" <?php echo $status_filter === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                            <option value="Shipped" <?php echo $status_filter === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
+                            <option value="Delivered" <?php echo $status_filter === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
+                            <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                        </select>
+                        <button type="submit" style="padding:10px 20px;">Filter</button>
+                        <?php if (!empty($search_query) || (!empty($status_filter) && $status_filter !== 'All')): ?>
+                            <a href="admin.php?page=orders">Clear Filter</a>
                         <?php endif; ?>
                         <button type="submit" name="export_csv" value="1" style="background-color: #28a745; margin-left: auto;">Export CSV</button>
                     </form>
@@ -795,7 +920,7 @@ try {
                                         <td>
                                             <div style="display: flex; gap: 8px; align-items: center;">
                                                 <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0;">
-                                                    <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                                    <input type="hidden" name="order_number" value="<?php echo $order['order_number']; ?>">
                                                     <select name="new_status" class="status-select" style="padding: 6px;">
                                                         <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
                                                         <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
@@ -807,6 +932,7 @@ try {
                                                     <?php if ($order['order_status'] === 'Processing'): ?>
                                                         <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
                                                     <?php endif; ?>
+                                                    <button type="submit" name="delete_order" class="delete-btn" onclick="return confirm('Are you sure you want to permanently delete this order? This action cannot be undone!');" style="padding: 10px 16px;">Delete</button>
                                                 </form>
                                                 <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn">Invoice</a>
                                                 <?php if (!empty($order['payment_screenshot'])): ?>
@@ -863,6 +989,20 @@ try {
                     <div class="admin-header">
                         <h2>Current Pets Database</h2>
                     </div>
+                    <form method="GET" class="search-form" action="admin.php">
+                        <input type="hidden" name="page" value="pets">
+                        <select name="pet_category_filter" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; font-size: 15px; outline: none; background: #fff; width: 250px;">
+                            <option value="All" <?php echo ($pet_category_filter === 'All' || empty($pet_category_filter)) ? 'selected' : ''; ?>>All Categories</option>
+                            <option value="Dogs" <?php echo $pet_category_filter === 'Dogs' ? 'selected' : ''; ?>>Dogs</option>
+                            <option value="Cats" <?php echo $pet_category_filter === 'Cats' ? 'selected' : ''; ?>>Cats</option>
+                            <option value="Fish" <?php echo $pet_category_filter === 'Fish' ? 'selected' : ''; ?>>Fish</option>
+                            <option value="Birds" <?php echo $pet_category_filter === 'Birds' ? 'selected' : ''; ?>>Birds</option>
+                        </select>
+                        <button type="submit" style="padding:10px 20px;">Filter</button>
+                        <?php if (!empty($pet_category_filter) && $pet_category_filter !== 'All'): ?>
+                            <a href="admin.php?page=pets">Clear Filter</a>
+                        <?php endif; ?>
+                    </form>
                     <table>
                         <thead>
                             <tr>
@@ -895,6 +1035,22 @@ try {
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+
+                    <?php if (isset($total_pages) && $total_pages > 1): ?>
+                        <div class="pagination">
+                            <?php if ($current_page > 1): ?>
+                                <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $current_page - 1; ?>" class="page-link">&laquo; Prev</a>
+                            <?php endif; ?>
+                            
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $i; ?>" class="page-link <?php echo $i === $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                            <?php endfor; ?>
+                            
+                            <?php if ($current_page < $total_pages): ?>
+                                <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $current_page + 1; ?>" class="page-link">Next &raquo;</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- ========================================== -->

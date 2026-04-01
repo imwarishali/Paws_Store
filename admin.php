@@ -7,6 +7,16 @@ if (!isset($_SESSION["admin_user"])) {
     exit();
 }
 
+// 30 minutes inactivity timeout
+$timeout_duration = 1800; // 30 minutes in seconds
+if (isset($_SESSION['admin_last_activity']) && (time() - $_SESSION['admin_last_activity']) > $timeout_duration) {
+    unset($_SESSION['admin_user']);
+    unset($_SESSION['admin_last_activity']);
+    header("Location: admin_login.php?timeout=1");
+    exit();
+}
+$_SESSION['admin_last_activity'] = time(); // Update last activity time
+
 require_once 'db.php';
 
 $success_message = null;

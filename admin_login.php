@@ -11,6 +11,10 @@ require_once 'db.php';
 
 $error_message = null;
 
+if (isset($_GET['timeout']) && $_GET['timeout'] == 1) {
+    $error_message = "Your session has expired due to inactivity. Please log in again.";
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -30,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id' => $admin['id'],
                     'username' => $admin['username']
                 ];
+                $_SESSION['admin_last_activity'] = time();
                 header("Location: admin.php");
                 exit();
             } else {

@@ -197,6 +197,14 @@ if (!empty($order['shipping_address'])) {
             background: #5a6268;
         }
 
+        .pdf-btn {
+            background: #28a745;
+        }
+
+        .pdf-btn:hover {
+            background: #218838;
+        }
+
         @media print {
             body {
                 background: #fff;
@@ -220,13 +228,16 @@ if (!empty($order['shipping_address'])) {
 
     <div class="btn-container no-print">
         <button onclick="history.back()" class="action-btn back-btn">⬅️ Back</button>
-        <button onclick="window.print()" class="action-btn print-btn">🖨️ Print / Save as PDF</button>
+        <button onclick="window.print()" class="action-btn print-btn">🖨️ Print</button>
+        <button onclick="downloadPDF()" class="action-btn pdf-btn">📄 Download PDF</button>
     </div>
 
-    <div class="invoice-box">
+    <div class="invoice-box" id="invoice">
         <div class="header">
             <div>
-                <h1>🐾 Paws Store</h1>
+                <!-- Upload your logo to the Assets folder and name it logo.png -->
+                <img src="Assets/logo.png" alt="Paws Store Logo" style="max-height: 60px; margin-bottom: 5px; display: none;" onload="this.style.display='block'; document.getElementById('text-logo').style.display='none';">
+                <h1 id="text-logo">🐾 Paws Store</h1>
                 <p>Bringing joy home, one paw at a time.</p>
             </div>
             <div class="invoice-details">
@@ -266,8 +277,18 @@ if (!empty($order['shipping_address'])) {
                     <td><?php echo htmlspecialchars($order['pet_name'] ?? 'Pet'); ?></td>
                     <td><?php echo htmlspecialchars($order['quantity'] ?? 1); ?></td>
                     <td>₹<?php echo number_format($order['pet_price'] ?? $order['total_amount']); ?></td>
-                    <td>₹<?php echo number_format(($order['pet_price'] ?? $order['total_amount']) * ($order['quantity'] ?? 1)); ?></td>
+                    <?php $base_subtotal = ($order['pet_price'] ?? $order['total_amount']) * ($order['quantity'] ?? 1); ?>
+                    <td>₹<?php echo number_format($base_subtotal); ?></td>
                 </tr>
+                <?php
+                $fees_and_discounts = $order['total_amount'] - $base_subtotal;
+                if ($fees_and_discounts != 0):
+                ?>
+                    <tr>
+                        <td colspan="3" style="text-align: right; color: #666; font-size: 14px;">Taxes, Shipping & Applied Offers:</td>
+                        <td style="color: #666; font-size: 14px;"><?php echo $fees_and_discounts > 0 ? '+' : ''; ?>₹<?php echo number_format($fees_and_discounts); ?></td>
+                    </tr>
+                <?php endif; ?>
                 <tr class="total-row">
                     <td colspan="3" style="text-align: right;">Grand Total (Including Taxes & Shipping):</td>
                     <td>₹<?php echo number_format($order['total_amount']); ?></td>
@@ -279,6 +300,32 @@ if (!empty($order['shipping_address'])) {
             <p>If you have any questions concerning this invoice, contact support@pawsstore.in</p>
         </div>
     </div>
+
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('invoice');
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: 'Invoice_<?php echo htmlspecialchars($order['order_number']); ?>.pdf',
+                image: {
+                    type: 'jpeg',
+                    quality: 0.98
+                },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
 </body>
 
 </html>

@@ -71,26 +71,26 @@ try {
   </nav>
   <div class="fk-nav-categories">
     <div class="fk-categories-wrapper" style="display: flex; justify-content: center;">
-      <div class="fk-cat-item active" data-category="all">
+      <a href="#home" class="fk-cat-item active" data-category="all" style="text-decoration: none;">
         <div class="fk-cat-img">🏠</div>
-        <a href="#home">Home</a>
-      </div>
-      <div class="fk-cat-item" data-category="dogs">
+        Home
+      </a>
+      <a href="#categories" class="fk-cat-item" data-category="dogs" style="text-decoration: none;">
         <div class="fk-cat-img">🛒</div>
-        <a href="#categories">Shop</a>
-      </div>
-      <div class="fk-cat-item" data-category="cats">
+        Shop
+      </a>
+      <a href="#pets" class="fk-cat-item" data-category="cats" style="text-decoration: none;">
         <div class="fk-cat-img">🐾</div>
-        <a href="#pets">Pets</a>
-      </div>
-      <div class="fk-cat-item" data-category="fish">
+        Pets
+      </a>
+      <a href="#about" class="fk-cat-item" data-category="fish" style="text-decoration: none;">
         <div class="fk-cat-img">ℹ️</div>
-        <a href="#about">About Us</a>
-      </div>
-      <div class="fk-cat-item" data-category="birds">
+        About Us
+      </a>
+      <a href="#contact" class="fk-cat-item" data-category="birds" style="text-decoration: none;">
         <div class="fk-cat-img">📞</div>
-        <a href="#contact">Contact Us</a>
-      </div>
+        Contact Us
+      </a>
     </div>
   </div>
 
@@ -245,9 +245,18 @@ try {
 
   <!-- Featured Pets -->
   <div class="ps-section ps-featured" style="padding-top: 52px" id="pets">
-    <div class="ps-section-title" id="show-all-pets" style="cursor: pointer;">Suggested for You</div>
-    <div class="ps-section-sub">
-      All pets are vaccinated, dewormed &amp; vet-checked
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <div class="ps-section-title" id="show-all-pets" style="cursor: pointer;">Suggested for You</div>
+        <div class="ps-section-sub" style="margin-bottom: 0;">
+          All pets are vaccinated, dewormed &amp; vet-checked
+        </div>
+      </div>
+      <select id="price-sort" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #d4b87a; background-color: #fff; font-family: 'Nunito', sans-serif; font-size: 14px; color: #2c1a0e; cursor: pointer; outline: none; font-weight: 600;">
+        <option value="default">Sort by: Default</option>
+        <option value="low-high">Price: Low to High</option>
+        <option value="high-low">Price: High to Low</option>
+      </select>
     </div>
     <div class="ps-pets-grid">
       <div class="ps-pet-card" data-category="dogs" data-pet-id="1">
@@ -717,6 +726,19 @@ try {
         </div>
       </div>
     </div>
+
+    <!-- Mix (shuffle) the pets randomly on every page load -->
+    <script>
+      (function() {
+        const grid = document.querySelector('#pets .ps-pets-grid');
+        if (grid) {
+          for (let i = grid.children.length; i > 0; i--) {
+            grid.appendChild(grid.children[Math.random() * i | 0]);
+          }
+        }
+      })();
+    </script>
+
     <div style="text-align: center; margin-top: 40px;">
       <a href="featured_pets.php" class="ps-btn-primary" style="text-decoration: none; padding: 14px 40px; font-size: 16px;">View All Featured Pets</a>
     </div>
@@ -862,13 +884,30 @@ try {
       const searchInput = document.getElementById('search-input');
       const searchBtn = document.getElementById('search-btn');
 
-      // SHRINK CATEGORY NAV ON SCROLL
+      // SHRINK CATEGORY NAV & HIGHLIGHT ACTIVE ITEM ON SCROLL
+      const navItems = document.querySelectorAll('.fk-cat-item');
+      const sections = document.querySelectorAll('#home, #categories, #pets, #about, #contact');
+
       window.addEventListener('scroll', function() {
         if (window.scrollY > 20) {
           document.body.classList.add('nav-scrolled');
         } else {
           document.body.classList.remove('nav-scrolled');
         }
+
+        let current = 'home';
+        sections.forEach(section => {
+          if (window.scrollY >= (section.offsetTop - 200)) {
+            current = section.getAttribute('id');
+          }
+        });
+
+        navItems.forEach(item => {
+          item.classList.remove('active');
+          if (item.getAttribute('href') === '#' + current) {
+            item.classList.add('active');
+          }
+        });
       });
 
       // NAVIGATE TO DETAILS PAGE ON CARD CLICK
@@ -882,8 +921,36 @@ try {
         });
       });
 
+      const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+      const cartKey = 'pawsCart_' + currentUserId;
+      const wishKey = 'pawsWishlist_' + currentUserId;
+
+      // TRANSFER GUEST DATA TO LOGGED-IN USER
+      if (currentUserId !== 'guest') {
+        let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+        if (guestCart && guestCart.length > 0) {
+          let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+          guestCart.forEach(guestItem => {
+            let existing = userCart.find(item => item.id === guestItem.id);
+            if (existing) existing.quantity += guestItem.quantity;
+            else userCart.push(guestItem);
+          });
+          localStorage.setItem(cartKey, JSON.stringify(userCart));
+          localStorage.removeItem('pawsCart_guest');
+        }
+        let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
+        if (guestWish && guestWish.length > 0) {
+          let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
+          guestWish.forEach(guestItem => {
+            if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
+          });
+          localStorage.setItem(wishKey, JSON.stringify(userWish));
+          localStorage.removeItem('pawsWishlist_guest');
+        }
+      }
+
       // CART SYSTEM
-      let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+      let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
       function updateCartCount() {
         const cartCountElement = document.getElementById('cart-count');
@@ -891,7 +958,7 @@ try {
 
         cartCountElement.textContent = totalItems;
         cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
-        localStorage.setItem('pawsCart', JSON.stringify(cart));
+        localStorage.setItem(cartKey, JSON.stringify(cart));
       }
 
       addToCartButtons.forEach(button => {
@@ -924,7 +991,7 @@ try {
       });
 
       // WISHLIST SYSTEM
-      let wishlist = JSON.parse(localStorage.getItem('pawsWishlist')) || [];
+      let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
       const wishButtons = document.querySelectorAll('.ps-pet-wish');
 
       function updateWishlistIcons() {
@@ -962,7 +1029,7 @@ try {
             });
             alert(petName + " added to wishlist!");
           }
-          localStorage.setItem('pawsWishlist', JSON.stringify(wishlist));
+          localStorage.setItem(wishKey, JSON.stringify(wishlist));
           updateWishlistIcons();
         });
       });
@@ -1042,6 +1109,31 @@ try {
         categoryCards.forEach(c => c.classList.remove('active'));
       });
 
+      // PRICE SORTING DROPDOWN
+      const priceSortSelect = document.getElementById('price-sort');
+      const petsGrid = document.querySelector('#pets .ps-pets-grid');
+
+      if (priceSortSelect && petsGrid) {
+        priceSortSelect.addEventListener('change', function() {
+          const cards = Array.from(petsGrid.children);
+          
+          if (this.value === 'low-high' || this.value === 'high-low') {
+            cards.sort((a, b) => {
+              const priceA = parseInt(a.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+              const priceB = parseInt(b.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+              
+              if (this.value === 'low-high') {
+                return priceA - priceB;
+              } else {
+                return priceB - priceA;
+              }
+            });
+            
+            cards.forEach(card => petsGrid.appendChild(card));
+          }
+        });
+      }
+
       // CAROUSEL SYSTEM
       const track = document.getElementById('ps-carousel-track');
       // .children gets element nodes, skipping any HTML comments
@@ -1090,7 +1182,7 @@ try {
         });
 
         function startInterval() {
-          autoSlideInterval = setInterval(nextSlide, 3000);
+          autoSlideInterval = setInterval(nextSlide, 10000);
         }
 
         function resetInterval() {

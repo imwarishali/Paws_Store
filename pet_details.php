@@ -266,8 +266,36 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
-            let wishlist = JSON.parse(localStorage.getItem('pawsWishlist')) || [];
+                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+                const cartKey = 'pawsCart_' + currentUserId;
+                const wishKey = 'pawsWishlist_' + currentUserId;
+
+                // TRANSFER GUEST DATA TO LOGGED-IN USER
+                if (currentUserId !== 'guest') {
+                    let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+                    if (guestCart && guestCart.length > 0) {
+                        let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                        guestCart.forEach(guestItem => {
+                            let existing = userCart.find(item => item.id === guestItem.id);
+                            if (existing) existing.quantity += guestItem.quantity;
+                            else userCart.push(guestItem);
+                        });
+                        localStorage.setItem(cartKey, JSON.stringify(userCart));
+                        localStorage.removeItem('pawsCart_guest');
+                    }
+                    let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
+                    if (guestWish && guestWish.length > 0) {
+                        let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
+                        guestWish.forEach(guestItem => {
+                            if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
+                        });
+                        localStorage.setItem(wishKey, JSON.stringify(userWish));
+                        localStorage.removeItem('pawsWishlist_guest');
+                    }
+                }
+
+                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
             const petId = "<?php echo $id; ?>";
             const petName = "<?php echo addslashes($pet['name']); ?>";
@@ -310,7 +338,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                         quantity: 1
                     });
                 }
-                localStorage.setItem('pawsCart', JSON.stringify(cart));
+                localStorage.setItem(cartKey, JSON.stringify(cart));
                 updateCartCount();
             }
 
@@ -338,7 +366,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                     });
                     alert(petName + " added to wishlist!");
                 }
-                localStorage.setItem('pawsWishlist', JSON.stringify(wishlist));
+                localStorage.setItem(wishKey, JSON.stringify(wishlist));
                 updateWishlistIcon();
             });
 

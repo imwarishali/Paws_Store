@@ -91,6 +91,8 @@ if ($special_offer === 'firstTime') {
     $discount = round($subtotal * 0.05);
 } else if ($special_offer === 'freeVet') {
     $discount = 500;
+} else if ($special_offer === 'save20' && $subtotal > 10000) {
+    $discount = 2000;
 }
 
 $shipping = $subtotal > 5000 ? 0 : 500;

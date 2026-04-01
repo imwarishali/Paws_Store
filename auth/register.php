@@ -8,6 +8,7 @@ if (isset($_SESSION["user"])) {
 
 $error = "";
 $success = "";
+$redirect = $_GET['redirect'] ?? $_POST['redirect'] ?? '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $host = 'localhost';
@@ -49,7 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $insert_stmt = $pdo->prepare("INSERT INTO users (username, email, phone, password) VALUES (?, ?, ?, ?)");
         if ($insert_stmt->execute([$username, $email, $phone, $password_hash])) {
           $success = "Registration successful! Redirecting to login...";
-          echo "<script>setTimeout(function(){ window.location.href = 'login.php'; }, 2000);</script>";
+          $redirect_url = 'login.php?registered=1' . (!empty($redirect) ? '&redirect=' . urlencode($redirect) : '');
+          echo "<script>setTimeout(function(){ window.location.href = '" . $redirect_url . "'; }, 2000);</script>";
         }
       }
     }
@@ -226,6 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php endif; ?>
 
     <form method="POST" action="register.php">
+      <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
       <div class="form-group">
         <label for="username">Username</label>
         <input type="text" id="username" name="username" placeholder="Your name" required>
@@ -254,7 +257,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
       <button type="submit" class="btn">Register</button>
     </form>
-    <p class="login-link">Already have an account? <a href="login.php">Login here</a></p>
+    <p class="login-link">Already have an account? <a href="login.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>">Login here</a></p>
   </div>
   <script>
     function togglePasswordVisibility(inputId, button) {

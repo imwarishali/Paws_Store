@@ -336,7 +336,10 @@ $userPhone = $user["phone"] ?? "";
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+                const cartKey = 'pawsCart_' + currentUserId;
+
+                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');

@@ -19,7 +19,7 @@ try {
         $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE id = ? AND user_id = ?");
         $update_stmt->execute([$cancel_id, $user_id]);
 
-        $success_message = "Your order has been successfully cancelled.";
+        $success_message = "Your order has been successfully cancelled. A refund has been initiated!";
     }
 
     $stmt = $pdo->prepare("
@@ -218,6 +218,20 @@ try {
             padding-top: 15px;
         }
 
+        .refund-notice {
+            background: #e0f7fa;
+            border: 1px solid #b2ebf2;
+            color: #006064;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .order-meta {
                 flex-direction: column;
@@ -276,7 +290,13 @@ try {
 
                         <div class="order-meta">
                             <span><strong>Placed:</strong> <?php echo date('d M Y, H:i', strtotime($order['created_at'])); ?></span>
-                            <span><strong>Status:</strong> <span class="status-badge status-<?php echo htmlspecialchars($order['order_status']); ?>"><?php echo htmlspecialchars($order['order_status']); ?></span></span>
+                            <span><strong>Status:</strong>
+                                <?php if ($order['order_status'] === 'Cancelled'): ?>
+                                    <span class="status-badge status-Cancelled">🚫 Order Cancelled</span>
+                                <?php else: ?>
+                                    <span class="status-badge status-<?php echo htmlspecialchars($order['order_status']); ?>"><?php echo htmlspecialchars($order['order_status']); ?></span>
+                                <?php endif; ?>
+                            </span>
                             <span><strong>Paid with:</strong> <?php echo htmlspecialchars(ucfirst($order['payment_method'] ?? 'N/A')); ?></span>
                             <span><strong>Txn ID:</strong> <?php echo htmlspecialchars($order['transaction_id'] ?? 'N/A'); ?></span>
                         </div>
@@ -306,6 +326,15 @@ try {
                             </div>
                         </div>
 
+                        <?php if ($order['order_status'] === 'Cancelled'): ?>
+                            <div class="refund-notice">
+                                <span style="font-size: 26px;">💸</span>
+                                <div>
+                                    <strong>Refund Initiated!</strong> Your amount of ₹<?php echo number_format($order['total_amount']); ?> is being securely processed and will reflect in your original payment method within 3-5 business days.
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="order-actions" style="gap: 10px;">
                             <?php if (!in_array($order['order_status'], ['Confirmed', 'Shipped', 'Delivered', 'Cancelled'])): ?>
                                 <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" style="margin: 0;">
@@ -314,7 +343,9 @@ try {
                                 </form>
                             <?php endif; ?>
                             <button type="button" class="btn-reorder" onclick="reorderPet('<?php echo $order['pet_id']; ?>', '<?php echo addslashes(htmlspecialchars($order['pet_name'] ?? 'Pet')); ?>', <?php echo (float)($order['pet_price'] ?? 0); ?>, '<?php echo addslashes(htmlspecialchars($order['pet_image'] ?? '')); ?>', <?php echo (int)$order['quantity']; ?>)">Reorder</button>
-                            <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="btn-invoice">Invoice</a>
+                            <?php if ($order['order_status'] !== 'Cancelled'): ?>
+                                <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="btn-invoice">Invoice</a>
+                            <?php endif; ?>
                         </div>
 
                     </div>
@@ -341,13 +372,16 @@ try {
                 });
             }
 
-            localStorage.setItem('pawsCart', JSON.stringify(cart));
+            localStorage.setItem(cartKey, JSON.stringify(cart));
             alert(name + " added to cart!");
             window.location.href = 'cart.php';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');

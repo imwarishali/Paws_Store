@@ -1,11 +1,6 @@
 <?php
 session_start();
 
-if (!isset($_SESSION["user"])) {
-    header("Location: auth/login.php");
-    exit();
-}
-
 require_once 'db.php';
 
 $petData = [];
@@ -14,7 +9,20 @@ try {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $petData[$row['id']] = ['name' => $row['name'], 'price' => (float)$row['price'], 'image' => $row['image']];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) {
+}
+
+$isFirstTime = true;
+if (isset($_SESSION["user"])) {
+    try {
+        $order_check_stmt = $pdo->prepare("SELECT COUNT(*) FROM orders WHERE user_id = ?");
+        $order_check_stmt->execute([$_SESSION["user"]["id"]]);
+        if ($order_check_stmt->fetchColumn() > 0) {
+            $isFirstTime = false;
+        }
+    } catch (PDOException $e) {
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -364,7 +372,30 @@ try {
 
             const petData = <?php echo json_encode($petData); ?>;
 
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+
+            // TRANSFER GUEST CART TO LOGGED-IN USER
+            if (currentUserId !== 'guest') {
+                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+                if (guestCart && guestCart.length > 0) {
+                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                    guestCart.forEach(guestItem => {
+                        let existing = userCart.find(item => item.id === guestItem.id);
+                        if (existing) existing.quantity += guestItem.quantity;
+                        else userCart.push(guestItem);
+                    });
+                    localStorage.setItem(cartKey, JSON.stringify(userCart));
+                    localStorage.removeItem('pawsCart_guest');
+                }
+            }
+
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+
+            window.appliedPromoType = 'none';
+            window.appliedPromoCode = '';
+
+            const isFirstTime = <?php echo $isFirstTime ? 'true' : 'false'; ?>;
 
             function renderCart() {
                 if (cart.length === 0) {
@@ -453,41 +484,13 @@ try {
               </div>
 
               <div class="summary-section">
-                <h3>Special Offers</h3>
-                <div class="offers">
-                  <label class="offer" for="firstTime">
-                    <input type="radio" name="specialOffer" id="firstTime" value="firstTime" onchange="applyOffers()">
-                    <div class="offer-content">
-                      <div class="offer-title">First-time buyer discount</div>
-                      <div class="offer-desc">10% off on your first purchase</div>
-                    </div>
-                    <div class="offer-radio"></div>
-                  </label>
-                  <label class="offer" for="bulkDiscount">
-                    <input type="radio" name="specialOffer" id="bulkDiscount" value="bulkDiscount" onchange="applyOffers()">
-                    <div class="offer-content">
-                      <div class="offer-title">Bulk purchase discount</div>
-                      <div class="offer-desc">5% off for 2+ pets</div>
-                    </div>
-                    <div class="offer-radio"></div>
-                  </label>
-                  <label class="offer" for="freeVet">
-                    <input type="radio" name="specialOffer" id="freeVet" value="freeVet" onchange="applyOffers()">
-                    <div class="offer-content">
-                      <div class="offer-title">Free vet consultation</div>
-                      <div class="offer-desc">₹500 value included</div>
-                    </div>
-                    <div class="offer-radio"></div>
-                  </label>
-                  <label class="offer" for="noOffer">
-                    <input type="radio" name="specialOffer" id="noOffer" value="none" onchange="applyOffers()" checked>
-                    <div class="offer-content">
-                      <div class="offer-title">No special offer</div>
-                      <div class="offer-desc">Continue without discount</div>
-                    </div>
-                    <div class="offer-radio"></div>
-                  </label>
+                <h3>Promo Code</h3>
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" id="promoCodeInput" placeholder="Enter promo code" value="${appliedPromoCode}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif;">
+                  <button type="button" onclick="applyPromoCode()" style="padding: 10px 20px; background: #2c1a0e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Apply</button>
                 </div>
+                <div style="margin-top: 8px; font-size: 13px; color: #666;">Try codes: <strong>FIRST10</strong>, <strong>BULK5</strong>, <strong>VET500</strong>, <strong>SAVE20</strong></div>
+                <div id="promoMessage" style="margin-top: 10px; font-size: 14px; font-weight: 600;"></div>
               </div>
 
               <div class="summary-section">
@@ -531,50 +534,94 @@ try {
                 const item = cart.find(item => item.id == id);
                 if (item) {
                     item.quantity = newQuantity;
-                    localStorage.setItem('pawsCart', JSON.stringify(cart));
+                    localStorage.setItem(cartKey, JSON.stringify(cart));
                     renderCart();
+                    applyPromoCode();
                     updateCartCount();
                 }
             };
 
             window.removeItem = function(id) {
                 cart = cart.filter(item => item.id != id);
-                localStorage.setItem('pawsCart', JSON.stringify(cart));
+                localStorage.setItem(cartKey, JSON.stringify(cart));
                 renderCart();
+                applyPromoCode();
                 updateCartCount();
             };
 
-            window.toggleOffer = function(offerType) {
-                const offerElement = document.querySelector(`[data-offer="${offerType}"]`);
-                offerElement.classList.toggle('active');
-                applyOffers();
-            };
-
-            window.applyOffers = function() {
-                // Remove selected class from all offers
-                document.querySelectorAll('.offer').forEach(offer => {
-                    offer.classList.remove('selected');
-                });
-
-                // Add selected class to the checked offer
-                const selectedRadio = document.querySelector('input[name="specialOffer"]:checked');
-                if (selectedRadio) {
-                    selectedRadio.closest('.offer').classList.add('selected');
+            window.applyPromoCode = function() {
+                if (cart.length === 0) {
+                    alert('Please add items to your cart before entering a promo code.');
+                    appliedPromoType = 'none';
+                    return;
                 }
 
                 const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
+                const inputElement = document.getElementById('promoCodeInput');
+                if (!inputElement) return;
+
+                appliedPromoCode = inputElement.value.trim().toUpperCase();
+                const msg = document.getElementById('promoMessage');
+
+                if (appliedPromoCode === 'FIRST10') {
+                    if (isFirstTime) {
+                        appliedPromoType = 'firstTime';
+                        msg.textContent = 'Promo code applied! 10% off on your first purchase.';
+                        msg.style.color = '#28a745';
+                    } else {
+                        appliedPromoType = 'none';
+                        msg.textContent = 'FIRST10 is only valid for your first purchase.';
+                        msg.style.color = '#dc3545';
+                    }
+                } else if (appliedPromoCode === 'BULK5') {
+                    if (cart.length >= 2) {
+                        appliedPromoType = 'bulkDiscount';
+                        msg.textContent = 'Promo code applied! 5% off for 2+ pets.';
+                        msg.style.color = '#28a745';
+                    } else {
+                        appliedPromoType = 'none';
+                        msg.textContent = 'BULK5 requires 2 or more pets in cart.';
+                        msg.style.color = '#dc3545';
+                    }
+                } else if (appliedPromoCode === 'VET500') {
+                    appliedPromoType = 'freeVet';
+                    msg.textContent = 'Promo code applied! ₹500 off for free vet consultation.';
+                    msg.style.color = '#28a745';
+                } else if (appliedPromoCode === 'SAVE20') {
+                    if (subtotal > 10000) {
+                        appliedPromoType = 'save20';
+                        msg.textContent = 'Promo code applied! Flat ₹2000 discount.';
+                        msg.style.color = '#28a745';
+                    } else {
+                        appliedPromoType = 'none';
+                        msg.textContent = 'SAVE20 requires an order total over ₹10,000.';
+                        msg.style.color = '#dc3545';
+                    }
+                } else if (appliedPromoCode === '') {
+                    appliedPromoType = 'none';
+                    msg.textContent = '';
+                } else {
+                    appliedPromoType = 'none';
+                    msg.textContent = 'Invalid promo code.';
+                    msg.style.color = '#dc3545';
+                }
+
+                calculateTotals();
+            };
+
+            window.calculateTotals = function() {
+                const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
                 let discount = 0;
 
-                const selectedOffer = selectedRadio ? selectedRadio.value : 'none';
-
-                if (selectedOffer === 'firstTime') {
+                if (appliedPromoType === 'firstTime') {
                     discount += Math.round(subtotal * 0.1);
-                } else if (selectedOffer === 'bulkDiscount' && cart.length >= 2) {
+                } else if (appliedPromoType === 'bulkDiscount' && cart.length >= 2) {
                     discount += Math.round(subtotal * 0.05);
-                } else if (selectedOffer === 'freeVet') {
+                } else if (appliedPromoType === 'freeVet') {
                     discount += 500;
+                } else if (appliedPromoType === 'save20') {
+                    discount += 2000;
                 }
-                // No discount for 'none' option
 
                 const shipping = subtotal > 5000 ? 0 : 500;
                 const tax = Math.round((subtotal - discount) * 0.18);
@@ -586,6 +633,12 @@ try {
             };
 
             window.processPayment = function() {
+                if (currentUserId === 'guest') {
+                    alert('Please log in or sign up to complete your purchase.');
+                    window.location.href = 'auth/login.php?redirect=cart.php';
+                    return;
+                }
+
                 const fullName = document.getElementById('fullName').value;
                 const phone = document.getElementById('phone').value;
                 const address = document.getElementById('address').value;
@@ -611,16 +664,17 @@ try {
                 // Calculate final total
                 const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
                 let discount = 0;
-                const selectedOffer = document.querySelector('input[name="specialOffer"]:checked');
-                if (selectedOffer) {
-                    if (selectedOffer.value === 'firstTime') {
-                        discount += Math.round(subtotal * 0.1);
-                    } else if (selectedOffer.value === 'bulkDiscount' && cart.length >= 2) {
-                        discount += Math.round(subtotal * 0.05);
-                    } else if (selectedOffer.value === 'freeVet') {
-                        discount += 500;
-                    }
+
+                if (appliedPromoType === 'firstTime') {
+                    discount += Math.round(subtotal * 0.1);
+                } else if (appliedPromoType === 'bulkDiscount' && cart.length >= 2) {
+                    discount += Math.round(subtotal * 0.05);
+                } else if (appliedPromoType === 'freeVet') {
+                    discount += 500;
+                } else if (appliedPromoType === 'save20') {
+                    discount += 2000;
                 }
+
                 const shipping = subtotal > 5000 ? 0 : 500;
                 const tax = Math.round((subtotal - discount) * 0.18);
                 const total = subtotal - discount + shipping + tax;
@@ -665,7 +719,7 @@ try {
                 const offerInput = document.createElement('input');
                 offerInput.type = 'hidden';
                 offerInput.name = 'special_offer';
-                offerInput.value = selectedOffer ? selectedOffer.value : 'none';
+                offerInput.value = appliedPromoType;
                 form.appendChild(offerInput);
 
                 document.body.appendChild(form);
@@ -682,7 +736,7 @@ try {
 
             renderCart();
             updateCartCount();
-            applyOffers();
+            applyPromoCode();
         });
     </script>
 </body>

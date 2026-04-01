@@ -50,8 +50,17 @@ try {
 
     <div class="ps-wrap">
         <div class="ps-section ps-featured" style="padding-top: 40px; min-height: 60vh;">
-            <div class="ps-section-title"><?php echo $pageTitle; ?></div>
-            <div class="ps-section-sub">Find your perfect companion. All pets are vaccinated, dewormed & vet-checked.</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <div class="ps-section-title"><?php echo $pageTitle; ?></div>
+                    <div class="ps-section-sub" style="margin-bottom: 0;">Find your perfect companion. All pets are vaccinated, dewormed & vet-checked.</div>
+                </div>
+                <select id="price-sort" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #d4b87a; background-color: #fff; font-family: 'Nunito', sans-serif; font-size: 14px; color: #2c1a0e; cursor: pointer; outline: none; font-weight: 600;">
+                    <option value="default">Sort by: Default</option>
+                    <option value="low-high">Price: Low to High</option>
+                    <option value="high-low">Price: High to Low</option>
+                </select>
+            </div>
 
             <div class="ps-pets-grid" id="pets-grid">
                 <!-- DOGS -->
@@ -526,6 +535,18 @@ try {
                     </div>
                 </div>
             </div>
+
+            <!-- Mix (shuffle) the pets randomly on every page load -->
+            <script>
+                (function() {
+                    const grid = document.getElementById('pets-grid');
+                    if (grid) {
+                        for (let i = grid.children.length; i > 0; i--) {
+                            grid.appendChild(grid.children[Math.random() * i | 0]);
+                        }
+                    }
+                })();
+            </script>
         </div>
     </div>
 
@@ -552,6 +573,31 @@ try {
                 });
             }
 
+            // PRICE SORTING DROPDOWN
+            const priceSortSelect = document.getElementById('price-sort');
+            const petsGrid = document.getElementById('pets-grid');
+
+            if (priceSortSelect && petsGrid) {
+                priceSortSelect.addEventListener('change', function() {
+                    const cards = Array.from(petsGrid.children);
+                    
+                    if (this.value === 'low-high' || this.value === 'high-low') {
+                        cards.sort((a, b) => {
+                            const priceA = parseInt(a.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+                            const priceB = parseInt(b.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+                            
+                            if (this.value === 'low-high') {
+                                return priceA - priceB;
+                            } else {
+                                return priceB - priceA;
+                            }
+                        });
+                        
+                        cards.forEach(card => petsGrid.appendChild(card));
+                    }
+                });
+            }
+
             // NAVIGATE TO DETAILS PAGE ON CARD CLICK
             petCards.forEach(card => {
                 card.style.cursor = 'pointer';
@@ -563,9 +609,37 @@ try {
                 });
             });
 
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+            const wishKey = 'pawsWishlist_' + currentUserId;
+
+            // TRANSFER GUEST DATA TO LOGGED-IN USER
+            if (currentUserId !== 'guest') {
+                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+                if (guestCart && guestCart.length > 0) {
+                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                    guestCart.forEach(guestItem => {
+                        let existing = userCart.find(item => item.id === guestItem.id);
+                        if (existing) existing.quantity += guestItem.quantity;
+                        else userCart.push(guestItem);
+                    });
+                    localStorage.setItem(cartKey, JSON.stringify(userCart));
+                    localStorage.removeItem('pawsCart_guest');
+                }
+                let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
+                if (guestWish && guestWish.length > 0) {
+                    let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
+                    guestWish.forEach(guestItem => {
+                        if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
+                    });
+                    localStorage.setItem(wishKey, JSON.stringify(userWish));
+                    localStorage.removeItem('pawsWishlist_guest');
+                }
+            }
+
             // CART & WISHLIST LOGIC
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
-            let wishlist = JSON.parse(localStorage.getItem('pawsWishlist')) || [];
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+            let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
@@ -608,7 +682,7 @@ try {
                             quantity: 1
                         });
                     }
-                    localStorage.setItem('pawsCart', JSON.stringify(cart));
+                    localStorage.setItem(cartKey, JSON.stringify(cart));
                     updateCartCount();
                     return petName;
                 }
@@ -640,7 +714,7 @@ try {
                         });
                         alert(petName + " added to wishlist!");
                     }
-                    localStorage.setItem('pawsWishlist', JSON.stringify(wishlist));
+                    localStorage.setItem(wishKey, JSON.stringify(wishlist));
                     updateWishlistIcons();
                 });
             });

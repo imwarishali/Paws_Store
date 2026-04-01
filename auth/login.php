@@ -11,6 +11,8 @@ if (isset($_SESSION["user"])) {
 }
 
 $error = "";
+$redirect = $_GET['redirect'] ?? $_POST['redirect'] ?? '';
+$registered = $_GET['registered'] ?? $_POST['registered'] ?? '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -36,10 +38,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       if ($user && password_verify($pass, $user["password"])) {
         $_SESSION["user"] = $user;
 
+        $target_url = '../index.php';
         if ($user["is_admin"] == 1) {
-          header("Location: ../admin_orders.php");
+          $target_url = '../admin_orders.php';
         } else {
-          header("Location: ../index.php");
+          if ($redirect === 'cart.php') {
+            $target_url = '../cart.php';
+          }
+        }
+
+        if ($registered == '1') {
+          echo "<script>window.location.replace('" . $target_url . "');</script>";
+        } else {
+          echo "<script>
+            localStorage.removeItem('pawsCart_guest');
+            localStorage.removeItem('pawsWishlist_guest');
+            window.location.replace('" . $target_url . "');
+          </script>";
         }
         exit();
       } else {
@@ -247,6 +262,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <?php endif; ?>
 
       <form method="POST">
+        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
+        <input type="hidden" name="registered" value="<?php echo htmlspecialchars($registered); ?>">
         <div class="form-group">
           <label for="username">Username or Email</label>
           <input type="text" id="username" name="username" placeholder="Enter username or email" required>
@@ -264,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <button type="submit" class="btn">Sign In</button>
       </form>
 
-      <p class="register-link">Don't have an account? <a href="register.php">Register here</a></p>
+      <p class="register-link">Don't have an account? <a href="register.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>">Register here</a></p>
     </div>
   </div>
 

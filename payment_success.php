@@ -238,7 +238,9 @@ if (!$order) {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Clear cart from local storage after successful payment
-            localStorage.removeItem('pawsCart');
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+            localStorage.removeItem(cartKey);
             let cart = [];
 
             function updateCartCount() {

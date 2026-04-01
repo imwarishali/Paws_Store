@@ -103,8 +103,37 @@ session_start();
         document.addEventListener('DOMContentLoaded', function() {
             const wishlistGrid = document.getElementById('wishlist-grid');
             const emptyMsg = document.getElementById('empty-wishlist-msg');
-            let wishlist = JSON.parse(localStorage.getItem('pawsWishlist')) || [];
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+            const wishKey = 'pawsWishlist_' + currentUserId;
+
+            // TRANSFER GUEST DATA TO LOGGED-IN USER
+            if (currentUserId !== 'guest') {
+                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+                if (guestCart && guestCart.length > 0) {
+                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                    guestCart.forEach(guestItem => {
+                        let existing = userCart.find(item => item.id === guestItem.id);
+                        if (existing) existing.quantity += guestItem.quantity;
+                        else userCart.push(guestItem);
+                    });
+                    localStorage.setItem(cartKey, JSON.stringify(userCart));
+                    localStorage.removeItem('pawsCart_guest');
+                }
+                let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
+                if (guestWish && guestWish.length > 0) {
+                    let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
+                    guestWish.forEach(guestItem => {
+                        if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
+                    });
+                    localStorage.setItem(wishKey, JSON.stringify(userWish));
+                    localStorage.removeItem('pawsWishlist_guest');
+                }
+            }
+
+            let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
@@ -147,7 +176,7 @@ session_start();
                     btn.addEventListener('click', function() {
                         const idx = this.getAttribute('data-index');
                         const removedPet = wishlist.splice(idx, 1)[0];
-                        localStorage.setItem('pawsWishlist', JSON.stringify(wishlist));
+                        localStorage.setItem(wishKey, JSON.stringify(wishlist));
                         renderWishlist();
                         alert(removedPet.name + " removed from wishlist!");
                     });
@@ -172,7 +201,7 @@ session_start();
                             });
                         }
 
-                        localStorage.setItem('pawsCart', JSON.stringify(cart));
+                        localStorage.setItem(cartKey, JSON.stringify(cart));
                         updateCartCount();
                         alert(pet.name + " added to cart!");
                     });

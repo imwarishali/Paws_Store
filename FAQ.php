@@ -237,7 +237,10 @@ session_start();
             });
 
             // Cart Count Update
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+                const cartKey = 'pawsCart_' + currentUserId;
+
+                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');

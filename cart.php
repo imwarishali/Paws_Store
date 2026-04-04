@@ -528,21 +528,48 @@ if (isset($_SESSION["user"])) {
                 <div class="form-group">
                   <label>State</label>
                   <select id="state">
-                    <option value="">Select State</option>
-                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="">Select State/UT</option>
+                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chandigarh">Chandigarh</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
                     <option value="Delhi">Delhi</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Punjab">Punjab</option>
                     <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Ladakh">Ladakh</option>
+                    <option value="Lakshadweep">Lakshadweep</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Puducherry">Puducherry</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>PIN Code</label>
-                  <input type="text" id="pincode" placeholder="Enter 6-digit PIN code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                  <input type="text" id="pincode" placeholder="Enter 6-digit PIN code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 6) fetchPincodeDetails(this.value);">
                 </div>
               </div>
 
@@ -587,6 +614,37 @@ if (isset($_SESSION["user"])) {
           </div>
         `;
             }
+
+            window.fetchPincodeDetails = function(pincode) {
+                fetch(`https://api.postalpincode.in/pincode/${pincode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+                            const postOffice = data[0].PostOffice[0];
+                            const city = postOffice.District || postOffice.Block || postOffice.Region;
+                            const state = postOffice.State;
+                            
+                            const cityInput = document.getElementById('city');
+                            const stateSelect = document.getElementById('state');
+                            
+                            if (cityInput) cityInput.value = city;
+                            if (stateSelect) {
+                                for (let i = 0; i < stateSelect.options.length; i++) {
+                                    const optionText = stateSelect.options[i].text.toLowerCase();
+                                    const apiState = state.toLowerCase();
+                                    if (optionText === apiState || optionText.includes(apiState) || apiState.includes(optionText)) {
+                                        stateSelect.selectedIndex = i;
+                                        break;
+                                    }
+                                }
+                            }
+                            showToast('Location auto-filled successfully!', '📍');
+                        } else {
+                            showToast('Could not find location for this PIN code.', '⚠️');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching pincode details:', error));
+            };
 
             window.updateQuantity = function(id, newQuantity) {
                 if (newQuantity <= 0) {
@@ -718,8 +776,13 @@ if (isset($_SESSION["user"])) {
                 const state = document.getElementById('state').value;
                 const pincode = document.getElementById('pincode').value;
 
-                if (!fullName || !phone || !address || !city || !state || !pincode) {
+                if (!fullName || !phone || !address || !city || !pincode) {
                     showToast('Please fill in all address fields.', '⚠️');
+                    return;
+                }
+
+                if (!state) {
+                    showToast('Please select a State/UT from the dropdown.', '⚠️');
                     return;
                 }
 

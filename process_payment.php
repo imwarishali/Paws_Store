@@ -113,7 +113,7 @@ try {
         $pet_id = $item['id'];
         $quantity = $item['quantity'] ?? 1;
         $price = $db_prices[$pet_id] ?? 0;
-        
+
         $item_subtotal = $price * $quantity;
         if ($subtotal > 0) {
             $item_proportion = $item_subtotal / $subtotal;
@@ -121,7 +121,7 @@ try {
         } else {
             $item_total = 0;
         }
-        
+
         if ($current_item === $items_count) {
             $item_total = $remaining_total;
         }

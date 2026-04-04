@@ -1718,3 +1718,70 @@ footer {
   transform: translateY(-6px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
+
+/* Splash Screen */
+#splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #faf7f2;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.splash-logo {
+  font-family: "Playfair Display", serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #2c1a0e;
+  margin-bottom: 20px;
+  animation: pulse-logo 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.splash-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e8e0d4;
+  border-top: 4px solid #b5860d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Advanced Filters */
+.ps-filter-select {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #d4b87a;
+  background-color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-size: 14px;
+  color: #2c1a0e;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.ps-filter-select:hover,
+.ps-filter-select:focus {
+  border-color: #b5860d;
+  box-shadow: 0 0 0 2px rgba(181, 134, 13, 0.1);
+}

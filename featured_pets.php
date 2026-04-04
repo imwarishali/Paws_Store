@@ -55,11 +55,33 @@ try {
                     <div class="ps-section-title"><?php echo $pageTitle; ?></div>
                     <div class="ps-section-sub" style="margin-bottom: 0;">Find your perfect companion. All pets are vaccinated, dewormed & vet-checked.</div>
                 </div>
-                <select id="price-sort" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #d4b87a; background-color: #fff; font-family: 'Nunito', sans-serif; font-size: 14px; color: #2c1a0e; cursor: pointer; outline: none; font-weight: 600;">
-                    <option value="default">Sort by: Default</option>
-                    <option value="low-high">Price: Low to High</option>
-                    <option value="high-low">Price: High to Low</option>
-                </select>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="location-filter" class="ps-filter-select">
+                        <option value="all">Location: All</option>
+                        <option value="Ahmedabad">Ahmedabad</option>
+                        <option value="Bengaluru">Bengaluru</option>
+                        <option value="Chandigarh">Chandigarh</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Jaipur">Jaipur</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Lucknow">Lucknow</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Pune">Pune</option>
+                    </select>
+                    <select id="price-filter" class="ps-filter-select">
+                        <option value="all">Price Range: All</option>
+                        <option value="under-10k">Under ₹10,000</option>
+                        <option value="10k-20k">₹10,000 - ₹20,000</option>
+                        <option value="above-20k">Above ₹20,000</option>
+                    </select>
+                    <select id="price-sort" class="ps-filter-select">
+                        <option value="default">Sort by: Default</option>
+                        <option value="low-high">Price: Low to High</option>
+                        <option value="high-low">Price: High to Low</option>
+                    </select>
+                </div>
             </div>
 
             <div class="ps-pets-grid" id="pets-grid">
@@ -565,13 +587,48 @@ try {
             const urlCategory = "<?php echo $category; ?>";
             const petCards = document.querySelectorAll('.ps-pet-card');
 
-            if (urlCategory !== 'all') {
+            function applyFilters() {
+                const locationFilter = document.getElementById('location-filter');
+                const priceFilter = document.getElementById('price-filter');
+                const locationVal = locationFilter ? locationFilter.value : 'all';
+                const priceVal = priceFilter ? priceFilter.value : 'all';
+
                 petCards.forEach(card => {
-                    if (card.getAttribute('data-category') !== urlCategory) {
+                    const cardCategory = card.getAttribute('data-category');
+                    const petLoc = card.querySelector('.ps-pet-loc').textContent;
+                    const petPrice = parseInt(card.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+
+                    let matchCategory = (urlCategory === 'all' || cardCategory === urlCategory);
+                    
+                    let matchLocation = true;
+                    if (locationVal !== 'all') {
+                        matchLocation = petLoc.includes(locationVal);
+                    }
+
+                    let matchPrice = true;
+                    if (priceVal === 'under-10k') {
+                        matchPrice = petPrice < 10000;
+                    } else if (priceVal === '10k-20k') {
+                        matchPrice = petPrice >= 10000 && petPrice <= 20000;
+                    } else if (priceVal === 'above-20k') {
+                        matchPrice = petPrice > 20000;
+                    }
+
+                    if (matchCategory && matchLocation && matchPrice) {
+                        card.style.display = 'block';
+                    } else {
                         card.style.display = 'none';
                     }
                 });
             }
+
+            const locationFilter = document.getElementById('location-filter');
+            const priceFilter = document.getElementById('price-filter');
+            if (locationFilter) locationFilter.addEventListener('change', applyFilters);
+            if (priceFilter) priceFilter.addEventListener('change', applyFilters);
+
+            // Initial filter run
+            applyFilters();
 
             // PRICE SORTING DROPDOWN
             const priceSortSelect = document.getElementById('price-sort');

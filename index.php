@@ -256,11 +256,33 @@ try {
           All pets are vaccinated, dewormed &amp; vet-checked
         </div>
       </div>
-      <select id="price-sort" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #d4b87a; background-color: #fff; font-family: 'Nunito', sans-serif; font-size: 14px; color: #2c1a0e; cursor: pointer; outline: none; font-weight: 600;">
-        <option value="default">Sort by: Default</option>
-        <option value="low-high">Price: Low to High</option>
-        <option value="high-low">Price: High to Low</option>
-      </select>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <select id="location-filter" class="ps-filter-select">
+          <option value="all">Location: All</option>
+          <option value="Ahmedabad">Ahmedabad</option>
+          <option value="Bengaluru">Bengaluru</option>
+          <option value="Chandigarh">Chandigarh</option>
+          <option value="Chennai">Chennai</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Hyderabad">Hyderabad</option>
+          <option value="Jaipur">Jaipur</option>
+          <option value="Kolkata">Kolkata</option>
+          <option value="Lucknow">Lucknow</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Pune">Pune</option>
+        </select>
+        <select id="price-filter" class="ps-filter-select">
+          <option value="all">Price Range: All</option>
+          <option value="under-10k">Under ₹10,000</option>
+          <option value="10k-20k">₹10,000 - ₹20,000</option>
+          <option value="above-20k">Above ₹20,000</option>
+        </select>
+        <select id="price-sort" class="ps-filter-select">
+          <option value="default">Sort by: Default</option>
+          <option value="low-high">Price: Low to High</option>
+          <option value="high-low">Price: High to Low</option>
+        </select>
+      </div>
     </div>
     <div class="ps-pets-grid">
       <div class="ps-pet-card" data-category="dogs" data-pet-id="1">
@@ -1115,14 +1137,51 @@ try {
         });
       });
 
-      // CATEGORY FILTER
-      function filterPets(category) {
+      // UNIFIED FILTER SYSTEM
+      let currentCategory = 'all';
+      let currentSearchTerm = '';
+
+      const locationFilter = document.getElementById('location-filter');
+      const priceFilter = document.getElementById('price-filter');
+
+      function applyFilters() {
         let visibleCount = 0;
         const noPetsMsg = document.getElementById('no-pets-msg');
+        const locationVal = locationFilter ? locationFilter.value : 'all';
+        const priceVal = priceFilter ? priceFilter.value : 'all';
 
         petCards.forEach(card => {
           const cardCategory = card.getAttribute('data-category');
-          if (category === 'all' || cardCategory === category) {
+          const petName = card.querySelector('.ps-pet-name').textContent.toLowerCase();
+          const petLoc = card.querySelector('.ps-pet-loc').textContent;
+          const petPrice = parseInt(card.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
+
+          // Category match
+          let matchCategory = (currentCategory === 'all' || cardCategory === currentCategory);
+          
+          // Search match
+          let matchSearch = true;
+          if (currentSearchTerm !== '') {
+            matchSearch = petName.includes(currentSearchTerm) || cardCategory.includes(currentSearchTerm);
+          }
+
+          // Location match
+          let matchLocation = true;
+          if (locationVal !== 'all') {
+            matchLocation = petLoc.includes(locationVal);
+          }
+
+          // Price match
+          let matchPrice = true;
+          if (priceVal === 'under-10k') {
+            matchPrice = petPrice < 10000;
+          } else if (priceVal === '10k-20k') {
+            matchPrice = petPrice >= 10000 && petPrice <= 20000;
+          } else if (priceVal === 'above-20k') {
+            matchPrice = petPrice > 20000;
+          }
+
+          if (matchCategory && matchSearch && matchLocation && matchPrice) {
             card.style.display = 'block';
             visibleCount++;
           } else {
@@ -1135,51 +1194,22 @@ try {
         }
       }
 
+      // Filter Event Listeners
+      if (locationFilter) locationFilter.addEventListener('change', applyFilters);
+      if (priceFilter) priceFilter.addEventListener('change', applyFilters);
+
       categoryCards.forEach(card => {
         card.addEventListener('click', function() {
-          const category = this.getAttribute('data-category');
-
-          filterPets(category);
+          currentCategory = this.getAttribute('data-category');
+          currentSearchTerm = '';
+          searchInput.value = ''; // Clear search when clicking category
+          
+          applyFilters();
 
           categoryCards.forEach(c => c.classList.remove('active'));
           this.classList.add('active');
         });
       });
-
-      // SEARCH FUNCTIONALITY
-      function searchPets(query) {
-        const searchTerm = query.toLowerCase().trim();
-        const noPetsMsg = document.getElementById('no-pets-msg');
-        let visibleCount = 0;
-
-        if (searchTerm === '') {
-          // If search is empty, show all pets
-          filterPets('all');
-          categoryCards.forEach(c => c.classList.remove('active'));
-          return;
-        }
-
-        // Filter pets based on search term
-        petCards.forEach(card => {
-          const petName = card.querySelector('.ps-pet-name').textContent.toLowerCase();
-          const petCategory = card.getAttribute('data-category').toLowerCase();
-
-          // Check if search term matches pet name or category
-          if (petName.includes(searchTerm) || petCategory.includes(searchTerm)) {
-            card.style.display = 'block';
-            visibleCount++;
-          } else {
-            card.style.display = 'none';
-          }
-        });
-
-        if (noPetsMsg) {
-          noPetsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
-        }
-
-        // Remove active state from category cards
-        categoryCards.forEach(c => c.classList.remove('active'));
-      }
 
       // Search event listeners
       let hasScrolledForSearch = false;
@@ -1192,12 +1222,19 @@ try {
         } else if (this.value.trim() === '') {
           hasScrolledForSearch = false;
         }
-        searchPets(this.value);
+        
+        currentSearchTerm = this.value.toLowerCase().trim();
+        if (currentSearchTerm !== '') {
+          currentCategory = 'all'; // Reset category when searching
+          categoryCards.forEach(c => c.classList.remove('active'));
+        }
+        applyFilters();
       });
 
       searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-          searchPets(this.value);
+          currentSearchTerm = this.value.toLowerCase().trim();
+          applyFilters();
         }
       });
 
@@ -1205,12 +1242,19 @@ try {
         document.getElementById('pets').scrollIntoView({
           behavior: 'smooth'
         });
-        searchPets(searchInput.value);
+        currentSearchTerm = searchInput.value.toLowerCase().trim();
+        applyFilters();
       });
 
       // SHOW ALL PETS
       showAllButton.addEventListener('click', function() {
-        filterPets('all');
+        currentCategory = 'all';
+        currentSearchTerm = '';
+        searchInput.value = '';
+        if (locationFilter) locationFilter.value = 'all';
+        if (priceFilter) priceFilter.value = 'all';
+        
+        applyFilters();
         categoryCards.forEach(c => c.classList.remove('active'));
       });
 

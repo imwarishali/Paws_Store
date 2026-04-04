@@ -32,21 +32,21 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // --- Orders Actions ---
         if (isset($_POST['update_status'])) {
-            $order_num = $_POST['order_number'];
+            $order_id = $_POST['order_id'];
             $new_status = $_POST['new_status'];
-            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE order_number = ?");
-            $update_stmt->execute([$new_status, $order_num]);
-            $success_message = "Order #{$order_num} status updated to '{$new_status}' successfully!";
+            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
+            $update_stmt->execute([$new_status, $order_id]);
+            $success_message = "Pet order status updated to '{$new_status}' successfully!";
         } elseif (isset($_POST['confirm_order'])) {
-            $order_num = $_POST['order_number'];
-            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE order_number = ?");
-            $update_stmt->execute([$order_num]);
-            $success_message = "Order #{$order_num} status updated to 'Confirmed' successfully!";
+            $order_id = $_POST['order_id'];
+            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE id = ?");
+            $update_stmt->execute([$order_id]);
+            $success_message = "Pet order status updated to 'Confirmed' successfully!";
         } elseif (isset($_POST['delete_order'])) {
-            $order_num = $_POST['order_number'];
-            $pdo->prepare("DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE order_number = ?)")->execute([$order_num]);
-            $pdo->prepare("DELETE FROM orders WHERE order_number = ?")->execute([$order_num]);
-            $success_message = "Order #{$order_num} has been deleted successfully!";
+            $order_id = $_POST['order_id'];
+            $pdo->prepare("DELETE FROM payments WHERE order_id = ?")->execute([$order_id]);
+            $pdo->prepare("DELETE FROM orders WHERE id = ?")->execute([$order_id]);
+            $success_message = "Pet order item has been deleted successfully!";
         }
         // --- Pets Actions ---
         elseif (isset($_POST['edit_pet'])) {
@@ -185,13 +185,15 @@ try {
         $recent_orders = $pdo->query("SELECT o.order_number, o.total_amount, o.order_status, o.created_at, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
     } elseif ($page === 'orders') {
         $sql = "SELECT 
+                    o.id AS order_id,
                     o.order_number, 
                     o.user_id, 
                     o.created_at, 
                     o.order_status, 
-                    SUM(o.total_amount) as total_amount, 
-                    GROUP_CONCAT(CONCAT(p.name, ' (x', o.quantity, ')') SEPARATOR '<br>') AS pet_names,
-                    MAX(o.payment_screenshot) as payment_screenshot
+                    o.total_amount, 
+                    o.quantity,
+                    p.name AS pet_name,
+                    o.payment_screenshot
                 FROM orders o 
                 LEFT JOIN pets p ON o.pet_id = p.id";
 
@@ -199,7 +201,8 @@ try {
         $params = [];
 
         if (!empty($search_query)) {
-            $where_clauses[] = "(o.order_number LIKE ? OR o.user_id LIKE ?)";
+            $where_clauses[] = "(o.order_number LIKE ? OR o.user_id LIKE ? OR p.name LIKE ?)";
+            $params[] = '%' . $search_query . '%';
             $params[] = '%' . $search_query . '%';
             $params[] = '%' . $search_query . '%';
         }
@@ -211,7 +214,7 @@ try {
             $sql .= " WHERE " . implode(' AND ', $where_clauses);
         }
 
-        $sql .= " GROUP BY o.order_number, o.user_id, o.created_at, o.order_status ORDER BY o.created_at DESC";
+        $sql .= " ORDER BY o.created_at DESC, o.id DESC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $all_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -221,12 +224,14 @@ try {
             header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename=orders_export_' . date('Y-m-d') . '.csv');
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Order ID', 'User ID', 'Pets Ordered', 'Date Placed', 'Amount (INR)', 'Status']);
+            fputcsv($output, ['Row ID', 'Order Number', 'User ID', 'Pet Ordered', 'Qty', 'Date Placed', 'Amount (INR)', 'Status']);
             foreach ($all_orders as $order) {
                 fputcsv($output, [
+                    $order['order_id'],
                     $order['order_number'],
                     $order['user_id'],
-                    $order['pet_names'] ? $order['pet_names'] : 'N/A',
+                    $order['pet_name'] ?? 'N/A',
+                    $order['quantity'],
                     date('d M Y H:i:s', strtotime($order['created_at'])),
                     $order['total_amount'],
                     $order['order_status']
@@ -241,7 +246,7 @@ try {
             $stmt->execute([$_GET['edit_id']]);
             $edit_pet = $stmt->fetch(PDO::FETCH_ASSOC);
         }
-        
+
         $sql = "SELECT * FROM pets";
         $count_sql = "SELECT COUNT(*) FROM pets";
         $params = [];
@@ -896,31 +901,38 @@ try {
                             <tr>
                                 <th>Order ID</th>
                                 <th>User ID</th>
-                                <th>Pets Ordered</th>
+                                <th>Pet Ordered</th>
+                                <th>Qty</th>
                                 <th>Date Placed</th>
                                 <th>Amount</th>
                                 <th>Current Status</th>
-                                <th style="width: 320px;">Action</th>
+                                <th style="min-width: 380px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($all_orders)): ?>
                                 <tr>
-                                    <td colspan="7" style="text-align: center;">No orders found.</td>
+                                    <td colspan="8" style="text-align: center;">No orders found.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($all_orders as $order): ?>
-                                    <tr>
+                                    <?php
+                                    $row_style = '';
+                                    if ($order['order_status'] === 'Cancelled') $row_style = 'background-color: #fff0f0;';
+                                    elseif ($order['order_status'] === 'Delivered') $row_style = 'background-color: #f0fdf4;';
+                                    ?>
+                                    <tr style="<?php echo $row_style; ?>">
                                         <td><strong><?php echo htmlspecialchars($order['order_number']); ?></strong></td>
                                         <td><?php echo htmlspecialchars($order['user_id']); ?></td>
-                                        <td style="font-size: 14px;"><?php echo $order['pet_names'] ? strip_tags($order['pet_names'], '<br>') : 'N/A'; ?></td>
+                                        <td><?php echo htmlspecialchars($order['pet_name'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($order['quantity'] ?? 1); ?></td>
                                         <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
                                         <td>₹<?php echo number_format($order['total_amount']); ?></td>
                                         <td><span class="status-processing"><?php echo htmlspecialchars($order['order_status']); ?></span></td>
                                         <td>
-                                            <div style="display: flex; gap: 8px; align-items: center;">
-                                                <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0;">
-                                                    <input type="hidden" name="order_number" value="<?php echo $order['order_number']; ?>">
+                                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                                <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0; flex-wrap: wrap;">
+                                                    <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
                                                     <select name="new_status" class="status-select" style="padding: 6px;">
                                                         <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
                                                         <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
@@ -932,11 +944,11 @@ try {
                                                     <?php if ($order['order_status'] === 'Processing'): ?>
                                                         <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
                                                     <?php endif; ?>
-                                                    <button type="submit" name="delete_order" class="delete-btn" onclick="return confirm('Are you sure you want to permanently delete this order? This action cannot be undone!');" style="padding: 10px 16px;">Delete</button>
+                                                    <button type="submit" name="delete_order" class="delete-btn" onclick="return confirm('Are you sure you want to permanently delete this order item? This action cannot be undone!');" style="padding: 10px 16px;">Delete</button>
                                                 </form>
-                                                <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn">Invoice</a>
+                                                <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn" style="padding: 10px 16px;">Invoice</a>
                                                 <?php if (!empty($order['payment_screenshot'])): ?>
-                                                    <a href="<?php echo htmlspecialchars($order['payment_screenshot']); ?>" target="_blank" class="screenshot-btn">Screenshot</a>
+                                                    <a href="<?php echo htmlspecialchars($order['payment_screenshot']); ?>" target="_blank" class="screenshot-btn" style="padding: 10px 16px;">📸 Screenshot</a>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
@@ -1041,11 +1053,11 @@ try {
                             <?php if ($current_page > 1): ?>
                                 <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $current_page - 1; ?>" class="page-link">&laquo; Prev</a>
                             <?php endif; ?>
-                            
+
                             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                                 <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $i; ?>" class="page-link <?php echo $i === $current_page ? 'active' : ''; ?>"><?php echo $i; ?></a>
                             <?php endfor; ?>
-                            
+
                             <?php if ($current_page < $total_pages): ?>
                                 <a href="admin.php?page=pets&pet_category_filter=<?php echo urlencode($pet_category_filter); ?>&p=<?php echo $current_page + 1; ?>" class="page-link">Next &raquo;</a>
                             <?php endif; ?>
@@ -1239,7 +1251,36 @@ try {
                 button.textContent = '👁️';
             }
         }
+
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = imageSrc;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(event) {
+            if (event) event.stopPropagation();
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            document.getElementById('modalImage').src = '';
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
     </script>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal(event)">×</button>
+            <img id="modalImage" src="" alt="Payment Screenshot">
+        </div>
+    </div>
 </body>
 
 </html>

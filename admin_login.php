@@ -171,9 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p style="color: #666;">Paws Store Management</p>
         </div>
 
-        <?php if ($error_message): ?>
-            <div class="msg-error"><?php echo htmlspecialchars($error_message); ?></div>
-        <?php endif; ?>
 
         <form method="POST" action="admin_login.php">
             <div class="ps-form-group">
@@ -192,6 +189,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // TOAST NOTIFICATION FUNCTION
+        function showToast(message, icon = '✅') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        <?php if ($error_message): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast("<?php echo addslashes($error_message); ?>", "⚠️");
+            });
+        <?php endif; ?>
+
         function togglePasswordVisibility(inputId, button) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {

@@ -176,9 +176,20 @@ try {
         }
 
         .no-orders a {
-            color: #b5860d;
+            display: inline-block;
+            background: #b5860d;
+            color: #fff;
+            padding: 12px 24px;
             text-decoration: none;
+            border-radius: 24px;
             font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .no-orders a:hover {
+            background: #9a7210;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.2);
         }
 
         .btn-cancel-order {
@@ -285,22 +296,12 @@ try {
                 <p>Track your past orders and see their current status.</p>
             </div>
 
-            <?php if (isset($success_message)): ?>
-                <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
-                    <?php echo htmlspecialchars($success_message); ?>
-                </div>
-            <?php endif; ?>
-            <?php if (isset($error_message)): ?>
-                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
-                    <?php echo htmlspecialchars($error_message); ?>
-                </div>
-            <?php endif; ?>
 
             <?php if (empty($orders)): ?>
                 <div class="no-orders">
                     <h2>No orders yet</h2>
                     <p>You haven’t placed any orders yet. Browse pets and place your first order!</p>
-                    <p><a href="index.php">Browse Pets</a></p>
+                    <a href="index.php" style="margin-top: 10px;">Browse Pets</a>
                 </div>
             <?php else: ?>
                 <?php foreach ($orders as $order): ?>
@@ -324,7 +325,7 @@ try {
                             <div class="detail-row">
                                 <strong>Pets Ordered:</strong>
                                 <div style="text-align: right;">
-                                    <?php foreach($order['pets'] as $p): ?>
+                                    <?php foreach ($order['pets'] as $p): ?>
                                         <div><?php echo htmlspecialchars($p['name'] ?? 'N/A'); ?> (x<?php echo htmlspecialchars($p['quantity']); ?>)</div>
                                     <?php endforeach; ?>
                                 </div>
@@ -360,12 +361,12 @@ try {
 
                         <div class="order-actions" style="gap: 10px;">
                             <?php if (!in_array($order['order_status'], ['Confirmed', 'Shipped', 'Delivered', 'Cancelled'])): ?>
-                                <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');" style="margin: 0;">
+                                <form method="POST" style="margin: 0;">
                                     <input type="hidden" name="cancel_order_number" value="<?php echo $order['order_number']; ?>">
-                                    <button type="submit" class="btn-cancel-order">Cancel Order</button>
+                                    <button type="submit" class="btn-cancel-order" onclick="if(this.innerText === 'Cancel Order') { this.innerText = 'Confirm Cancel'; this.style.backgroundColor = '#852029'; setTimeout(() => { this.innerText = 'Cancel Order'; this.style.backgroundColor = ''; }, 3000); return false; }">Cancel Order</button>
                                 </form>
                             <?php endif; ?>
-                            <?php foreach($order['pets'] as $p): ?>
+                            <?php foreach ($order['pets'] as $p): ?>
                                 <button type="button" class="btn-reorder" onclick="reorderPet('<?php echo $p['pet_id']; ?>', '<?php echo addslashes(htmlspecialchars($p['name'] ?? 'Pet')); ?>', <?php echo (float)($p['price'] ?? 0); ?>, '<?php echo addslashes(htmlspecialchars($p['image'] ?? '')); ?>', <?php echo (int)$p['quantity']; ?>)">Reorder <?php echo htmlspecialchars($p['name'] ?? 'Pet'); ?></button>
                             <?php endforeach; ?>
                             <?php if ($order['order_status'] !== 'Cancelled'): ?>
@@ -381,8 +382,30 @@ try {
     </div>
 
     <script>
+        // TOAST NOTIFICATION FUNCTION
+        function showToast(message, icon = '✅') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
         function reorderPet(id, name, price, image, quantity) {
-            let cart = JSON.parse(localStorage.getItem('pawsCart')) || [];
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
             const existingPet = cart.find(item => item.id == id);
 
             if (existingPet) {
@@ -398,11 +421,20 @@ try {
             }
 
             localStorage.setItem(cartKey, JSON.stringify(cart));
-            alert(name + " added to cart!");
-            window.location.href = 'cart.php';
+            showToast(name + " added to cart!", '🛒');
+            setTimeout(() => {
+                window.location.href = 'cart.php';
+            }, 1200);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            <?php if (isset($success_message)): ?>
+                showToast("<?php echo addslashes($success_message); ?>", "🚫");
+            <?php endif; ?>
+            <?php if (isset($error_message)): ?>
+                showToast("<?php echo addslashes($error_message); ?>", "⚠️");
+            <?php endif; ?>
+
             const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
             const cartKey = 'pawsCart_' + currentUserId;
 

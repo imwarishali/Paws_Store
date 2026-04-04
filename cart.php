@@ -319,11 +319,28 @@ if (isset($_SESSION["user"])) {
             color: #2c1a0e;
             margin-bottom: 20px;
         }
+        
+        .empty-cart-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
 
         .empty-cart a {
-            color: #b5860d;
+            display: inline-block;
+            background: #b5860d;
+            color: #fff;
+            padding: 12px 24px;
             text-decoration: none;
-            font-weight: 600;
+            border-radius: 24px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .empty-cart a:hover {
+            background: #9a7210;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.2);
         }
 
         @media (max-width: 768px) {
@@ -366,6 +383,31 @@ if (isset($_SESSION["user"])) {
         </div>
     </div>
 
+    <!-- Mobile App-like Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+        <a href="index.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="index.php#categories" class="mobile-nav-item">
+            <span class="mobile-nav-icon">🔍</span>
+            <span>Shop</span>
+        </a>
+        <a href="wishlist.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'wishlist.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🤍</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="cart.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'cart.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🛒</span>
+            <span>Cart</span>
+            <span id="mobile-cart-count" class="mobile-cart-badge" style="display: none;">0</span>
+        </a>
+        <a href="profile.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const cartContent = document.getElementById('cart-content');
@@ -397,10 +439,31 @@ if (isset($_SESSION["user"])) {
 
             const isFirstTime = <?php echo $isFirstTime ? 'true' : 'false'; ?>;
 
+            // TOAST NOTIFICATION FUNCTION
+            function showToast(message, icon = '✅') {
+                let container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg';
+                toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+
             function renderCart() {
                 if (cart.length === 0) {
                     cartContent.innerHTML = `
             <div class="empty-cart">
+              <div class="empty-cart-icon">🛒</div>
               <h2>Your cart is empty</h2>
               <p>Add some pets to get started!</p>
               <a href="index.php">Browse Pets</a>
@@ -487,7 +550,7 @@ if (isset($_SESSION["user"])) {
                 <h3>Promo Code</h3>
                 <div style="display: flex; gap: 10px;">
                   <input type="text" id="promoCodeInput" placeholder="Enter promo code" value="${appliedPromoCode}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif;">
-                  <button type="button" onclick="applyPromoCode()" style="padding: 10px 20px; background: #2c1a0e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Apply</button>
+                <button type="button" onclick="applyPromoCode(true)" style="padding: 10px 20px; background: #2c1a0e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Apply</button>
                 </div>
                 <div style="margin-top: 8px; font-size: 13px; color: #666;">Try codes: <strong>FIRST10</strong>, <strong>BULK5</strong>, <strong>VET500</strong>, <strong>SAVE20</strong></div>
                 <div id="promoMessage" style="margin-top: 10px; font-size: 14px; font-weight: 600;"></div>
@@ -536,22 +599,29 @@ if (isset($_SESSION["user"])) {
                     item.quantity = newQuantity;
                     localStorage.setItem(cartKey, JSON.stringify(cart));
                     renderCart();
-                    applyPromoCode();
+                    applyPromoCode(false);
                     updateCartCount();
                 }
             };
 
             window.removeItem = function(id) {
+                const itemToRemove = cart.find(item => item.id == id);
+                if (itemToRemove) {
+                    const pet = petData[itemToRemove.id];
+                    showToast((pet ? pet.name : "Item") + " removed from cart!", "🗑️");
+                }
                 cart = cart.filter(item => item.id != id);
                 localStorage.setItem(cartKey, JSON.stringify(cart));
                 renderCart();
-                applyPromoCode();
+                applyPromoCode(false);
                 updateCartCount();
             };
 
-            window.applyPromoCode = function() {
+            window.applyPromoCode = function(isManual = false) {
                 if (cart.length === 0) {
-                    alert('Please add items to your cart before entering a promo code.');
+                    if (isManual) {
+                        showToast('Please add items to your cart before entering a promo code.', '⚠️');
+                    }
                     appliedPromoType = 'none';
                     return;
                 }
@@ -634,8 +704,10 @@ if (isset($_SESSION["user"])) {
 
             window.processPayment = function() {
                 if (currentUserId === 'guest') {
-                    alert('Please log in or sign up to complete your purchase.');
-                    window.location.href = 'auth/login.php?redirect=cart.php';
+                    showToast('Please log in or sign up to complete your purchase.', '⚠️');
+                    setTimeout(() => {
+                        window.location.href = 'auth/login.php?redirect=cart.php';
+                    }, 1500);
                     return;
                 }
 
@@ -647,17 +719,17 @@ if (isset($_SESSION["user"])) {
                 const pincode = document.getElementById('pincode').value;
 
                 if (!fullName || !phone || !address || !city || !state || !pincode) {
-                    alert('Please fill in all address fields');
+                    showToast('Please fill in all address fields.', '⚠️');
                     return;
                 }
 
                 if (!/^\d{10}$/.test(phone)) {
-                    alert('Please enter a valid 10-digit phone number');
+                    showToast('Please enter a valid 10-digit phone number.', '⚠️');
                     return;
                 }
 
                 if (!/^\d{6}$/.test(pincode)) {
-                    alert('Please enter a valid 6-digit PIN code');
+                    showToast('Please enter a valid 6-digit PIN code.', '⚠️');
                     return;
                 }
 
@@ -729,9 +801,17 @@ if (isset($_SESSION["user"])) {
             // Function to update cart count
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
+                const mobileCartCount = document.getElementById('mobile-cart-count');
                 const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                cartCountElement.textContent = totalItems;
-                cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                
+                if (cartCountElement) {
+                    cartCountElement.textContent = totalItems;
+                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
+                if (mobileCartCount) {
+                    mobileCartCount.textContent = totalItems;
+                    mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
             }
 
             renderCart();

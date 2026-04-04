@@ -414,21 +414,41 @@ try {
             }
         });
 
+        // TOAST NOTIFICATION FUNCTION
+        function showToast(message, icon = '✅') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
         document.getElementById('payment-form').addEventListener('submit', function(e) {
             const txnId = document.getElementById('transaction_id').value.trim();
             if (!/^[Tt]/.test(txnId)) {
                 e.preventDefault();
-                alert('Please enter a valid Transaction ID starting with the letter "T".');
+                showToast('Please enter a valid Transaction ID starting with the letter "T".', '⚠️');
             }
         });
 
         renderOrderItems();
 
         // Update Cart Count
-            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
+        const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+        const cartKey = 'pawsCart_' + currentUserId;
 
-            let localCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+        let localCart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
         function updateCartCount() {
             const cartCountElement = document.getElementById('cart-count');

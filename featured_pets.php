@@ -641,6 +641,26 @@ try {
             let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
             let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
+            // TOAST NOTIFICATION FUNCTION
+            function showToast(message, icon = '✅') {
+                let container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg';
+                toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
                 const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -689,7 +709,17 @@ try {
 
                 button.addEventListener('click', function() {
                     const petName = addToCart(this.closest('.ps-pet-card'));
-                    alert(petName + " added to cart!");
+                    
+                    this.textContent = 'Added! ✓';
+                    this.classList.add('added-to-cart');
+                    
+                    clearTimeout(this.addedTimeout);
+                    this.addedTimeout = setTimeout(() => {
+                        this.textContent = 'Add to Cart';
+                        this.classList.remove('added-to-cart');
+                    }, 2000);
+                        
+                        showToast(petName + " added to cart!", '🛒');
                 });
             });
 
@@ -704,7 +734,7 @@ try {
                     const existingIndex = wishlist.findIndex(item => item.id === petId);
                     if (existingIndex > -1) {
                         wishlist.splice(existingIndex, 1);
-                        alert(petName + " removed from wishlist!");
+                            showToast(petName + " removed from wishlist!", '🤍');
                     } else {
                         wishlist.push({
                             id: petId,
@@ -712,10 +742,13 @@ try {
                             price: parseInt(petPrice.replace(/[^0-9]/g, '')), // Parse the string to a raw number
                             image: petImage
                         });
-                        alert(petName + " added to wishlist!");
+                            showToast(petName + " added to wishlist!", '❤️');
                     }
                     localStorage.setItem(wishKey, JSON.stringify(wishlist));
                     updateWishlistIcons();
+                    
+                    this.classList.add('wish-pop');
+                    setTimeout(() => this.classList.remove('wish-pop'), 300);
                 });
             });
 

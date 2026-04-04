@@ -83,6 +83,10 @@ try {
         <div class="fk-cat-img">🐾</div>
         Pets
       </a>
+      <a href="other_services.php" class="fk-cat-item" style="text-decoration: none;">
+        <div class="fk-cat-img">🏥</div>
+        Other Services
+      </a>
       <a href="#about" class="fk-cat-item" data-category="fish" style="text-decoration: none;">
         <div class="fk-cat-img">ℹ️</div>
         About Us
@@ -727,6 +731,11 @@ try {
       </div>
     </div>
 
+    <div id="no-pets-msg" style="display: none; text-align: center; padding: 40px; color: #666; background: #fff; border-radius: 16px; border: 0.5px solid #e8e0d4; margin-top: 16px;">
+      <h2 style="color: #2c1a0e; margin-bottom: 10px;">🐾 No pets found</h2>
+      <p>We couldn't find any pets matching your search criteria. Try a different keyword!</p>
+    </div>
+
     <!-- Mix (shuffle) the pets randomly on every page load -->
     <script>
       (function() {
@@ -875,6 +884,38 @@ try {
   </footer>
   </div>
 
+  <!-- Floating Action Buttons -->
+  <a href="https://wa.me/919798889456?text=Hi!%20I%20am%20interested%20in%20adopting%20a%20pet%20from%20Paws%20Store." target="_blank" class="float-whatsapp" title="Chat with us on WhatsApp">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 35px; height: 35px;">
+  </a>
+
+  <button class="float-top" id="back-to-top" title="Go to top">↑</button>
+
+  <!-- Mobile App-like Bottom Navigation -->
+  <div class="mobile-bottom-nav">
+    <a href="index.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+      <span class="mobile-nav-icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="index.php#categories" class="mobile-nav-item">
+      <span class="mobile-nav-icon">🔍</span>
+      <span>Shop</span>
+    </a>
+    <a href="wishlist.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'wishlist.php' ? 'active' : ''; ?>">
+      <span class="mobile-nav-icon">🤍</span>
+      <span>Wishlist</span>
+    </a>
+    <a href="cart.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'cart.php' ? 'active' : ''; ?>">
+      <span class="mobile-nav-icon">🛒</span>
+      <span>Cart</span>
+      <span id="mobile-cart-count" class="mobile-cart-badge" style="display: none;">0</span>
+    </a>
+    <a href="profile.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+      <span class="mobile-nav-icon">👤</span>
+      <span>Profile</span>
+    </a>
+  </div>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const categoryCards = document.querySelectorAll('.ps-cat-card');
@@ -949,15 +990,42 @@ try {
         }
       }
 
+      // TOAST NOTIFICATION FUNCTION
+      function showToast(message, icon = '✅') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toast-container';
+          container.className = 'toast-container';
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = 'toast-msg';
+        toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 400);
+        }, 3000);
+      }
+
       // CART SYSTEM
       let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
       function updateCartCount() {
         const cartCountElement = document.getElementById('cart-count');
+        const mobileCartCount = document.getElementById('mobile-cart-count');
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-        cartCountElement.textContent = totalItems;
-        cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+        if (cartCountElement) {
+          cartCountElement.textContent = totalItems;
+          cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
+        if (mobileCartCount) {
+          mobileCartCount.textContent = totalItems;
+          mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
         localStorage.setItem(cartKey, JSON.stringify(cart));
       }
 
@@ -986,7 +1054,17 @@ try {
 
         button.addEventListener('click', function() {
           const petName = addToCart(this.closest('.ps-pet-card'));
-          alert(petName + " added to cart!");
+
+          this.textContent = 'Added! ✓';
+          this.classList.add('added-to-cart');
+
+          clearTimeout(this.addedTimeout);
+          this.addedTimeout = setTimeout(() => {
+            this.textContent = 'Add to Cart';
+            this.classList.remove('added-to-cart');
+          }, 2000);
+
+          showToast(petName + " added to cart!", '🛒');
         });
       });
 
@@ -1019,7 +1097,7 @@ try {
           const existingIndex = wishlist.findIndex(item => item.id === petId);
           if (existingIndex > -1) {
             wishlist.splice(existingIndex, 1);
-            alert(petName + " removed from wishlist!");
+            showToast(petName + " removed from wishlist!", '🤍');
           } else {
             wishlist.push({
               id: petId,
@@ -1027,23 +1105,34 @@ try {
               price: parseInt(petPrice),
               image: petImage
             });
-            alert(petName + " added to wishlist!");
+            showToast(petName + " added to wishlist!", '❤️');
           }
           localStorage.setItem(wishKey, JSON.stringify(wishlist));
           updateWishlistIcons();
+
+          this.classList.add('wish-pop');
+          setTimeout(() => this.classList.remove('wish-pop'), 300);
         });
       });
 
       // CATEGORY FILTER
       function filterPets(category) {
+        let visibleCount = 0;
+        const noPetsMsg = document.getElementById('no-pets-msg');
+
         petCards.forEach(card => {
           const cardCategory = card.getAttribute('data-category');
           if (category === 'all' || cardCategory === category) {
             card.style.display = 'block';
+            visibleCount++;
           } else {
             card.style.display = 'none';
           }
         });
+
+        if (noPetsMsg) {
+          noPetsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
       }
 
       categoryCards.forEach(card => {
@@ -1060,6 +1149,8 @@ try {
       // SEARCH FUNCTIONALITY
       function searchPets(query) {
         const searchTerm = query.toLowerCase().trim();
+        const noPetsMsg = document.getElementById('no-pets-msg');
+        let visibleCount = 0;
 
         if (searchTerm === '') {
           // If search is empty, show all pets
@@ -1076,20 +1167,31 @@ try {
           // Check if search term matches pet name or category
           if (petName.includes(searchTerm) || petCategory.includes(searchTerm)) {
             card.style.display = 'block';
+            visibleCount++;
           } else {
             card.style.display = 'none';
           }
         });
+
+        if (noPetsMsg) {
+          noPetsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
         // Remove active state from category cards
         categoryCards.forEach(c => c.classList.remove('active'));
-        // Scroll to pets section
-        document.getElementById('pets').scrollIntoView({
-          behavior: 'smooth'
-        });
       }
 
       // Search event listeners
+      let hasScrolledForSearch = false;
       searchInput.addEventListener('input', function() {
+        if (this.value.trim() !== '' && !hasScrolledForSearch) {
+          document.getElementById('pets').scrollIntoView({
+            behavior: 'smooth'
+          });
+          hasScrolledForSearch = true;
+        } else if (this.value.trim() === '') {
+          hasScrolledForSearch = false;
+        }
         searchPets(this.value);
       });
 
@@ -1100,6 +1202,9 @@ try {
       });
 
       searchBtn.addEventListener('click', function() {
+        document.getElementById('pets').scrollIntoView({
+          behavior: 'smooth'
+        });
         searchPets(searchInput.value);
       });
 
@@ -1116,19 +1221,19 @@ try {
       if (priceSortSelect && petsGrid) {
         priceSortSelect.addEventListener('change', function() {
           const cards = Array.from(petsGrid.children);
-          
+
           if (this.value === 'low-high' || this.value === 'high-low') {
             cards.sort((a, b) => {
               const priceA = parseInt(a.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
               const priceB = parseInt(b.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
-              
+
               if (this.value === 'low-high') {
                 return priceA - priceB;
               } else {
                 return priceB - priceA;
               }
             });
-            
+
             cards.forEach(card => petsGrid.appendChild(card));
           }
         });
@@ -1205,11 +1310,26 @@ try {
         subscribeBtn.addEventListener('click', function() {
           const email = newsletterInput.value;
           if (email && email.includes('@') && email.includes('.')) { // Basic email validation
-            alert('Thank you for subscribing to our newsletter! You will receive pet care tips and exclusive offers.');
+            showToast('Thank you for subscribing to our newsletter!', '💌');
             newsletterInput.value = ''; // Clear the input field
           } else {
-            alert('Please enter a valid email address.');
+            showToast('Please enter a valid email address.', '⚠️');
           }
+        });
+      }
+
+      // BACK TO TOP BUTTON
+      const backToTopBtn = document.getElementById('back-to-top');
+      if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+          if (window.scrollY > 600) {
+            backToTopBtn.classList.add('visible');
+          } else {
+            backToTopBtn.classList.remove('visible');
+          }
+        });
+        backToTopBtn.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       }
 

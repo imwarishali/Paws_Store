@@ -48,11 +48,13 @@ session_start();
             text-decoration: none;
             border-radius: 24px;
             font-weight: 700;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
         }
 
         .ps-empty-wishlist a:hover {
             background: #9a7210;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.2);
         }
     </style>
 </head>
@@ -99,6 +101,31 @@ session_start();
         </div>
     </footer>
 
+    <!-- Mobile App-like Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+        <a href="index.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="index.php#categories" class="mobile-nav-item">
+            <span class="mobile-nav-icon">🔍</span>
+            <span>Shop</span>
+        </a>
+        <a href="wishlist.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'wishlist.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🤍</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="cart.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'cart.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🛒</span>
+            <span>Cart</span>
+            <span id="mobile-cart-count" class="mobile-cart-badge" style="display: none;">0</span>
+        </a>
+        <a href="profile.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const wishlistGrid = document.getElementById('wishlist-grid');
@@ -135,11 +162,39 @@ session_start();
             let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
             let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
+            // TOAST NOTIFICATION FUNCTION
+            function showToast(message, icon = '✅') {
+                let container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg';
+                toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
+                const mobileCartCount = document.getElementById('mobile-cart-count');
                 const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                cartCountElement.textContent = totalItems;
-                cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+
+                if (cartCountElement) {
+                    cartCountElement.textContent = totalItems;
+                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
+                if (mobileCartCount) {
+                    mobileCartCount.textContent = totalItems;
+                    mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
             }
 
             function renderWishlist() {
@@ -178,7 +233,7 @@ session_start();
                         const removedPet = wishlist.splice(idx, 1)[0];
                         localStorage.setItem(wishKey, JSON.stringify(wishlist));
                         renderWishlist();
-                        alert(removedPet.name + " removed from wishlist!");
+                        showToast(removedPet.name + " removed from wishlist!", '🤍');
                     });
                 });
 
@@ -203,7 +258,17 @@ session_start();
 
                         localStorage.setItem(cartKey, JSON.stringify(cart));
                         updateCartCount();
-                        alert(pet.name + " added to cart!");
+
+                        this.textContent = 'Added! ✓';
+                        this.classList.add('added-to-cart');
+
+                        clearTimeout(this.addedTimeout);
+                        this.addedTimeout = setTimeout(() => {
+                            this.textContent = 'Add to Cart';
+                            this.classList.remove('added-to-cart');
+                        }, 2000);
+
+                        showToast(pet.name + " added to cart!", '🛒');
                     });
                 });
             }

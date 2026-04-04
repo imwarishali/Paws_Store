@@ -258,16 +258,6 @@ $userPhone = $user["phone"] ?? "";
                 <p style="color: #666;">Update your personal details below.</p>
             </div>
 
-            <?php if (isset($success_message)): ?>
-                <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
-                    <?php echo htmlspecialchars($success_message); ?>
-                </div>
-            <?php endif; ?>
-            <?php if (isset($error_message)): ?>
-                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 600;">
-                    <?php echo htmlspecialchars($error_message); ?>
-                </div>
-            <?php endif; ?>
 
             <form method="POST" action="profile.php">
                 <div class="ps-form-group">
@@ -334,20 +324,77 @@ $userPhone = $user["phone"] ?? "";
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-                const cartKey = 'pawsCart_' + currentUserId;
+    <!-- Mobile App-like Bottom Navigation -->
+    <div class="mobile-bottom-nav">
+        <a href="index.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="index.php#categories" class="mobile-nav-item">
+            <span class="mobile-nav-icon">🔍</span>
+            <span>Shop</span>
+        </a>
+        <a href="wishlist.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'wishlist.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🤍</span>
+            <span>Wishlist</span>
+        </a>
+        <a href="cart.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'cart.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">🛒</span>
+            <span>Cart</span>
+            <span id="mobile-cart-count" class="mobile-cart-badge" style="display: none;">0</span>
+        </a>
+        <a href="profile.php" class="mobile-nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+            <span class="mobile-nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </div>
 
-                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+    <script>
+        // TOAST NOTIFICATION FUNCTION
+        function showToast(message, icon = '✅') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if (isset($success_message)): ?>
+                showToast("<?php echo addslashes($success_message); ?>", "✅");
+            <?php endif; ?>
+            <?php if (isset($error_message)): ?>
+                showToast("<?php echo addslashes($error_message); ?>", "⚠️");
+            <?php endif; ?>
+
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             function updateCartCount() {
                 const cartCountElement = document.getElementById('cart-count');
+                const mobileCartCount = document.getElementById('mobile-cart-count');
                 const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
                 if (cartCountElement) {
                     cartCountElement.textContent = totalItems;
                     cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                }
+                if (mobileCartCount) {
+                    mobileCartCount.textContent = totalItems;
+                    mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
                 }
             }
 

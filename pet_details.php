@@ -149,6 +149,25 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             background: #9a7210;
         }
 
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .ps-btn-add.added-to-cart {
+            background: #28a745 !important;
+            animation: pop 0.3s ease;
+        }
+
         .ps-btn-buy {
             flex: 1;
             background: #2c1a0e;
@@ -266,36 +285,56 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-                const cartKey = 'pawsCart_' + currentUserId;
-                const wishKey = 'pawsWishlist_' + currentUserId;
+            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
+            const cartKey = 'pawsCart_' + currentUserId;
+            const wishKey = 'pawsWishlist_' + currentUserId;
 
-                // TRANSFER GUEST DATA TO LOGGED-IN USER
-                if (currentUserId !== 'guest') {
-                    let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-                    if (guestCart && guestCart.length > 0) {
-                        let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                        guestCart.forEach(guestItem => {
-                            let existing = userCart.find(item => item.id === guestItem.id);
-                            if (existing) existing.quantity += guestItem.quantity;
-                            else userCart.push(guestItem);
-                        });
-                        localStorage.setItem(cartKey, JSON.stringify(userCart));
-                        localStorage.removeItem('pawsCart_guest');
-                    }
-                    let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
-                    if (guestWish && guestWish.length > 0) {
-                        let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
-                        guestWish.forEach(guestItem => {
-                            if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
-                        });
-                        localStorage.setItem(wishKey, JSON.stringify(userWish));
-                        localStorage.removeItem('pawsWishlist_guest');
-                    }
+            // TRANSFER GUEST DATA TO LOGGED-IN USER
+            if (currentUserId !== 'guest') {
+                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
+                if (guestCart && guestCart.length > 0) {
+                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
+                    guestCart.forEach(guestItem => {
+                        let existing = userCart.find(item => item.id === guestItem.id);
+                        if (existing) existing.quantity += guestItem.quantity;
+                        else userCart.push(guestItem);
+                    });
+                    localStorage.setItem(cartKey, JSON.stringify(userCart));
+                    localStorage.removeItem('pawsCart_guest');
                 }
+                let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
+                if (guestWish && guestWish.length > 0) {
+                    let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
+                    guestWish.forEach(guestItem => {
+                        if (!userWish.find(item => item.id === guestItem.id)) userWish.push(guestItem);
+                    });
+                    localStorage.setItem(wishKey, JSON.stringify(userWish));
+                    localStorage.removeItem('pawsWishlist_guest');
+                }
+            }
 
-                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
+            // TOAST NOTIFICATION FUNCTION
+            function showToast(message, icon = '✅') {
+                let container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+                const toast = document.createElement('div');
+                toast.className = 'toast-msg';
+                toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, 3000);
+            }
+
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+            let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
             const petId = "<?php echo $id; ?>";
             const petName = "<?php echo addslashes($pet['name']); ?>";
@@ -344,7 +383,17 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
             cartBtn.addEventListener('click', function() {
                 addToCart();
-                alert(petName + " added to cart!");
+
+                this.textContent = 'Added! ✓';
+                this.classList.add('added-to-cart');
+
+                clearTimeout(this.addedTimeout);
+                this.addedTimeout = setTimeout(() => {
+                    this.textContent = 'Add to Cart';
+                    this.classList.remove('added-to-cart');
+                }, 2000);
+
+                showToast(petName + " added to cart!", '🛒');
             });
 
             buyNowBtn.addEventListener('click', function() {
@@ -356,7 +405,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                 const existingIndex = wishlist.findIndex(item => item.id === petId);
                 if (existingIndex > -1) {
                     wishlist.splice(existingIndex, 1);
-                    alert(petName + " removed from wishlist!");
+                    showToast(petName + " removed from wishlist!", '🤍');
                 } else {
                     wishlist.push({
                         id: petId,
@@ -364,10 +413,13 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                         price: petPrice, // Store the raw number for consistency
                         image: petImage
                     });
-                    alert(petName + " added to wishlist!");
+                    showToast(petName + " added to wishlist!", '❤️');
                 }
                 localStorage.setItem(wishKey, JSON.stringify(wishlist));
                 updateWishlistIcon();
+
+                this.classList.add('wish-pop');
+                setTimeout(() => this.classList.remove('wish-pop'), 300);
             });
 
             updateCartCount();

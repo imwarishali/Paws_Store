@@ -853,6 +853,139 @@ body.nav-scrolled .fk-cat-img {
   background: #9a7210;
 }
 
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.ps-pet-add.added-to-cart {
+  background: #28a745 !important;
+  animation: pop 0.3s ease;
+}
+
+.wish-pop {
+  animation: pop 0.3s ease;
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast-msg {
+  background: #2c1a0e;
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast-msg.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-icon {
+  font-size: 20px;
+}
+
+/* Floating Action Buttons */
+.float-whatsapp {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 55px;
+  height: 55px;
+  background: #25d366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+  z-index: 998;
+  transition: all 0.3s ease;
+}
+
+.float-whatsapp:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+@keyframes bounceInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-8px);
+  }
+  80% {
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.float-top {
+  position: fixed;
+  bottom: 90px; /* Sits just above your toast notifications */
+  right: 24px;
+  width: 45px;
+  height: 45px;
+  background: #2c1a0e;
+  color: #f5d98a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 998;
+  cursor: pointer;
+  border: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.float-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  animation: bounceInUp 0.6s ease forwards;
+}
+
+.float-top:hover {
+  background: #4a3020;
+  transform: translateY(-3px);
+}
+
 .ps-pet-buy {
   background: #2c1a0e;
   color: #fff;
@@ -868,6 +1001,83 @@ body.nav-scrolled .fk-cat-img {
 
 .ps-pet-buy:hover {
   background: #4a3020;
+}
+
+/* Mobile App-like Bottom Navigation */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  justify-content: space-around;
+  padding: 12px 0;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid #f0f0f0;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #888;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 4px;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.mobile-nav-item.active {
+  color: #b5860d;
+}
+
+.mobile-nav-icon {
+  font-size: 22px;
+  transition: transform 0.2s;
+}
+
+.mobile-nav-item:active .mobile-nav-icon {
+  transform: scale(0.9);
+}
+
+.mobile-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  
+  body {
+    padding-bottom: 75px !important; /* Prevent content from hiding behind the nav */
+  }
+  
+  .float-whatsapp {
+    bottom: 95px !important;
+  }
+  
+  .float-top {
+    bottom: 160px !important;
+  }
 }
 
 /* Orders Section */

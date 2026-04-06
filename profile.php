@@ -378,27 +378,23 @@ $userPhone = $user["phone"] ?? "";
                 showToast("<?php echo addslashes($error_message); ?>", "⚠️");
             <?php endif; ?>
 
-            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
-
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-            function updateCartCount() {
-                const cartCountElement = document.getElementById('cart-count');
-                const mobileCartCount = document.getElementById('mobile-cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-                if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
-                }
-                if (mobileCartCount) {
-                    mobileCartCount.textContent = totalItems;
-                    mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
-                }
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            const mobileCartCount = document.getElementById('mobile-cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+                cartCountElement.style.display = count > 0 ? 'flex' : 'none';
             }
-
-            updateCartCount();
+            if (mobileCartCount) {
+                mobileCartCount.textContent = count;
+                mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+        fetch('cart_action.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({action: 'get'})
+        }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
 
             window.togglePasswordVisibility = function(inputId, button) {
                 const input = document.getElementById(inputId);

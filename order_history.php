@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION["user"])) {
-    header("Location: auth/login.php");
+    header("Location: auth/login.php?redirect=order_history.php");
     exit();
 }
 
@@ -450,28 +450,16 @@ try {
         }
 
         function reorderPet(id, name, price, image, quantity) {
-            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-            const existingPet = cart.find(item => item.id == id);
-
-            if (existingPet) {
-                existingPet.quantity += quantity;
-            } else {
-                cart.push({
-                    id: id.toString(),
-                    name: name,
-                    price: parseFloat(price),
-                    image: image,
-                    quantity: quantity
-                });
-            }
-
-            localStorage.setItem(cartKey, JSON.stringify(cart));
-            showToast(name + " added to cart!", '🛒');
-            setTimeout(() => {
-                window.location.href = 'cart.php';
-            }, 1200);
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'add', id: id, quantity: quantity})
+            }).then(response => response.json()).then(data => {
+                showToast(name + " added to cart!", '🛒');
+                setTimeout(() => {
+                    window.location.href = 'cart.php';
+                }, 1200);
+            });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -483,19 +471,19 @@ try {
             <?php endif; ?>
 
             const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
 
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-            function updateCartCount() {
+            function updateCartCount(count) {
                 const cartCountElement = document.getElementById('cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
-            updateCartCount();
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get'})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
 
             // ORDER SEARCH FUNCTIONALITY
             const searchInput = document.getElementById('order-search');

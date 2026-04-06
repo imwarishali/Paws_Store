@@ -227,12 +227,34 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
         <div class="fk-nav-top">
             <a href="index.php" class="fk-logo">🐾 Paws Store</a>
             <div class="fk-nav-right" style="margin-left: auto;">
-                <a href="index.php" class="fk-cart-btn" style="margin-right: 15px;">
-                    <span class="fk-cart-icon">🏠</span> Home
-                </a>
-                <a href="wishlist.php" class="fk-cart-btn" style="margin-right: 15px;">
-                    <span class="fk-cart-icon">🤍</span> Wishlist
-                </a>
+                <div class="fk-dropdown-wrapper" style="margin-right: 15px;">
+                    <button class="fk-login-btn">
+                        <span class="fk-icon-user">👤</span>
+                        <?php echo isset($_SESSION["user"]) ? "Account" : "Login"; ?>
+                        <span class="fk-chevron">⌄</span>
+                    </button>
+                    <div class="fk-dropdown-menu">
+                        <?php if (!isset($_SESSION["user"])): ?>
+                            <?php $current_url = urlencode("pet_details.php?id=" . $id); ?>
+                            <div class="fk-new-customer">
+                                <span>Existing user?</span>
+                                <a href="auth/login.php?redirect=<?php echo $current_url; ?>" class="fk-signup-link">Log In</a>
+                            </div>
+                            <div class="fk-new-customer">
+                                <span>New customer?</span>
+                                <a href="auth/register.php?redirect=<?php echo $current_url; ?>" class="fk-signup-link">Sign Up</a>
+                            </div>
+                            <hr class="fk-divider">
+                        <?php endif; ?>
+                        <a href="profile.php" class="fk-menu-item"><span class="fk-menu-icon">👤</span> My Profile</a>
+                        <a href="order_history.php" class="fk-menu-item"><span class="fk-menu-icon">📦</span> Orders</a>
+                        <a href="wishlist.php" class="fk-menu-item"><span class="fk-menu-icon">🤍</span> Wishlist</a>
+                        <?php if (isset($_SESSION["user"])): ?>
+                            <hr class="fk-divider">
+                            <a href="auth/logout.php" class="fk-menu-item"><span class="fk-menu-icon">🚪</span> Logout</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
                 <a href="cart.php" class="fk-cart-btn">
                     <span class="fk-cart-icon">🛒</span> Cart
                     <span id="cart-count" class="cart-count">0</span>
@@ -291,17 +313,6 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
             // TRANSFER GUEST DATA TO LOGGED-IN USER
             if (currentUserId !== 'guest') {
-                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-                if (guestCart && guestCart.length > 0) {
-                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                    guestCart.forEach(guestItem => {
-                        let existing = userCart.find(item => item.id === guestItem.id);
-                        if (existing) existing.quantity += guestItem.quantity;
-                        else userCart.push(guestItem);
-                    });
-                    localStorage.setItem(cartKey, JSON.stringify(userCart));
-                    localStorage.removeItem('pawsCart_guest');
-                }
                 let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
                 if (guestWish && guestWish.length > 0) {
                     let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
@@ -333,7 +344,6 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                 }, 3000);
             }
 
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
             let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
             const petId = "<?php echo $id; ?>";
@@ -346,13 +356,17 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             const wishBtn = document.getElementById('toggle-wishlist');
             const cartCountElement = document.getElementById('cart-count');
 
-            function updateCartCount() {
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            function updateCartCount(count) {
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get'})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
 
             function updateWishlistIcon() {
                 if (wishlist.find(item => item.id === petId)) {
@@ -365,20 +379,17 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             }
 
             function addToCart() {
-                const existingPet = cart.find(item => item.id === petId);
-                if (existingPet) {
-                    existingPet.quantity += 1;
-                } else {
-                    cart.push({
-                        id: petId,
-                        name: petName,
-                        price: petPrice,
-                        image: petImage,
-                        quantity: 1
-                    });
-                }
-                localStorage.setItem(cartKey, JSON.stringify(cart));
-                updateCartCount();
+                fetch('cart_action.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({action: 'add', id: petId, quantity: 1})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        updateCartCount(data.cart_count);
+                    }
+                });
             }
 
             cartBtn.addEventListener('click', function() {
@@ -422,7 +433,6 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                 setTimeout(() => this.classList.remove('wish-pop'), 300);
             });
 
-            updateCartCount();
             updateWishlistIcon();
         });
     </script>

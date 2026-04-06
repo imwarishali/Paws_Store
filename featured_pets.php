@@ -560,14 +560,19 @@ try {
 
             <!-- Mix (shuffle) the pets randomly on every page load -->
             <script>
-                (function() {
+                document.addEventListener('DOMContentLoaded', function() {
                     const grid = document.getElementById('pets-grid');
                     if (grid) {
-                        for (let i = grid.children.length; i > 0; i--) {
-                            grid.appendChild(grid.children[Math.random() * i | 0]);
+                        grid.style.display = 'none'; // Prevent layout thrashing
+                        const fragment = document.createDocumentFragment();
+                        const children = Array.from(grid.children);
+                        while (children.length) {
+                            fragment.appendChild(children.splice(Math.floor(Math.random() * children.length), 1)[0]);
                         }
+                        grid.appendChild(fragment);
+                        grid.style.display = ''; // Restore visibility
                     }
-                })();
+                });
             </script>
         </div>
     </div>
@@ -672,17 +677,6 @@ try {
 
             // TRANSFER GUEST DATA TO LOGGED-IN USER
             if (currentUserId !== 'guest') {
-                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-                if (guestCart && guestCart.length > 0) {
-                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                    guestCart.forEach(guestItem => {
-                        let existing = userCart.find(item => item.id === guestItem.id);
-                        if (existing) existing.quantity += guestItem.quantity;
-                        else userCart.push(guestItem);
-                    });
-                    localStorage.setItem(cartKey, JSON.stringify(userCart));
-                    localStorage.removeItem('pawsCart_guest');
-                }
                 let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
                 if (guestWish && guestWish.length > 0) {
                     let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
@@ -695,7 +689,6 @@ try {
             }
 
             // CART & WISHLIST LOGIC
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
             let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
 
             // TOAST NOTIFICATION FUNCTION
@@ -718,14 +711,24 @@ try {
                 }, 3000);
             }
 
-            function updateCartCount() {
+            function updateCartCount(count) {
                 const cartCountElement = document.getElementById('cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                const mobileCartCount = document.getElementById('mobile-cart-count');
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+                }
+                if (mobileCartCount) {
+                    mobileCartCount.textContent = count;
+                    mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
+
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get'})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
 
             function updateWishlistIcons() {
                 document.querySelectorAll('.ps-pet-wish').forEach(btn => {
@@ -741,31 +744,22 @@ try {
             }
 
             document.querySelectorAll('.ps-pet-add').forEach(button => {
-                function addToCart(petCard) {
+                button.addEventListener('click', function() {
+                    const petCard = this.closest('.ps-pet-card');
                     const petId = petCard.getAttribute('data-pet-id');
                     const petName = petCard.querySelector('.ps-pet-name').textContent;
-                    const petPrice = petCard.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '');
-                    const petImage = petCard.querySelector('img').src;
-
-                    const existingPet = cart.find(item => item.id === petId);
-                    if (existingPet) {
-                        existingPet.quantity += 1;
-                    } else {
-                        cart.push({
-                            id: petId,
-                            name: petName,
-                            price: parseInt(petPrice),
-                            image: petImage,
-                            quantity: 1
-                        });
-                    }
-                    localStorage.setItem(cartKey, JSON.stringify(cart));
-                    updateCartCount();
-                    return petName;
-                }
-
-                button.addEventListener('click', function() {
-                    const petName = addToCart(this.closest('.ps-pet-card'));
+                    
+                    fetch('cart_action.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({action: 'add', id: petId, quantity: 1})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'success') {
+                            updateCartCount(data.cart_count);
+                        }
+                    });
                     
                     this.textContent = 'Added! ✓';
                     this.classList.add('added-to-cart');
@@ -809,7 +803,6 @@ try {
                 });
             });
 
-            updateCartCount();
             updateWishlistIcons();
         });
     </script>

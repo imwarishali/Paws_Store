@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+// Redirect guests to login if they try to access the wishlist
+if (!isset($_SESSION["user"])) {
+    header("Location: auth/login.php?redirect=wishlist.php");
+    exit();
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -137,17 +143,6 @@ session_start();
 
             // TRANSFER GUEST DATA TO LOGGED-IN USER
             if (currentUserId !== 'guest') {
-                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-                if (guestCart && guestCart.length > 0) {
-                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                    guestCart.forEach(guestItem => {
-                        let existing = userCart.find(item => item.id === guestItem.id);
-                        if (existing) existing.quantity += guestItem.quantity;
-                        else userCart.push(guestItem);
-                    });
-                    localStorage.setItem(cartKey, JSON.stringify(userCart));
-                    localStorage.removeItem('pawsCart_guest');
-                }
                 let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
                 if (guestWish && guestWish.length > 0) {
                     let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
@@ -160,7 +155,6 @@ session_start();
             }
 
             let wishlist = JSON.parse(localStorage.getItem(wishKey)) || [];
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
 
             // TOAST NOTIFICATION FUNCTION
             function showToast(message, icon = '✅') {
@@ -182,20 +176,23 @@ session_start();
                 }, 3000);
             }
 
-            function updateCartCount() {
+            function updateCartCount(count) {
                 const cartCountElement = document.getElementById('cart-count');
                 const mobileCartCount = document.getElementById('mobile-cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
                 }
                 if (mobileCartCount) {
-                    mobileCartCount.textContent = totalItems;
-                    mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
+                    mobileCartCount.textContent = count;
+                    mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get'})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
 
             function renderWishlist() {
                 wishlistGrid.innerHTML = '';
@@ -243,21 +240,17 @@ session_start();
                         const idx = this.getAttribute('data-index');
                         const pet = wishlist[idx];
 
-                        const existingPet = cart.find(item => item.id === pet.id);
-                        if (existingPet) {
-                            existingPet.quantity += 1;
-                        } else {
-                            cart.push({
-                                id: pet.id,
-                                name: pet.name,
-                                price: pet.price,
-                                image: pet.image,
-                                quantity: 1
-                            });
+                    fetch('cart_action.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({action: 'add', id: pet.id, quantity: 1})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'success') {
+                            updateCartCount(data.cart_count);
                         }
-
-                        localStorage.setItem(cartKey, JSON.stringify(cart));
-                        updateCartCount();
+                    });
 
                         this.textContent = 'Added! ✓';
                         this.classList.add('added-to-cart');
@@ -274,7 +267,6 @@ session_start();
             }
 
             renderWishlist();
-            updateCartCount();
         });
     </script>
 </body>

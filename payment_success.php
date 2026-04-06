@@ -245,21 +245,24 @@ if (!$order) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Clear cart from local storage after successful payment
-            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
-            localStorage.removeItem(cartKey);
-            let cart = [];
-
-            function updateCartCount() {
+            function updateCartCount(count) {
                 const cartCountElement = document.getElementById('cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
-            updateCartCount();
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'get'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') updateCartCount(d.cart_count);
+            });
         });
     </script>
 </body>

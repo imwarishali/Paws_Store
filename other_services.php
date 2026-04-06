@@ -29,6 +29,11 @@
             --radius: 16px;
         }
 
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 100px;
+        }
+
         body {
             font-family: "Outfit", sans-serif;
             background: var(--cream);
@@ -74,10 +79,17 @@
             text-decoration: none;
             color: var(--text);
             font-weight: 500;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
         nav a:hover {
-            color: var(--accent);
+            color: var(--brown);
+            background: var(--accent-soft);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(92, 64, 51, 0.15);
         }
 
         /* Hero */
@@ -141,6 +153,20 @@
             border: 1px solid var(--accent-soft);
         }
 
+        .map-container iframe {
+            width: 100%;
+            height: 350px;
+            border: 0;
+            display: block;
+        }
+
+        #location {
+            max-width: 900px;
+            margin: auto;
+            padding: 2rem 2rem 4rem;
+            text-align: center;
+        }
+
         /* Services */
         .services {
             padding: 2rem;
@@ -182,6 +208,23 @@
             margin-bottom: 12px;
         }
 
+        .card.fade-in {
+            opacity: 0;
+            transform: translateY(40px);
+            /* Smooth, elegant slide up and fade in */
+            transition: opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1), transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .card.fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card.fade-in.visible:hover {
+            transition: all 0.2s ease;
+            transform: translateY(-5px);
+        }
+
         /* Footer */
         footer {
             background: var(--brown);
@@ -193,7 +236,17 @@
 
         @media (max-width: 768px) {
             nav ul {
-                display: none;
+                gap: 1rem;
+                font-size: 0.9rem;
+                padding-left: 0;
+            }
+
+            .map-container iframe {
+                height: 250px;
+            }
+
+            #location {
+                padding: 2rem 1rem 3rem;
             }
         }
     </style>
@@ -203,7 +256,13 @@
     <!-- HEADER -->
     <header>
         <div class="header-inner">
-            <div class="logo">🐾 Paws Store<span>.</span></div>
+            <a href="index.php" class="logo" style="text-decoration: none;">🐾 Paws Store<span>.</span></a>
+            <nav>
+                <ul>
+                    <li><a href="index.php">🏠 Home</a></li>
+                    <li><a href="#location">📍 Location</a></li>
+                </ul>
+            </nav>
         </div>
     </header>
 
@@ -215,28 +274,6 @@
             vaccination, training, and boarding services are <strong>exclusively available in-person</strong>
             at our physical clinic. We'd love to see you and your furry friend!
         </p>
-
-        <div class="contact-highlights">
-            <div class="highlight-item">
-                📍 Visit us at:
-                <strong><a href="https://maps.google.com" target="_blank">123 Pet Avenue, Koramangala, Bangalore, Karnataka 560034</a></strong>
-            </div>
-            <div class="highlight-item">📞 Phone: <strong><a href="tel:+919798889456">+91 97988 89456</a></strong></div>
-            <div class="highlight-item">🕒 Hours: <strong>Mon - Sun, 9:00 AM - 8:00 PM</strong></div>
-        </div>
-
-        <a href="index.php" class="btn btn-outline-dark btn-back">⬅ Go Back</a>
-
-        <div class="map-container">
-            <iframe
-                src="https://maps.google.com/maps?q=Koramangala,%20Bangalore&t=&z=14&ie=UTF8&iwloc=&output=embed"
-                width="100%"
-                height="350"
-                style="border:0; display:block;"
-                allowfullscreen=""
-                loading="lazy">
-            </iframe>
-        </div>
     </section>
 
     <!-- SERVICES -->
@@ -244,7 +281,7 @@
         <div class="row g-4">
             <!-- Grooming -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card" data-service-id="grooming">
                     <img
                         src="Assets/Services/grooming.jpg"
                         alt="" />
@@ -261,7 +298,7 @@
 
             <!-- Vaccination -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card" data-service-id="vaccination">
                     <img
                         src="Assets/Services/vaccination.jpg"
                         alt="" />
@@ -280,7 +317,7 @@
 
             <!-- Training -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card" data-service-id="training">
                     <img
                         src="Assets/Services/training.jpg"
                         alt="" />
@@ -300,7 +337,7 @@
 
             <!-- Health -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card" data-service-id="health">
                     <img
                         src="Assets/Services/Health_Checkup.jpg"
                         alt="" />
@@ -319,7 +356,7 @@
 
             <!-- Boarding -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card" data-service-id="boarding">
                     <img
                         src="Assets/Services/Pet_Boarding.jpg"
                         alt="" />
@@ -335,6 +372,45 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Photography -->
+            <div class="col-md-4">
+                <div class="card" data-service-id="photography">
+                    <img
+                        src="Assets/Services/Photography.jpg"
+                        alt="" />
+                    <div class="card-body">
+                        <h5 class="card-title">Pet Photography</h5>
+                        <div class="service-price">Starting from ₹1,499 / session</div>
+                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
+                            Capture the unique personality of your furry friend with our professional pet photography sessions.
+                        </p>
+                        <p>
+                            • Studio & outdoor<br />• Edited photos<br />• Props included
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LOCATION & CONTACT -->
+    <section id="location">
+        <h2 style="font-family: 'Playfair Display', serif; color: var(--brown); font-size: 2.5rem; margin-bottom: 1.5rem;">Visit Our Clinic</h2>
+        <div class="contact-highlights">
+            <div class="highlight-item">
+                📍 Visit us at:
+                <strong><a href="https://maps.google.com" target="_blank">123 Pet Avenue, Koramangala, Bangalore, Karnataka 560034</a></strong>
+            </div>
+            <div class="highlight-item">📞 Phone: <strong><a href="tel:+919798889456">+91 97988 89456</a></strong></div>
+            <div class="highlight-item">🕒 Hours: <strong>Mon - Sun, 9:00 AM - 8:00 PM</strong></div>
+        </div>
+        <div class="map-container">
+            <iframe
+                src="https://maps.google.com/maps?q=Koramangala,%20Bangalore&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                allowfullscreen=""
+                loading="lazy">
+            </iframe>
         </div>
     </section>
 
@@ -342,6 +418,40 @@
     <footer>
         <p>© 2025 Paws Store. Made with 🐾 in India.</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
+                let delay = 0;
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.add('visible');
+                        }, delay);
+                        delay += 150; // 150ms stagger effect for cards showing up at the same time
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.add('fade-in');
+                observer.observe(card);
+
+                // Click to view service details
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', function() {
+                    const serviceId = this.getAttribute('data-service-id');
+                    if (serviceId) {
+                        window.location.href = 'service_details.php?id=' + serviceId;
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

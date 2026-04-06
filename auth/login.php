@@ -13,6 +13,17 @@ if (isset($_SESSION["user"])) {
 $error = "";
 $redirect = $_GET['redirect'] ?? $_POST['redirect'] ?? '';
 $registered = $_GET['registered'] ?? $_POST['registered'] ?? '';
+$info_message = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "GET" && $redirect === 'cart.php') {
+  $info_message = "Please log in or sign up to view your cart and complete checkout.";
+} elseif ($_SERVER["REQUEST_METHOD"] == "GET" && $redirect === 'wishlist.php') {
+  $info_message = "Please log in or sign up to view your wishlist.";
+} elseif ($_SERVER["REQUEST_METHOD"] == "GET" && $redirect === 'order_history.php') {
+  $info_message = "Please log in or sign up to view your order history.";
+} elseif ($_SERVER["REQUEST_METHOD"] == "GET" && strpos($redirect, 'pet_details.php') !== false) {
+  $info_message = "Please log in or sign up to continue viewing this pet.";
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -42,8 +53,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($user["is_admin"] == 1) {
           $target_url = '../admin_orders.php';
         } else {
-          if ($redirect === 'cart.php') {
-            $target_url = '../cart.php';
+          if (!empty($redirect)) {
+            $target_url = '../' . ltrim($redirect, '/');
           }
         }
 
@@ -209,6 +220,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       border: 1px solid #f5c6cb;
     }
 
+    .info {
+      color: #004085;
+      background-color: #cce5ff;
+      border: 1px solid #b8daff;
+    }
+
     .register-link {
       margin-top: 1rem;
       font-size: 1rem;
@@ -259,6 +276,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <?php if (!empty($error)): ?>
         <p class="message error"><?php echo htmlspecialchars($error); ?></p>
+      <?php endif; ?>
+      <?php if (!empty($info_message)): ?>
+        <p class="message info"><?php echo htmlspecialchars($info_message); ?></p>
       <?php endif; ?>
 
       <form method="POST">

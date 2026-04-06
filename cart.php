@@ -1,13 +1,32 @@
 <?php
 session_start();
 
+// Redirect guests to login if they try to access the cart
+if (!isset($_SESSION["user"])) {
+    header("Location: auth/login.php?redirect=cart.php");
+    exit();
+}
+
 require_once 'db.php';
 
-$petData = [];
+$cart_for_js = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM pets");
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $petData[$row['id']] = ['name' => $row['name'], 'price' => (float)$row['price'], 'image' => $row['image']];
+    if (!isset($_SESSION['cart'])) {
+        $_SESSION['cart'] = [];
+    }
+    
+    // Only fetch database prices for items ACTUALLY in the cart
+    if (!empty($_SESSION['cart'])) {
+        $ids = array_keys($_SESSION['cart']);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare("SELECT id, name, price, image FROM pets WHERE id IN ($placeholders)");
+        $stmt->execute($ids);
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['quantity'] = $_SESSION['cart'][$row['id']];
+            $row['price'] = (float)$row['price'];
+            $cart_for_js[] = $row;
+        }
     }
 } catch (PDOException $e) {
 }
@@ -412,27 +431,8 @@ if (isset($_SESSION["user"])) {
         document.addEventListener('DOMContentLoaded', function() {
             const cartContent = document.getElementById('cart-content');
 
-            const petData = <?php echo json_encode($petData); ?>;
-
-            const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-            const cartKey = 'pawsCart_' + currentUserId;
-
-            // TRANSFER GUEST CART TO LOGGED-IN USER
-            if (currentUserId !== 'guest') {
-                let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-                if (guestCart && guestCart.length > 0) {
-                    let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-                    guestCart.forEach(guestItem => {
-                        let existing = userCart.find(item => item.id === guestItem.id);
-                        if (existing) existing.quantity += guestItem.quantity;
-                        else userCart.push(guestItem);
-                    });
-                    localStorage.setItem(cartKey, JSON.stringify(userCart));
-                    localStorage.removeItem('pawsCart_guest');
-                }
-            }
-
-            let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+            // Load the securely compiled cart directly from PHP!
+            let cart = <?php echo json_encode($cart_for_js); ?>;
 
             window.appliedPromoType = 'none';
             window.appliedPromoCode = '';
@@ -474,16 +474,15 @@ if (isset($_SESSION["user"])) {
 
                 let subtotal = 0;
                 const cartItemsHtml = cart.map(item => {
-                    const pet = petData[item.id];
-                    const itemTotal = pet.price * item.quantity;
+                    const itemTotal = item.price * item.quantity;
                     subtotal += itemTotal;
 
                     return `
             <div class="cart-item" data-id="${item.id}">
               <img src="${item.image}" alt="${item.name}">
               <div class="cart-item-details">
-                <h4>${pet.name}</h4>
-                <div class="cart-item-price">₹${pet.price.toLocaleString()}</div>
+                <h4>${item.name}</h4>
+                <div class="cart-item-price">₹${item.price.toLocaleString()}</div>
               </div>
               <div class="quantity-controls">
                 <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
@@ -655,24 +654,37 @@ if (isset($_SESSION["user"])) {
                 const item = cart.find(item => item.id == id);
                 if (item) {
                     item.quantity = newQuantity;
-                    localStorage.setItem(cartKey, JSON.stringify(cart));
-                    renderCart();
-                    applyPromoCode(false);
-                    updateCartCount();
+                    
+                    // Securely update session cart via AJAX
+                    fetch('cart_action.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({action: 'update', id: id, quantity: newQuantity})
+                    }).then(() => {
+                        renderCart();
+                        applyPromoCode(false);
+                        updateCartCount();
+                    });
                 }
             };
 
             window.removeItem = function(id) {
                 const itemToRemove = cart.find(item => item.id == id);
                 if (itemToRemove) {
-                    const pet = petData[itemToRemove.id];
-                    showToast((pet ? pet.name : "Item") + " removed from cart!", "🗑️");
+                    showToast((itemToRemove.name) + " removed from cart!", "🗑️");
                 }
                 cart = cart.filter(item => item.id != id);
-                localStorage.setItem(cartKey, JSON.stringify(cart));
-                renderCart();
-                applyPromoCode(false);
-                updateCartCount();
+                
+                // Securely remove from session cart via AJAX
+                fetch('cart_action.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({action: 'remove', id: id})
+                }).then(() => {
+                    renderCart();
+                    applyPromoCode(false);
+                    updateCartCount();
+                });
             };
 
             window.applyPromoCode = function(isManual = false) {
@@ -684,7 +696,7 @@ if (isset($_SESSION["user"])) {
                     return;
                 }
 
-                const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 const inputElement = document.getElementById('promoCodeInput');
                 if (!inputElement) return;
 
@@ -738,7 +750,7 @@ if (isset($_SESSION["user"])) {
             };
 
             window.calculateTotals = function() {
-                const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 let discount = 0;
 
                 if (appliedPromoType === 'firstTime') {
@@ -761,14 +773,6 @@ if (isset($_SESSION["user"])) {
             };
 
             window.processPayment = function() {
-                if (currentUserId === 'guest') {
-                    showToast('Please log in or sign up to complete your purchase.', '⚠️');
-                    setTimeout(() => {
-                        window.location.href = 'auth/login.php?redirect=cart.php';
-                    }, 1500);
-                    return;
-                }
-
                 const fullName = document.getElementById('fullName').value;
                 const phone = document.getElementById('phone').value;
                 const address = document.getElementById('address').value;
@@ -797,7 +801,7 @@ if (isset($_SESSION["user"])) {
                 }
 
                 // Calculate final total
-                const subtotal = cart.reduce((sum, item) => sum + (petData[item.id].price * item.quantity), 0);
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 let discount = 0;
 
                 if (appliedPromoType === 'firstTime') {

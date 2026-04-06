@@ -200,7 +200,7 @@ session_start();
             <div class="faq-item">
                 <div class="faq-question">How do I contact customer support? <span class="faq-icon">+</span></div>
                 <div class="faq-answer">
-                    <br>You can reach our dedicated support team 24/7 by calling us at +91 97988 89456, or by emailing us at support@pawsstore.in. We are always happy to help!
+                    <br>You can reach our dedicated support team 24/7 by calling us at <a href="tel:+919798889456" style="color: #b5860d; text-decoration: none; font-weight: bold;">+91 97988 89456</a>, or by emailing us at <a href="mailto:support@pawsstore.in" style="color: #b5860d; text-decoration: none; font-weight: bold;">support@pawsstore.in</a>. We are always happy to help!
                 </div>
             </div>
         </div>
@@ -223,7 +223,7 @@ session_start();
                 const question = item.querySelector('.faq-question');
                 question.addEventListener('click', () => {
                     const isActive = item.classList.contains('active');
-                    
+
                     // Close all items
                     faqItems.forEach(faq => {
                         faq.classList.remove('active');
@@ -237,20 +237,18 @@ session_start();
             });
 
             // Cart Count Update
-                const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-                const cartKey = 'pawsCart_' + currentUserId;
-
-                let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-            function updateCartCount() {
+            function updateCartCount(count) {
                 const cartCountElement = document.getElementById('cart-count');
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
                 if (cartCountElement) {
-                    cartCountElement.textContent = totalItems;
-                    cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
                 }
             }
-            updateCartCount();
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'get'})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
         });
     </script>
 </body>

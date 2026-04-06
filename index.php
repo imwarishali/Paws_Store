@@ -45,6 +45,10 @@ try {
           <div class="fk-dropdown-menu">
             <?php if (!isset($_SESSION["user"])): ?>
               <div class="fk-new-customer">
+                <span>Existing user?</span>
+                <a href="auth/login.php" class="fk-signup-link">Log In</a>
+              </div>
+              <div class="fk-new-customer">
                 <span>New customer?</span>
                 <a href="auth/register.php" class="fk-signup-link">Sign Up</a>
               </div>
@@ -760,14 +764,19 @@ try {
 
     <!-- Mix (shuffle) the pets randomly on every page load -->
     <script>
-      (function() {
-        const grid = document.querySelector('#pets .ps-pets-grid');
-        if (grid) {
-          for (let i = grid.children.length; i > 0; i--) {
-            grid.appendChild(grid.children[Math.random() * i | 0]);
+      document.addEventListener('DOMContentLoaded', function() {
+          const grid = document.querySelector('#pets .ps-pets-grid');
+          if (grid) {
+              grid.style.display = 'none'; // Prevent layout thrashing
+              const fragment = document.createDocumentFragment();
+              const children = Array.from(grid.children);
+              while (children.length) {
+                  fragment.appendChild(children.splice(Math.floor(Math.random() * children.length), 1)[0]);
+              }
+              grid.appendChild(fragment);
+              grid.style.display = ''; // Restore visibility
           }
-        }
-      })();
+      });
     </script>
 
     <div style="text-align: center; margin-top: 40px;">
@@ -895,8 +904,8 @@ try {
         </div>
         <div class="ps-footer-col">
           <h4>Contact</h4>
-          <div class="ps-footer-contact">📞 +91 97988 89456</div>
-          <div class="ps-footer-contact">✉️ support@pawsstore.in</div>
+          <div class="ps-footer-contact">📞 <a href="tel:+919798889456" style="color: inherit; text-decoration: none;">+91 97988 89456</a></div>
+          <div class="ps-footer-contact">✉️ <a href="mailto:support@pawsstore.in" style="color: inherit; text-decoration: none;">support@pawsstore.in</a></div>
         </div>
       </div>
       <div class="ps-footer-bottom">
@@ -990,17 +999,6 @@ try {
 
       // TRANSFER GUEST DATA TO LOGGED-IN USER
       if (currentUserId !== 'guest') {
-        let guestCart = JSON.parse(localStorage.getItem('pawsCart_guest'));
-        if (guestCart && guestCart.length > 0) {
-          let userCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-          guestCart.forEach(guestItem => {
-            let existing = userCart.find(item => item.id === guestItem.id);
-            if (existing) existing.quantity += guestItem.quantity;
-            else userCart.push(guestItem);
-          });
-          localStorage.setItem(cartKey, JSON.stringify(userCart));
-          localStorage.removeItem('pawsCart_guest');
-        }
         let guestWish = JSON.parse(localStorage.getItem('pawsWishlist_guest'));
         if (guestWish && guestWish.length > 0) {
           let userWish = JSON.parse(localStorage.getItem(wishKey)) || [];
@@ -1032,50 +1030,51 @@ try {
         }, 3000);
       }
 
-      // CART SYSTEM
-      let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-      function updateCartCount() {
-        const cartCountElement = document.getElementById('cart-count');
-        const mobileCartCount = document.getElementById('mobile-cart-count');
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-        if (cartCountElement) {
-          cartCountElement.textContent = totalItems;
-          cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
-        }
-        if (mobileCartCount) {
-          mobileCartCount.textContent = totalItems;
-          mobileCartCount.style.display = totalItems > 0 ? 'flex' : 'none';
-        }
-        localStorage.setItem(cartKey, JSON.stringify(cart));
+      // PHP SESSION CART SYSTEM
+      function updateCartCount(count) {
+          const cartCountElement = document.getElementById('cart-count');
+          const mobileCartCount = document.getElementById('mobile-cart-count');
+          
+          if (cartCountElement) {
+              cartCountElement.textContent = count;
+              cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+          }
+          if (mobileCartCount) {
+              mobileCartCount.textContent = count;
+              mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
+          }
       }
 
+      // Fetch initial cart count on page load
+      fetch('cart_action.php', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({action: 'get'})
+      })
+      .then(response => response.json())
+      .then(data => {
+          if(data.status === 'success') {
+              updateCartCount(data.cart_count);
+          }
+      });
+
       addToCartButtons.forEach(button => {
-        function addToCart(petCard) {
+        button.addEventListener('click', function() {
+          const petCard = this.closest('.ps-pet-card');
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
-          const petPrice = petCard.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '');
-          const petImage = petCard.querySelector('img').src;
-
-          const existingPet = cart.find(item => item.id === petId);
-          if (existingPet) {
-            existingPet.quantity += 1;
-          } else {
-            cart.push({
-              id: petId,
-              name: petName,
-              price: parseInt(petPrice),
-              image: petImage,
-              quantity: 1
-            });
-          }
-          updateCartCount();
-          return petName;
-        }
-
-        button.addEventListener('click', function() {
-          const petName = addToCart(this.closest('.ps-pet-card'));
+          
+          fetch('cart_action.php', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({action: 'add', id: petId, quantity: 1})
+          })
+          .then(response => response.json())
+          .then(data => {
+              if(data.status === 'success') {
+                  updateCartCount(data.cart_count);
+              }
+          });
 
           this.textContent = 'Added! ✓';
           this.classList.add('added-to-cart');

@@ -21,7 +21,10 @@ require_once 'db.php';
 
 $petData = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM pets");
+    $pet_ids = array_column($cart, 'id');
+    $placeholders = implode(',', array_fill(0, count($pet_ids), '?'));
+    $stmt = $pdo->prepare("SELECT id, name, price FROM pets WHERE id IN ($placeholders)");
+    $stmt->execute($pet_ids);
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $petData[$row['id']] = ['name' => $row['name'], 'price' => (float)$row['price']];
     }
@@ -445,18 +448,15 @@ try {
         renderOrderItems();
 
         // Update Cart Count
-        const currentUserId = '<?php echo isset($_SESSION["user"]["id"]) ? $_SESSION["user"]["id"] : "guest"; ?>';
-        const cartKey = 'pawsCart_' + currentUserId;
-
-        let localCart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-        function updateCartCount() {
+        function updateCartCount(count) {
             const cartCountElement = document.getElementById('cart-count');
-            const totalItems = localCart.reduce((sum, item) => sum + item.quantity, 0);
-            cartCountElement.textContent = totalItems;
-            cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+                cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+            }
         }
-        updateCartCount();
+        // We can just use the PHP cart array length since it's already on the server
+        updateCartCount(<?php echo isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0; ?>);
     </script>
 </body>
 

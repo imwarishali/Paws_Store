@@ -15,11 +15,127 @@ try {
         $cancel_num = $_POST['cancel_order_number'];
         $user_id = $_SESSION['user']['id'];
 
+        // Fetch the Razorpay Transaction ID for this order
+        $txn_stmt = $pdo->prepare("
+            SELECT p.transaction_id 
+            FROM orders o 
+            JOIN payments p ON o.id = p.order_id 
+            WHERE o.order_number = ? AND o.user_id = ? 
+            LIMIT 1
+        ");
+        $txn_stmt->execute([$cancel_num, $user_id]);
+        $transaction_id = $txn_stmt->fetchColumn();
+
         // Update the order status to Cancelled
         $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Cancelled' WHERE order_number = ? AND user_id = ?");
         $update_stmt->execute([$cancel_num, $user_id]);
 
+        // Update payment status to Refunded
+        $refund_stmt = $pdo->prepare("UPDATE payments p JOIN orders o ON p.order_id = o.id SET p.payment_status = 'Refunded' WHERE o.order_number = ? AND o.user_id = ?");
+        $refund_stmt->execute([$cancel_num, $user_id]);
+
+        // Process Automatic Razorpay Refund
+        if ($transaction_id && strpos($transaction_id, 'pay_') === 0) {
+            $env = parse_ini_file('.env');
+            $keyId = $env['RAZORPAY_KEY_ID'] ?? '';
+            $keySecret = $env['RAZORPAY_KEY_SECRET'] ?? '';
+
+            if ($keyId && $keySecret) {
+                $ch = curl_init("https://api.razorpay.com/v1/payments/{$transaction_id}/refund");
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_USERPWD, $keyId . ':' . $keySecret);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([])); // Empty JSON array triggers a full refund
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_exec($ch);
+                curl_close($ch);
+            }
+        }
+
         $success_message = "Your order has been successfully cancelled. A refund has been initiated!";
+
+        // Send Order Cancellation Email to Customer
+        $to = $_SESSION['user']['email'] ?? '';
+        $username = $_SESSION['user']['username'] ?? 'Customer';
+        $subject = "Order Cancelled - Paws Store [" . $cancel_num . "]";
+        $message = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <title>Order Cancelled</title>
+        </head>
+        <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+            <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                <tr>
+                    <td align='center'>
+                        <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                            <tr>
+                                <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                    <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 40px 30px;'>
+                                    <h2 style='color: #2c1a0e; margin-top: 0;'>Order Cancelled</h2>
+                                    <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
+                                    <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This email is to confirm that your order <strong>#" . htmlspecialchars($cancel_num) . "</strong> has been successfully cancelled.</p>
+                                    
+                                    <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                        <p style='margin: 0; font-size: 16px; color: #555555;'><strong>Refund Initiated:</strong> Your refund will reflect in your original payment method within 3-5 business days.</p>
+                                    </div>
+                                    
+                                    <p style='font-size: 16px; line-height: 1.5; color: #555555;'>If you change your mind, you can always place a new order. We'd love to help you find your perfect companion!</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
+                                    <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
+                                    <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        ";
+
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+        $headers .= "From: Paws Store <warishali105@gmail.com>\r\n";
+
+        if (!empty($to)) {
+            @mail($to, $subject, $message, $headers);
+        }
+
+        // Send Cancelled WhatsApp
+        $env = parse_ini_file('.env');
+        $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+        $token = $env['ULTRAMSG_TOKEN'] ?? '';
+        $phone = $_SESSION['user']['phone'] ?? '';
+        $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+        if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+            if (strlen($clean_phone) == 10) {
+                $clean_phone = "91" . $clean_phone;
+            }
+            $wa_body = "🐾 *Paws Store*\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour order *#" . htmlspecialchars($cancel_num) . "* has been successfully cancelled.\n\n*Refund Initiated:* Your refund will reflect in your original payment method within 3-5 business days.\n\nIf you change your mind, we're always here to help you find your perfect companion!";
+
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
+                CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+            curl_exec($curl);
+            curl_close($curl);
+        }
     }
 
     $stmt = $pdo->prepare("
@@ -111,11 +227,6 @@ try {
             padding: 4px 10px !important;
             font-weight: 600;
             border-radius: 12px;
-        }
-
-        .status-Processing {
-            background: #fff3cd !important;
-            color: #856404 !important;
         }
 
         .status-Confirmed {
@@ -372,6 +483,9 @@ try {
                                         <span class="status-badge status-<?php echo htmlspecialchars($order['order_status']); ?>"><?php echo htmlspecialchars($order['order_status']); ?></span>
                                     <?php endif; ?>
                                 </span>
+                                <?php if (in_array($order['order_status'], ['Confirmed', 'Shipped'])): ?>
+                                    <span style="color: #0c5460; background: #e0f7fa;"><strong>Est. Delivery:</strong> <?php echo date('d M Y', strtotime($order['created_at'] . ' + 5 days')); ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="order-details">
@@ -405,7 +519,7 @@ try {
                             <?php endif; ?>
 
                             <div class="order-actions" style="gap: 10px; margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">
-                                <?php if (!in_array($order['order_status'], ['Confirmed', 'Shipped', 'Delivered', 'Cancelled'])): ?>
+                                <?php if (!in_array($order['order_status'], ['Shipped', 'Delivered', 'Cancelled'])): ?>
                                     <form method="POST" style="margin: 0; flex: 1; min-width: 150px;">
                                         <input type="hidden" name="cancel_order_number" value="<?php echo $order['order_number']; ?>">
                                         <button type="submit" class="btn-cancel-order" style="width: 100%;" onclick="if(this.innerText === 'Cancel Order') { this.innerText = 'Confirm Cancel'; this.style.backgroundColor = '#852029'; setTimeout(() => { this.innerText = 'Cancel Order'; this.style.backgroundColor = ''; }, 3000); return false; }">Cancel Order</button>
@@ -452,8 +566,14 @@ try {
         function reorderPet(id, name, price, image, quantity) {
             fetch('cart_action.php', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: 'add', id: id, quantity: quantity})
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'add',
+                    id: id,
+                    quantity: quantity
+                })
             }).then(response => response.json()).then(data => {
                 showToast(name + " added to cart!", '🛒');
                 setTimeout(() => {
@@ -481,9 +601,15 @@ try {
             }
             fetch('cart_action.php', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: 'get'})
-            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'get'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') updateCartCount(d.cart_count);
+            });
 
             // ORDER SEARCH FUNCTIONALITY
             const searchInput = document.getElementById('order-search');

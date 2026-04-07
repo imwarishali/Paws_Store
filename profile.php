@@ -40,6 +40,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_changes'])) {
                 $_SESSION['user']['phone'] = $new_phone;
 
                 $success_message = "Profile updated successfully!";
+
+                // Send Profile Update Email
+                $to = $new_email;
+                $subject = "Profile Updated - Paws Store";
+                $message = "
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Profile Updated</title>
+                </head>
+                <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+                    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                        <tr>
+                            <td align='center'>
+                                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                                    <tr>
+                                        <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                            <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 40px 30px;'>
+                                            <h2 style='color: #2c1a0e; margin-top: 0;'>Profile Updated Successfully</h2>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($new_username) . ",</p>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This is a quick notification to confirm that your profile details have been successfully updated.</p>
+                                            
+                                            <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                                <p style='margin: 0; font-size: 16px; color: #555555;'>If you made this change, no further action is required.</p>
+                                            </div>
+                                            
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'><strong>Didn't make this change?</strong> Please contact our support team immediately to secure your account.</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
+                                            <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
+                                            <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                ";
+
+                $headers = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+                $headers .= "From: Paws Store <warishali105@gmail.com>\r\n";
+
+                @mail($to, $subject, $message, $headers);
+
+                // Send Profile Update WhatsApp
+                $env = parse_ini_file('.env');
+                $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+                $token = $env['ULTRAMSG_TOKEN'] ?? '';
+                $clean_phone = preg_replace('/[^0-9]/', '', $new_phone);
+
+                if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+                    if (strlen($clean_phone) == 10) {
+                        $clean_phone = "91" . $clean_phone;
+                    }
+                    $wa_body = "🐾 *Paws Store - Profile Update*\n\nHello *" . htmlspecialchars($new_username) . "*,\n\nYour profile details have been successfully updated.\n\nIf you did not make this change, please contact our support team immediately.";
+                    
+                    $curl = curl_init();
+                    curl_setopt_array($curl, [
+                        CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_POST => true,
+                        CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
+                        CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
+                        CURLOPT_SSL_VERIFYPEER => false, 
+                        CURLOPT_SSL_VERIFYHOST => false
+                    ]);
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
             }
         } catch (PDOException $e) {
             $error_message = "Database error: " . $e->getMessage();
@@ -75,6 +154,92 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password']
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
             $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
             $update_stmt->execute([$hashed_password, $user_id]);
+
+            // Send Security Alert Email using HTML Tables and Inline CSS
+            $username = $_SESSION['user']['username'] ?? 'Customer';
+            $email = $_SESSION['user']['email'] ?? '';
+
+            if (!empty($email)) {
+                $to = $email;
+                $subject = "Security Alert: Password Changed - Paws Store";
+                $message = "
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Password Changed Successfully</title>
+                </head>
+                <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+                    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                        <tr>
+                            <td align='center'>
+                                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                                    <tr>
+                                        <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                            <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 40px 30px;'>
+                                            <h2 style='color: #2c1a0e; margin-top: 0;'>Password Changed Successfully</h2>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This is a quick notification to confirm that the password for your Paws Store account has been successfully changed from your profile settings.</p>
+                                            
+                                            <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                                <p style='margin: 0; font-size: 16px; color: #555555;'>If you made this change, no further action is required.</p>
+                                            </div>
+                                            
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'><strong>Didn't make this change?</strong> Please contact our support team immediately to secure your account.</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
+                                            <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
+                                            <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                ";
+
+                $headers = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+                $headers .= "From: Paws Store <warishali105@gmail.com>\r\n";
+
+                @mail($to, $subject, $message, $headers);
+            }
+
+            // Send Security WhatsApp
+            $env = parse_ini_file('.env');
+            $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+            $token = $env['ULTRAMSG_TOKEN'] ?? '';
+            $phone = $_SESSION['user']['phone'] ?? '';
+            $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+            if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+                if (strlen($clean_phone) == 10) {
+                    $clean_phone = "91" . $clean_phone;
+                }
+                $wa_body = "🐾 *Paws Store - Security Alert*\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour password has been successfully changed from your profile settings. If you made this change, no further action is required.\n\nIf you didn't make this change, please contact our support team immediately.";
+
+                $curl = curl_init();
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
+                    CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false
+                ]);
+                curl_exec($curl);
+                curl_close($curl);
+            }
+
             $success_message = "Your password has been updated successfully!";
         }
     } catch (PDOException $e) {
@@ -378,23 +543,29 @@ $userPhone = $user["phone"] ?? "";
                 showToast("<?php echo addslashes($error_message); ?>", "⚠️");
             <?php endif; ?>
 
-        function updateCartCount(count) {
-            const cartCountElement = document.getElementById('cart-count');
-            const mobileCartCount = document.getElementById('mobile-cart-count');
-            if (cartCountElement) {
-                cartCountElement.textContent = count;
-                cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+            function updateCartCount(count) {
+                const cartCountElement = document.getElementById('cart-count');
+                const mobileCartCount = document.getElementById('mobile-cart-count');
+                if (cartCountElement) {
+                    cartCountElement.textContent = count;
+                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+                }
+                if (mobileCartCount) {
+                    mobileCartCount.textContent = count;
+                    mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
+                }
             }
-            if (mobileCartCount) {
-                mobileCartCount.textContent = count;
-                mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
-            }
-        }
-        fetch('cart_action.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({action: 'get'})
-        }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
+            fetch('cart_action.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'get'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') updateCartCount(d.cart_count);
+            });
 
             window.togglePasswordVisibility = function(inputId, button) {
                 const input = document.getElementById(inputId);

@@ -27,14 +27,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && $redirect === 'cart.php') {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-  $host = 'localhost';
-  $dbname = 'pet_store';
-  $db_user = 'root';
-  $db_pass = '';
-
   try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    require_once '../db.php';
 
     $login_id = trim($_POST["username"]);
     $pass = $_POST["password"];

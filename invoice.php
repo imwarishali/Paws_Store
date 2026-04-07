@@ -19,7 +19,7 @@ try {
     $is_admin = isset($_SESSION['admin_user']);
     // Build the query dynamically based on user role
     $sql = "
-        SELECT o.*, p.name AS pet_name, p.price AS pet_price, pm.transaction_id, pm.payment_method AS pm_method, pm.payment_date
+        SELECT o.*, p.name AS pet_name, p.price AS pet_price, pm.transaction_id, pm.payment_method AS pm_method, pm.payment_status, pm.payment_date
         FROM orders o
         LEFT JOIN pets p ON o.pet_id = p.id
         LEFT JOIN payments pm ON o.id = pm.order_id
@@ -80,6 +80,8 @@ if (!empty($order['shipping_address'])) {
             border: 1px solid #eee;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             background: #fff;
+            position: relative;
+            overflow: hidden;
         }
 
         .header {
@@ -226,6 +228,22 @@ if (!empty($order['shipping_address'])) {
                 display: none;
             }
         }
+
+        .watermark-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-35deg);
+            font-size: 110px;
+            color: rgba(220, 53, 69, 0.12);
+            /* Faded red */
+            border: 12px solid rgba(220, 53, 69, 0.12);
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: 900;
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 
@@ -238,6 +256,11 @@ if (!empty($order['shipping_address'])) {
     </div>
 
     <div class="invoice-box" id="invoice">
+        <?php if (($order['payment_status'] ?? '') === 'Refunded'): ?>
+            <div class="watermark-stamp">REFUNDED</div>
+        <?php elseif (($order['order_status'] ?? '') === 'Cancelled'): ?>
+            <div class="watermark-stamp">CANCELLED</div>
+        <?php endif; ?>
         <div class="header">
             <div>
                 <!-- Upload your logo to the Assets folder and name it logo.png -->
@@ -265,7 +288,14 @@ if (!empty($order['shipping_address'])) {
             <div class="address-box">
                 <h3>Payment Info:</h3>
                 <p><strong>Method:</strong> <?php echo htmlspecialchars(ucfirst($order['pm_method'] ?? $order['payment_method'] ?? 'N/A')); ?></p>
-                <p><strong>Status:</strong> <?php echo htmlspecialchars($order['order_status'] ?? 'Completed'); ?></p>
+                <p><strong>Order Status:</strong> <?php echo htmlspecialchars($order['order_status'] ?? 'Completed'); ?></p>
+                <p><strong>Payment Status:</strong>
+                    <?php if (($order['payment_status'] ?? '') === 'Refunded'): ?>
+                        <span style="color: #dc3545; font-weight: bold;">Refunded</span>
+                    <?php else: ?>
+                        <?php echo htmlspecialchars($order['payment_status'] ?? 'Completed'); ?>
+                    <?php endif; ?>
+                </p>
             </div>
         </div>
         <table class="table">
@@ -278,9 +308,9 @@ if (!empty($order['shipping_address'])) {
                 </tr>
             </thead>
             <tbody>
-                <?php 
+                <?php
                 $base_subtotal_all = 0;
-                foreach ($order_rows as $row): 
+                foreach ($order_rows as $row):
                     $row_base = ($row['pet_price'] ?? 0) * ($row['quantity'] ?? 1);
                     $base_subtotal_all += $row_base;
                 ?>

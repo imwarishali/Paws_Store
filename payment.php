@@ -19,6 +19,28 @@ if (empty($cart)) {
 
 require_once 'db.php';
 
+$env = parse_ini_file('.env');
+$keyId = $env['RAZORPAY_KEY_ID'] ?? '';
+$keySecret = $env['RAZORPAY_KEY_SECRET'] ?? '';
+
+// Create Razorpay Order
+$razorpayOrderId = '';
+if ($total > 0 && $keyId && $keySecret) {
+    $ch = curl_init('https://api.razorpay.com/v1/orders');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERPWD, $keyId . ':' . $keySecret);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'amount' => round($total * 100),
+        'currency' => 'INR',
+        'receipt' => 'rcpt_' . time()
+    ]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    $response = curl_exec($ch);
+    $razorpayOrder = json_decode($response, true);
+    $razorpayOrderId = $razorpayOrder['id'] ?? '';
+}
+
 $petData = [];
 try {
     $pet_ids = array_column($cart, 'id');
@@ -275,62 +297,10 @@ try {
 
             <form id="payment-form" method="POST" action="process_payment.php" enctype="multipart/form-data">
                 <div class="payment-grid">
-                    <div class="payment-options">
-                        <h3>Select Payment Method</h3>
-
-                        <!-- QR Code Payment -->
-                        <div class="payment-method" id="qr-method">
-                            <div class="payment-method-header" onclick="togglePaymentMethod('qr')">
-                                <span>📱 Pay via QR Code</span>
-                                <span class="toggle-icon">▼</span>
-                            </div>
-                            <div class="payment-method-content">
-                                <div class="qr-section">
-                                    <h4>Scan QR Code to Pay</h4>
-                                    <div class="qr-code">
-                                        <div style="font-size: 14px; color: #666;">
-                                            <div>QR Code Placeholder</div>
-                                            <div>UPI ID: pawsstore@upi</div>
-                                            <div>Amount: ₹<?php echo number_format($total); ?></div>
-                                        </div>
-                                    </div>
-                                    <p>Scan this QR code with your UPI app or banking app</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bank Transfer -->
-                        <div class="payment-method" id="bank-method">
-                            <div class="payment-method-header" onclick="togglePaymentMethod('bank')">
-                                <span>🏦 Bank Transfer</span>
-                                <span class="toggle-icon">▼</span>
-                            </div>
-                            <div class="payment-method-content">
-                                <div class="bank-details">
-                                    <h4>Bank Account Details</h4>
-                                    <p><strong>Account Name:</strong> Paws Store Pvt Ltd</p>
-                                    <p><strong>Account Number:</strong> 123456789012</p>
-                                    <p><strong>IFSC Code:</strong> PAWS0001234</p>
-                                    <p><strong>Bank Name:</strong> Paws Bank</p>
-                                    <p><strong>Branch:</strong> Mumbai Main Branch</p>
-                                </div>
-                                <p>Transfer the exact amount to the above account</p>
-                            </div>
-                        </div>
-
-                        <!-- UPI ID -->
-                        <div class="payment-method" id="upi-method">
-                            <div class="payment-method-header" onclick="togglePaymentMethod('upi')">
-                                <span>💳 UPI Transfer</span>
-                                <span class="toggle-icon">▼</span>
-                            </div>
-                            <div class="payment-method-content">
-                                <div class="upi-id">
-                                    <p><strong>UPI ID:</strong> pawsstore@upi</p>
-                                </div>
-                                <p>Use this UPI ID in your banking app or UPI app</p>
-                            </div>
-                        </div>
+                    <div class="payment-options" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <h3>Secure Payment via Razorpay</h3>
+                        <p style="color: #666; margin-top: 10px;">Click the button below to open the secure Razorpay checkout gateway. You can pay using Cards, Netbanking, UPI, and Wallets.</p>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg" alt="Razorpay" style="height: 40px; margin-top: 20px;">
                     </div>
 
                     <div class="order-summary">
@@ -342,32 +312,23 @@ try {
                             Total: ₹<?php echo number_format($total); ?>
                         </div>
 
-                        <div class="form-group">
-                            <label>Transaction ID / Reference Number</label>
-                            <input type="text" id="transaction_id" name="transaction_id" required pattern="^[Tt].*" title="Transaction ID must start with 'T'" placeholder="Enter transaction ID (Must start with 'T')">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Payment Screenshot</label>
-                            <div class="file-upload" onclick="document.getElementById('payment-screenshot').click()">
-                                <input type="file" id="payment-screenshot" name="payment_screenshot" accept="image/*" required>
-                                <div class="file-upload-label">
-                                    📎 Click to upload payment screenshot
-                                </div>
-                            </div>
-                        </div>
-
                         <input type="hidden" name="cart" value="<?php echo htmlspecialchars(json_encode($cart)); ?>">
                         <input type="hidden" name="address" value="<?php echo htmlspecialchars(json_encode($address)); ?>">
                         <input type="hidden" name="special_offer" value="<?php echo htmlspecialchars($special_offer); ?>">
-                        <input type="hidden" name="payment_method" id="payment_method" value="qr">
 
-                        <button type="submit" class="submit-btn">Confirm Payment</button>
+                        <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+                        <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+                        <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+                        <input type="hidden" name="payment_method" id="payment_method" value="Razorpay">
+
+                        <button type="button" id="rzp-button1" class="submit-btn">Pay with Razorpay</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <script>
         const petData = <?php echo json_encode($petData); ?>;
@@ -392,31 +353,6 @@ try {
             orderItems.innerHTML = html;
         }
 
-        function togglePaymentMethod(method) {
-            // Remove active class from all methods
-            document.querySelectorAll('.payment-method').forEach(el => {
-                el.classList.remove('active');
-            });
-
-            // Add active class to selected method
-            document.getElementById(method + '-method').classList.add('active');
-
-            // Update hidden payment_method field
-            const methodInput = document.getElementById('payment_method');
-            if (methodInput) {
-                methodInput.value = method;
-            }
-        }
-
-        // File upload preview
-        document.getElementById('payment-screenshot').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const label = document.querySelector('.file-upload-label');
-                label.textContent = '📎 ' + file.name;
-            }
-        });
-
         // TOAST NOTIFICATION FUNCTION
         function showToast(message, icon = '✅') {
             let container = document.getElementById('toast-container');
@@ -437,15 +373,37 @@ try {
             }, 3000);
         }
 
-        document.getElementById('payment-form').addEventListener('submit', function(e) {
-            const txnId = document.getElementById('transaction_id').value.trim();
-            if (!/^[Tt]/.test(txnId)) {
-                e.preventDefault();
-                showToast('Please enter a valid Transaction ID starting with the letter "T".', '⚠️');
-            }
-        });
-
         renderOrderItems();
+
+        var options = {
+            "key": "<?php echo $keyId; ?>",
+            "amount": "<?php echo round($total * 100); ?>",
+            "currency": "INR",
+            "name": "Paws Store",
+            "description": "Pet Purchase",
+            "order_id": "<?php echo $razorpayOrderId; ?>",
+            "handler": function(response) {
+                document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+                document.getElementById('razorpay_signature').value = response.razorpay_signature;
+                document.getElementById('payment-form').submit();
+            },
+            "prefill": {
+                "name": "<?php echo htmlspecialchars($_SESSION['user']['username'] ?? ''); ?>",
+                "email": "<?php echo htmlspecialchars($_SESSION['user']['email'] ?? ''); ?>"
+            },
+            "theme": {
+                "color": "#b5860d"
+            }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.on('payment.failed', function(response) {
+            showToast("Payment Failed: " + response.error.description, '❌');
+        });
+        document.getElementById('rzp-button1').onclick = function(e) {
+            rzp1.open();
+            e.preventDefault();
+        }
 
         // Update Cart Count
         function updateCartCount(count) {

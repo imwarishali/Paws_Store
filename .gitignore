@@ -1,0 +1,10 @@
+# Environment Variables (Contains sensitive passwords and API keys)
+.env
+
+# Log files
+php-error.log
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

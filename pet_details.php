@@ -9,6 +9,14 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM pets WHERE id = ?");
     $stmt->execute([$id]);
     $pet = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $suggested_pets = [];
+    if ($pet) {
+        // Fetch 4 random pets from any category, excluding the current pet
+        $suggested_stmt = $pdo->prepare("SELECT id, name, price, image FROM pets WHERE id != ? ORDER BY RAND() LIMIT 4");
+        $suggested_stmt->execute([$id]);
+        $suggested_pets = $suggested_stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
 }
@@ -211,6 +219,76 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             background: #fdf5f5;
         }
 
+        /* Suggested Pets */
+        .related-section {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid #e8e0d4;
+        }
+
+        .related-title {
+            font-family: "Playfair Display", serif;
+            font-size: 28px;
+            color: #2c1a0e;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+        }
+
+        .related-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(92, 64, 51, 0.08);
+            overflow: hidden;
+            text-decoration: none;
+            color: #2d2a26;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e8e0d4;
+        }
+
+        .related-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(92, 64, 51, 0.12);
+        }
+
+        .related-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .related-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .related-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c1a0e;
+            margin-bottom: 8px;
+        }
+
+        .related-price {
+            color: #b5860d;
+            background: #fdfaf6;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 12px;
+            align-self: flex-start;
+            border: 1px solid #f5ecd8;
+        }
+
         @media (max-width: 768px) {
             .ps-details-container {
                 flex-direction: column;
@@ -295,6 +373,24 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                 </div>
             </div>
         </div>
+
+        <!-- SUGGESTED PETS SECTION -->
+        <?php if (!empty($suggested_pets)): ?>
+            <div class="related-section">
+                <h2 class="related-title">Suggested For You</h2>
+                <div class="related-grid">
+                    <?php foreach ($suggested_pets as $s_pet): ?>
+                        <a href="pet_details.php?id=<?php echo $s_pet['id']; ?>" class="related-card">
+                            <img src="<?php echo htmlspecialchars($s_pet['image']); ?>" alt="<?php echo htmlspecialchars($s_pet['name']); ?>" class="related-img">
+                            <div class="related-content">
+                                <div class="related-card-title"><?php echo htmlspecialchars($s_pet['name']); ?></div>
+                                <div class="related-price">₹<?php echo number_format($s_pet['price']); ?></div>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <footer id="contact">
@@ -364,9 +460,15 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             }
             fetch('cart_action.php', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: 'get'})
-            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'get'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') updateCartCount(d.cart_count);
+            });
 
             function updateWishlistIcon() {
                 if (wishlist.find(item => item.id === petId)) {
@@ -380,16 +482,22 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
             function addToCart() {
                 fetch('cart_action.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({action: 'add', id: petId, quantity: 1})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.status === 'success') {
-                        updateCartCount(data.cart_count);
-                    }
-                });
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'add',
+                            id: petId,
+                            quantity: 1
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            updateCartCount(data.cart_count);
+                        }
+                    });
             }
 
             cartBtn.addEventListener('click', function() {

@@ -37,11 +37,144 @@ try {
             $update_stmt = $pdo->prepare("UPDATE orders SET order_status = ? WHERE id = ?");
             $update_stmt->execute([$new_status, $order_id]);
             $success_message = "Pet order status updated to '{$new_status}' successfully!";
-        } elseif (isset($_POST['confirm_order'])) {
-            $order_id = $_POST['order_id'];
-            $update_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE id = ?");
-            $update_stmt->execute([$order_id]);
-            $success_message = "Pet order status updated to 'Confirmed' successfully!";
+
+            // Process Automatic Razorpay Refund
+            if ($new_status === 'Cancelled') {
+                $refund_stmt = $pdo->prepare("UPDATE payments SET payment_status = 'Refunded' WHERE order_id = ?");
+                $refund_stmt->execute([$order_id]);
+
+                $txn_stmt = $pdo->prepare("SELECT transaction_id FROM payments WHERE order_id = ? LIMIT 1");
+                $txn_stmt->execute([$order_id]);
+                $transaction_id = $txn_stmt->fetchColumn();
+
+                if ($transaction_id && strpos($transaction_id, 'pay_') === 0) {
+                    $env = parse_ini_file('.env');
+                    $keyId = $env['RAZORPAY_KEY_ID'] ?? '';
+                    $keySecret = $env['RAZORPAY_KEY_SECRET'] ?? '';
+
+                    if ($keyId && $keySecret) {
+                        $ch = curl_init("https://api.razorpay.com/v1/payments/{$transaction_id}/refund");
+                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($ch, CURLOPT_USERPWD, $keyId . ':' . $keySecret);
+                        curl_setopt($ch, CURLOPT_POST, true);
+                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([])); // Empty JSON array triggers a full refund
+                        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                        curl_exec($ch);
+                        curl_close($ch);
+                    }
+                }
+                $success_message .= " A refund has been automatically initiated.";
+            }
+
+            // Send Order Update Email
+            if (in_array($new_status, ['Shipped', 'Delivered', 'Cancelled'])) {
+                $info_stmt = $pdo->prepare("SELECT o.order_number, u.email, u.username, u.phone FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+                $info_stmt->execute([$order_id]);
+                $order_info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($order_info && !empty($order_info['email'])) {
+                    $to = $order_info['email'];
+                    $order_number = $order_info['order_number'];
+                    $username = $order_info['username'] ?? 'Customer';
+                    $phone = $order_info['phone'] ?? '';
+
+                    $subject = "Order Update: Your pet is " . $new_status . "! - Paws Store [" . $order_number . "]";
+
+                    if ($new_status === 'Shipped') {
+                        $status_message = "Your order has been <strong>shipped</strong> and is on its way to you! You can expect delivery soon.";
+                    } elseif ($new_status === 'Delivered') {
+                        $status_message = "Your order has been <strong>delivered</strong> successfully! We hope you and your new furry friend share lots of joyful moments together.";
+                    } else {
+                        $status_message = "Your order has been <strong>cancelled</strong> by the store admin. A full refund has been initiated to your original payment method.";
+                        $subject = "Order Cancelled & Refund Initiated - Paws Store [" . $order_number . "]";
+                    }
+
+                    $message = "
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset='UTF-8'>
+                        <title>Order Update</title>
+                    </head>
+                    <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                            <tr>
+                                <td align='center'>
+                                    <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                                        <tr>
+                                            <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                                <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style='padding: 40px 30px;'>
+                                                <h2 style='color: #2c1a0e; margin-top: 0;'>Order Status Update</h2>
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Great news about your order <strong>#" . $order_number . "</strong>!</p>
+                                                <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                                    <p style='margin: 0; font-size: 16px; color: #555555;'>" . $status_message . "</p>
+                                                </div>
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>You can view your complete order details anytime by logging into your account.</p>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
+                                                <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
+                                                <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                    ";
+
+                    $env = parse_ini_file('.env');
+                    $system_email = $env['SYSTEM_EMAIL'] ?? 'noreply@localhost';
+                    $headers = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
+                    $headers .= "From: Paws Store <" . $system_email . ">\r\n";
+
+                    @mail($to, $subject, $message, $headers);
+
+                    // Send Order Update WhatsApp
+                    $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+                    $token = $env['ULTRAMSG_TOKEN'] ?? '';
+                    $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+                    if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+                        if (strlen($clean_phone) == 10) {
+                            $clean_phone = "91" . $clean_phone;
+                        }
+
+                        $wa_status_message = "";
+                        if ($new_status === 'Shipped') {
+                            $wa_status_message = "Your order has been *shipped* and is on its way to you! 🚚";
+                        } elseif ($new_status === 'Delivered') {
+                            $wa_status_message = "Your order has been *delivered* successfully! 🏡 We hope you and your new furry friend share lots of joyful moments together.";
+                        } else {
+                            $wa_status_message = "Your order has been *cancelled* by the store admin. 🚫 A full refund has been initiated to your original payment method.";
+                        }
+
+                        $wa_body = "🐾 *Paws Store - Order Update*\n\nHello *" . htmlspecialchars($username) . "*,\n\nGreat news about your order *#" . $order_number . "*!\n\n" . $wa_status_message;
+
+                        $curl = curl_init();
+                        curl_setopt_array($curl, [
+                            CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_POST => true,
+                            CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
+                            CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
+                            CURLOPT_SSL_VERIFYPEER => false,
+                            CURLOPT_SSL_VERIFYHOST => false
+                        ]);
+                        curl_exec($curl);
+                        curl_close($curl);
+                    }
+                }
+            }
         } elseif (isset($_POST['delete_order'])) {
             $order_id = $_POST['order_id'];
             $pdo->prepare("DELETE FROM payments WHERE order_id = ?")->execute([$order_id]);
@@ -65,9 +198,78 @@ try {
         // --- Users Actions ---
         elseif (isset($_POST['delete_user'])) {
             $delete_id = $_POST['user_id'];
+
+            // Fetch user info before deleting
+            $stmt = $pdo->prepare("SELECT username, email, phone FROM users WHERE id = ?");
+            $stmt->execute([$delete_id]);
+            $del_user = $stmt->fetch(PDO::FETCH_ASSOC);
+
             $delete_stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
             $delete_stmt->execute([$delete_id]);
             $success_message = "User deleted successfully!";
+
+            if ($del_user && !empty($del_user['email'])) {
+                $to = $del_user['email'];
+                $username = $del_user['username'] ?? 'Customer';
+                $phone = $del_user['phone'] ?? '';
+
+                $subject = "Account Deleted - Paws Store";
+                $message = "
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <title>Account Deleted</title>
+                </head>
+                <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+                    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                        <tr>
+                            <td align='center'>
+                                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                                    <tr>
+                                        <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                            <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style='padding: 40px 30px;'>
+                                            <h2 style='color: #2c1a0e; margin-top: 0;'>Account Deleted</h2>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This email is to inform you that your Paws Store account has been permanently deleted by the administrator.</p>
+                                            
+                                            <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                                <p style='margin: 0; font-size: 16px; color: #555555;'>We're sorry to see you go!</p>
+                                            </div>
+                                            
+                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>If you believe this was a mistake, or if you'd like to rejoin us, please contact our support team.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                ";
+
+                $env = parse_ini_file('.env');
+                $system_email = $env['SYSTEM_EMAIL'] ?? 'noreply@localhost';
+                $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: Paws Store <" . $system_email . ">\r\n";
+                @mail($to, $subject, $message, $headers);
+
+                $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+                $token = $env['ULTRAMSG_TOKEN'] ?? '';
+                $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+                if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+                    if (strlen($clean_phone) == 10) $clean_phone = "91" . $clean_phone;
+                    $wa_body = "🐾 *Paws Store*\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour account has been deleted by the administrator. If you believe this was a mistake, please contact our support team.";
+                    $curl = curl_init();
+                    curl_setopt_array($curl, [CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat", CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]), CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"], CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => false]);
+                    curl_exec($curl);
+                    curl_close($curl);
+                }
+            }
         } elseif (isset($_POST['update_user_password'])) {
             $user_id = $_POST['user_id'];
             $new_password = $_POST['new_password'];
@@ -83,6 +285,74 @@ try {
                 $update_stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
                 $update_stmt->execute([$hashed_password, $user_id]);
                 $success_message = "User password updated successfully!";
+
+                // Notify the user their password was forcibly reset by admin
+                $stmt = $pdo->prepare("SELECT username, email, phone FROM users WHERE id = ?");
+                $stmt->execute([$user_id]);
+                $up_user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($up_user && !empty($up_user['email'])) {
+                    $to = $up_user['email'];
+                    $username = $up_user['username'] ?? 'Customer';
+                    $phone = $up_user['phone'] ?? '';
+
+                    $subject = "Security Alert: Password Reset by Admin - Paws Store";
+                    $message = "
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset='UTF-8'>
+                        <title>Password Reset</title>
+                    </head>
+                    <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
+                        <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
+                            <tr>
+                                <td align='center'>
+                                    <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+                                        <tr>
+                                            <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
+                                                <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style='padding: 40px 30px;'>
+                                                <h2 style='color: #2c1a0e; margin-top: 0;'>Password Reset</h2>
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This is a notification to let you know that your password has been successfully reset by the Paws Store administrator.</p>
+                                                
+                                                <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
+                                                    <p style='margin: 0; font-size: 16px; color: #555555;'>Please login using your new credentials provided by the admin.</p>
+                                                </div>
+                                                
+                                                <p style='font-size: 16px; line-height: 1.5; color: #555555;'>If you did not request this change or have any questions, please contact our support team immediately.</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                    ";
+
+                    $env = parse_ini_file('.env');
+                    $system_email = $env['SYSTEM_EMAIL'] ?? 'noreply@localhost';
+                    $headers = "MIME-Version: 1.0\r\nContent-type:text/html;charset=UTF-8\r\nFrom: Paws Store <" . $system_email . ">\r\n";
+                    @mail($to, $subject, $message, $headers);
+
+                    $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
+                    $token = $env['ULTRAMSG_TOKEN'] ?? '';
+                    $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+
+                    if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
+                        if (strlen($clean_phone) == 10) $clean_phone = "91" . $clean_phone;
+                        $wa_body = "🐾 *Paws Store - Security Alert*\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour password has been successfully reset by the store administrator. Please login with your new credentials.\n\nIf you have any questions, please contact support.";
+                        $curl = curl_init();
+                        curl_setopt_array($curl, [CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat", CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]), CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"], CURLOPT_SSL_VERIFYPEER => false, CURLOPT_SSL_VERIFYHOST => false]);
+                        curl_exec($curl);
+                        curl_close($curl);
+                    }
+                }
             }
         }
         // --- Admin Actions ---
@@ -158,7 +428,7 @@ try {
         $total_revenue = (float)$pdo->query("SELECT SUM(total_amount) FROM orders WHERE order_status != 'Cancelled'")->fetchColumn();
         $total_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
         $total_pets = (int)$pdo->query("SELECT COUNT(*) FROM pets")->fetchColumn();
-        $pending_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'Processing'")->fetchColumn();
+        $pending_orders = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE order_status = 'Confirmed'")->fetchColumn();
         $total_users = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
         $chart_stmt = $pdo->query("SELECT DATE(created_at) as order_date, SUM(total_amount) as daily_revenue FROM orders WHERE order_status != 'Cancelled' AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(created_at) ORDER BY DATE(created_at) ASC");
@@ -192,8 +462,7 @@ try {
                     o.order_status, 
                     o.total_amount, 
                     o.quantity,
-                    p.name AS pet_name,
-                    o.payment_screenshot
+                    p.name AS pet_name
                 FROM orders o 
                 LEFT JOIN pets p ON o.pet_id = p.id";
 
@@ -238,6 +507,168 @@ try {
                 ]);
             }
             fclose($output);
+            exit();
+        }
+
+        // Handle PDF Export
+        if (isset($_GET['export_pdf']) && $_GET['export_pdf'] == '1') {
+?>
+            <!DOCTYPE html>
+            <html lang="en">
+
+            <head>
+                <meta charset="UTF-8">
+                <title>Orders Master Report</title>
+                <style>
+                    body {
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        color: #333;
+                        margin: 0;
+                        padding: 20px;
+                        background: #fff;
+                    }
+
+                    .report-container {
+                        max-width: 1000px;
+                        margin: auto;
+                    }
+
+                    .report-header {
+                        text-align: center;
+                        border-bottom: 2px solid #b5860d;
+                        padding-bottom: 20px;
+                        margin-bottom: 20px;
+                    }
+
+                    .report-header h1 {
+                        color: #b5860d;
+                        margin: 0 0 5px 0;
+                        font-size: 28px;
+                    }
+
+                    .report-header p {
+                        margin: 0;
+                        color: #666;
+                        font-size: 14px;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 12px;
+                    }
+
+                    th,
+                    td {
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        text-align: left;
+                    }
+
+                    th {
+                        background-color: #f5f2eb;
+                        color: #2c1a0e;
+                        font-weight: bold;
+                    }
+
+                    tr:nth-child(even) {
+                        background-color: #faf7f2;
+                    }
+
+                    .total-row td {
+                        font-weight: bold;
+                        background-color: #f5f2eb !important;
+                        font-size: 14px;
+                    }
+                </style>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            </head>
+
+            <body>
+                <div id="report-content" class="report-container">
+                    <div class="report-header">
+                        <h1>🐾 Paws Store</h1>
+                        <h2>Orders Master Report</h2>
+                        <p>Generated on <?php echo date('d M Y, H:i'); ?></p>
+                        <?php if (!empty($status_filter) && $status_filter !== 'All'): ?>
+                            <p><strong>Filtered By Status:</strong> <?php echo htmlspecialchars($status_filter); ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($search_query)): ?>
+                            <p><strong>Search Query:</strong> "<?php echo htmlspecialchars($search_query); ?>"</p>
+                        <?php endif; ?>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>User ID</th>
+                                <th>Pet Ordered</th>
+                                <th>Qty</th>
+                                <th>Date Placed</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $total_report_amount = 0;
+                            foreach ($all_orders as $order):
+                                $total_report_amount += $order['total_amount'];
+                            ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($order['order_number']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['user_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['pet_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($order['quantity']); ?></td>
+                                    <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
+                                    <td>₹<?php echo number_format($order['total_amount']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['order_status']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($all_orders)): ?>
+                                <tr>
+                                    <td colspan="7" style="text-align: center;">No orders found matching this criteria.</td>
+                                </tr>
+                            <?php else: ?>
+                                <tr class="total-row">
+                                    <td colspan="5" style="text-align: right;">Total Amount for this Report:</td>
+                                    <td colspan="2">₹<?php echo number_format($total_report_amount); ?></td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <script>
+                    window.onload = function() {
+                        const element = document.getElementById('report-content');
+                        const opt = {
+                            margin: [10, 10, 10, 10],
+                            filename: 'Paws_Store_Orders_Report_<?php echo date('Y_m_d'); ?>.pdf',
+                            image: {
+                                type: 'jpeg',
+                                quality: 0.98
+                            },
+                            html2canvas: {
+                                scale: 2,
+                                useCORS: true
+                            },
+                            jsPDF: {
+                                unit: 'mm',
+                                format: 'a4',
+                                orientation: 'portrait'
+                            }
+                        };
+                        html2pdf().set(opt).from(element).save().then(() => {
+                            setTimeout(() => {
+                                window.close();
+                            }, 500);
+                        });
+                    };
+                </script>
+            </body>
+
+            </html>
+<?php
             exit();
         }
     } elseif ($page === 'pets') {
@@ -685,17 +1116,6 @@ try {
             white-space: nowrap;
         }
 
-        .screenshot-btn {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
         /* Pagination */
         .pagination {
             display: flex;
@@ -884,7 +1304,6 @@ try {
                         <input type="text" name="search_query" placeholder="Search by Order ID or User ID..." value="<?php echo htmlspecialchars($search_query); ?>">
                         <select name="status_filter" style="padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; font-size: 15px; outline: none; background: #fff;">
                             <option value="All" <?php echo ($status_filter === 'All' || empty($status_filter)) ? 'selected' : ''; ?>>All Statuses</option>
-                            <option value="Processing" <?php echo $status_filter === 'Processing' ? 'selected' : ''; ?>>Processing</option>
                             <option value="Confirmed" <?php echo $status_filter === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
                             <option value="Shipped" <?php echo $status_filter === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
                             <option value="Delivered" <?php echo $status_filter === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
@@ -895,6 +1314,7 @@ try {
                             <a href="admin.php?page=orders">Clear Filter</a>
                         <?php endif; ?>
                         <button type="submit" name="export_csv" value="1" style="background-color: #28a745; margin-left: auto;">Export CSV</button>
+                        <button type="submit" name="export_pdf" value="1" formtarget="_blank" style="background-color: #dc3545;">Export PDF</button>
                     </form>
                     <table>
                         <thead>
@@ -934,22 +1354,15 @@ try {
                                                 <form method="POST" style="display: flex; gap: 8px; align-items: center; margin: 0; flex-wrap: wrap;">
                                                     <input type="hidden" name="order_id" value="<?php echo $order['order_id']; ?>">
                                                     <select name="new_status" class="status-select" style="padding: 6px;">
-                                                        <option value="Processing" <?php echo $order['order_status'] === 'Processing' ? 'selected' : ''; ?>>Processing</option>
                                                         <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
                                                         <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
                                                         <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
                                                         <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                                     </select>
                                                     <button type="submit" name="update_status" class="update-btn">Update</button>
-                                                    <?php if ($order['order_status'] === 'Processing'): ?>
-                                                        <button type="submit" name="confirm_order" style="background-color: #28a745; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Confirm</button>
-                                                    <?php endif; ?>
                                                     <button type="submit" name="delete_order" class="delete-btn" onclick="return confirm('Are you sure you want to permanently delete this order item? This action cannot be undone!');" style="padding: 10px 16px;">Delete</button>
                                                 </form>
                                                 <a href="invoice.php?order_id=<?php echo urlencode($order['order_number']); ?>" class="invoice-btn" style="padding: 10px 16px;">Invoice</a>
-                                                <?php if (!empty($order['payment_screenshot'])): ?>
-                                                    <a href="<?php echo htmlspecialchars($order['payment_screenshot']); ?>" target="_blank" class="screenshot-btn" style="padding: 10px 16px;">📸 Screenshot</a>
-                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -1251,36 +1664,7 @@ try {
                 button.textContent = '👁️';
             }
         }
-
-        function openModal(imageSrc) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modalImg.src = imageSrc;
-
-            modal.style.display = 'flex';
-        }
-
-        function closeModal(event) {
-            if (event) event.stopPropagation();
-            const modal = document.getElementById('imageModal');
-            modal.style.display = 'none';
-            document.getElementById('modalImage').src = '';
-        }
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
-        });
     </script>
-
-    <!-- Image Modal -->
-    <div id="imageModal" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal(event)">×</button>
-            <img id="modalImage" src="" alt="Payment Screenshot">
-        </div>
-    </div>
 </body>
 
 </html>

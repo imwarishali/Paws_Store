@@ -1,10 +1,30 @@
 # Environment Variables (Contains sensitive passwords and API keys)
 .env
+.env.local
+.env.*.local
 
 # Log files
 php-error.log
 *.log
+logs/
+
+# User uploaded files
+uploads/
 
 # OS generated files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.cache

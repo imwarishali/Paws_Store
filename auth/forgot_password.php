@@ -1,5 +1,8 @@
 <?php
-session_start();
+
+require_once '../config.php';
+require_once '../db.php';
+require_once '../helpers/email_helper.php';
 
 if (isset($_SESSION["user"])) {
     header("Location: ../index.php");
@@ -11,8 +14,6 @@ $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
-        require_once '../db.php';
-
         $email = trim($_POST["email"]);
         $username = trim($_POST["username"]);
         $new_password = $_POST["new_password"];

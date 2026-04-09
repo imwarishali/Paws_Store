@@ -1,5 +1,8 @@
 <?php
-session_start();
+
+require_once '../config.php';
+require_once '../db.php';
+require_once '../helpers/email_helper.php';
 
 if (isset($_SESSION["user"])) {
   header("Location: ../index.php");
@@ -11,31 +14,29 @@ $success = "";
 $redirect = $_GET['redirect'] ?? $_POST['redirect'] ?? '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  try {
-    require_once '../db.php';
+  $username = trim($_POST["username"] ?? '');
+  $email = trim($_POST["email"] ?? '');
+  $phone = trim($_POST["phone"] ?? '');
+  $password = $_POST["password"] ?? '';
+  $confirm_password = $_POST["confirm_password"] ?? '';
 
-    $username = trim($_POST["username"]);
-    $email = trim($_POST["email"]);
-    $phone = trim($_POST["phone"]);
-    $password = $_POST["password"];
-    $confirm_password = $_POST["confirm_password"];
-
-    if (empty($username) || empty($email) || empty($phone) || empty($password) || empty($confirm_password)) {
-      $error = "All fields are required.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-      $error = "Invalid email format.";
-    } elseif (strlen(preg_replace('/[^0-9]/', '', $phone)) !== 10) {
-      $error = "Please enter a valid 10-digit mobile number.";
-    } elseif ($password !== $confirm_password) {
-      $error = "Passwords do not match.";
-    } elseif (strlen($password) < 8) {
-      $error = "Password must be at least 8 characters long.";
-    } elseif (!preg_match('/[0-9]/', $password)) {
-      $error = "Password must contain at least one number.";
-    } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
-      $error = "Password must contain at least one special character.";
-    } else {
-      // Rate Limiting: Max 3 OTP requests per hour
+  if (empty($username) || empty($email) || empty($phone) || empty($password) || empty($confirm_password)) {
+    $error = "All fields are required.";
+  } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $error = "Invalid email format.";
+  } elseif (!preg_match(PHONE_REGEX, preg_replace('/[^0-9]/', '', $phone))) {
+    $error = "Please enter a valid 10-digit mobile number.";
+  } elseif ($password !== $confirm_password) {
+    $error = "Passwords do not match.";
+  } elseif (strlen($password) < PASSWORD_MIN_LENGTH) {
+    $error = "Password must be at least " . PASSWORD_MIN_LENGTH . " characters long.";
+  } elseif (!preg_match('/[0-9]/', $password)) {
+    $error = "Password must contain at least one number.";
+  } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+    $error = "Password must contain at least one special character.";
+  } else {
+    try {
+      // Rate Limiting: Check OTP requests
       if (!isset($_SESSION['otp_requests'])) {
         $_SESSION['otp_requests'] = [];
       }
@@ -43,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         return ($timestamp > time() - 3600);
       });
 
-      if (count($_SESSION['otp_requests']) >= 6) {
+      if (count($_SESSION['otp_requests']) >= MAX_OTP_REQUESTS_PER_HOUR) {
         $error = "You have exceeded the maximum number of OTP requests. Please try again after an hour.";
       } else {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
@@ -53,8 +54,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           $error = "An account with this email or username already exists.";
         } else {
           $password_hash = password_hash($password, PASSWORD_DEFAULT);
-
           $otp = rand(100000, 999999);
+
           $_SESSION['pending_user'] = [
             'username' => $username,
             'email' => $email,
@@ -64,108 +65,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             'otp_time' => time()
           ];
 
-          // Send OTP Email
-          $to = $email;
-          $subject = "Verify Your Email - Paws Store";
-          $message = "
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <meta charset='UTF-8'>
-              <title>Email Verification</title>
-          </head>
-          <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
-              <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
-                  <tr>
-                      <td align='center'>
-                          <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
-                              <tr>
-                                  <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
-                                      <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
-                                  </td>
-                              </tr>
-                              <tr>
-                                  <td style='padding: 40px 30px;'>
-                                      <h2 style='color: #2c1a0e; margin-top: 0;'>Verify Your Email</h2>
-                                      <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
-                                      <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Thank you for registering at Paws Store. To complete your registration, please use the following One-Time Password (OTP):</p>
-                                      
-                                      <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
-                                          <h1 style='margin: 0; font-size: 36px; color: #b5860d; letter-spacing: 5px;'>" . $otp . "</h1>
-                                      </div>
-                                      
-                                      <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p>
-                                  </td>
-                              </tr>
-                              <tr>
-                                  <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
-                                      <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
-                                      <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
-                                  </td>
-                              </tr>
-                          </table>
-                      </td>
-                  </tr>
-              </table>
-          </body>
-          </html>
-          ";
+          // Send OTP Email using helper
+          sendOTPEmail($email, $username, $otp);
 
-          $env = parse_ini_file('../.env');
-          $system_email = $env['SYSTEM_EMAIL'] ?? 'noreply@localhost';
-          $headers = "MIME-Version: 1.0\r\n";
-          $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-          $headers .= "From: Paws Store <" . $system_email . ">\r\n";
+          // Send OTP via WhatsApp
+          $wa_body = "🐾 *Paws Store*\n\nHello! 👋\nYour One-Time Password (OTP) for account verification is: *" . $otp . "*\n\n⏳ This code is valid for the next 10 minutes.\nFor your security, please do not share this code with anyone.\n\nThank you for choosing Paws Store!";
+          sendWhatsAppMessage($phone, $wa_body);
 
-          @mail($to, $subject, $message, $headers);
-
-          // Send OTP via WhatsApp (Using UltraMsg API)
-          $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
-          $token = $env['ULTRAMSG_TOKEN'] ?? '';
-          $clean_phone = preg_replace('/[^0-9]/', '', $phone);
-
-          if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
-            if (strlen($clean_phone) == 10) {
-              $clean_phone = "91" . $clean_phone; // Add India country code if 10 digits
-            }
-
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-              CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
-              CURLOPT_RETURNTRANSFER => true,
-              CURLOPT_POST => true,
-              CURLOPT_POSTFIELDS => http_build_query([
-                "token" => $token,
-                "to" => "+" . $clean_phone,
-                "body" => "🐾 *Paws Store*\n\nHello! 👋\nYour One-Time Password (OTP) for account verification is: *" . $otp . "*\n\n⏳ This code is valid for the next 10 minutes.\nFor your security, please do not share this code with anyone.\n\nThank you for choosing Paws Store!"
-              ]),
-              CURLOPT_HTTPHEADER => [
-                "Content-Type: application/x-www-form-urlencoded"
-              ],
-              CURLOPT_SSL_VERIFYPEER => false,
-              CURLOPT_SSL_VERIFYHOST => false
-            ]);
-            $response = curl_exec($curl);
-            $err = curl_error($curl);
-            curl_close($curl);
-
-            if ($err) {
-              error_log("cURL Error (WhatsApp): " . $err);
-            } else {
-              error_log("WhatsApp API Response: " . $response);
-            }
-          }
-
-          $_SESSION['otp_requests'][] = time(); // Log the successful request
-
+          $_SESSION['otp_requests'][] = time();
           $success = "OTP sent to your email and WhatsApp! Redirecting to verification...";
           $redirect_url = 'verify_otp.php' . (!empty($redirect) ? '?redirect=' . urlencode($redirect) : '');
           echo "<script>setTimeout(function(){ window.location.href = '" . $redirect_url . "'; }, 2000);</script>";
         }
       }
+    } catch (PDOException $e) {
+      error_log("Registration error: " . $e->getMessage());
+      $error = "Database error: " . $e->getMessage();
     }
-  } catch (PDOException $e) {
-    $error = "Database error: " . $e->getMessage();
   }
 }
 ?>

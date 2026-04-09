@@ -1,13 +1,12 @@
 <?php
-session_start();
+require_once 'config.php';
+require_once 'db.php';
 
 // Redirect to login if not logged in
 if (!isset($_SESSION["user"])) {
     header("Location: auth/login.php");
     exit();
 }
-
-require_once 'db.php';
 
 $success_message = null;
 $error_message = null;
@@ -105,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_changes'])) {
                         $clean_phone = "91" . $clean_phone;
                     }
                     $wa_body = "🐾 *Paws Store - Profile Update*\n\nHello *" . htmlspecialchars($new_username) . "*,\n\nYour profile details have been successfully updated.\n\nIf you did not make this change, please contact our support team immediately.";
-                    
+
                     $curl = curl_init();
                     curl_setopt_array($curl, [
                         CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
@@ -113,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_changes'])) {
                         CURLOPT_POST => true,
                         CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
                         CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
-                        CURLOPT_SSL_VERIFYPEER => false, 
+                        CURLOPT_SSL_VERIFYPEER => false,
                         CURLOPT_SSL_VERIFYHOST => false
                     ]);
                     curl_exec($curl);

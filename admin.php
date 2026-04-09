@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'config.php';
 
 // If admin is not logged in, redirect to the new admin login page
 if (!isset($_SESSION["admin_user"])) {

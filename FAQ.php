@@ -90,6 +90,49 @@ session_start();
         .faq-item.active .faq-icon {
             transform: rotate(45deg);
         }
+
+        .ps-faq-search {
+            margin: 30px auto 0;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .ps-faq-search input {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid #d4b87a;
+            border-radius: 30px;
+            font-family: "Nunito", sans-serif;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        .ps-faq-search input:focus {
+            border-color: #b5860d;
+            box-shadow: 0 0 0 2px rgba(181, 134, 13, 0.1);
+        }
+
+        .ps-faq-search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #888;
+        }
+        
+        .no-results-msg {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            display: none;
+            font-size: 18px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e8e0d4;
+        }
     </style>
 </head>
 
@@ -116,6 +159,10 @@ session_start();
         <div class="ps-faq-header">
             <h1>Frequently Asked Questions</h1>
             <p>Have questions about adopting a pet, our delivery process, or pet care? Find all the answers you need right here.</p>
+            <div class="ps-faq-search">
+                <span class="ps-faq-search-icon">🔍</span>
+                <input type="text" id="faqSearch" placeholder="Search for a question or keyword...">
+            </div>
         </div>
 
         <div class="ps-faq-container">
@@ -203,6 +250,21 @@ session_start();
                     <br>You can reach our dedicated support team 24/7 by calling us at <a href="tel:+919798889456" style="color: #b5860d; text-decoration: none; font-weight: bold;">+91 97988 89456</a>, or by emailing us at <a href="mailto:support@pawsstore.in" style="color: #b5860d; text-decoration: none; font-weight: bold;">support@pawsstore.in</a>. We are always happy to help!
                 </div>
             </div>
+            <!-- FAQ Item 13 -->
+            <div class="faq-item">
+                <div class="faq-question">Do you offer other pet services like grooming or boarding? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes! We offer a variety of in-person clinic services including pet grooming, vaccination, professional training, health checkups, boarding, and pet photography. You can explore all of these on our <a href="other_services.php" style="color: #b5860d; text-decoration: none; font-weight: bold;">Other Services</a> page.
+                </div>
+            </div>
+            <!-- FAQ Item 14 -->
+            <div class="faq-item">
+                <div class="faq-question">What forms of payment are accepted on delivery? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Currently, to ensure a smooth and secure adoption process, we do not offer Cash on Delivery (COD) or Pay on Delivery options. All payments must be completed securely online via our payment gateway (which accepts UPI, Credit/Debit Cards, Net Banking, and Wallets) before your pet is dispatched.
+                </div>
+            </div>
+            <div id="no-results-msg" class="no-results-msg">No FAQs found matching your search criteria.</div>
         </div>
     </div>
 
@@ -235,6 +297,32 @@ session_start();
                     }
                 });
             });
+
+            // Search Filter Logic
+            const searchInput = document.getElementById('faqSearch');
+            const noResultsMsg = document.getElementById('no-results-msg');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    let visibleCount = 0;
+
+                    faqItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'block';
+                            visibleCount++;
+                        } else {
+                            item.style.display = 'none';
+                            item.classList.remove('active'); // Collapse hidden items
+                        }
+                    });
+
+                    if (noResultsMsg) {
+                        noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+                    }
+                });
+            }
 
             // Cart Count Update
             function updateCartCount(count) {

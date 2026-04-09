@@ -1,5 +1,8 @@
 <?php
-session_start();
+
+require_once '../config.php';
+require_once '../db.php';
+require_once '../helpers/email_helper.php';
 
 if (isset($_SESSION["user"])) {
     header("Location: ../index.php");
@@ -233,7 +236,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                                 $clean_phone = "91" . $clean_phone;
                             }
                             $wa_body = "🐾 *Paws Store*\n\nWelcome, *" . htmlspecialchars($username) . "*! 🎉\n\nYour account has been successfully created. You can now log in to explore our wide variety of lovely pets, save your favorites to your wishlist, and track your orders easily.\n\nThank you for joining the Paws Store family!";
-                            
+
                             $curl = curl_init();
                             curl_setopt_array($curl, [
                                 CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
@@ -241,7 +244,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                                 CURLOPT_POST => true,
                                 CURLOPT_POSTFIELDS => http_build_query(["token" => $token, "to" => "+" . $clean_phone, "body" => $wa_body]),
                                 CURLOPT_HTTPHEADER => ["Content-Type: application/x-www-form-urlencoded"],
-                                CURLOPT_SSL_VERIFYPEER => false, 
+                                CURLOPT_SSL_VERIFYPEER => false,
                                 CURLOPT_SSL_VERIFYHOST => false
                             ]);
                             curl_exec($curl);

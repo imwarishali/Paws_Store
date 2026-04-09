@@ -1,5 +1,6 @@
 <?php
-session_start();
+
+require_once '../config.php';
 
 if (isset($_SESSION["user"])) {
   if (isset($_SESSION["user"]["is_admin"]) && $_SESSION["user"]["is_admin"] == 1) {

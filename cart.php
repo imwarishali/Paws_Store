@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'config.php';
+require_once 'db.php';
 
 // Redirect guests to login if they try to access the cart
 if (!isset($_SESSION["user"])) {
@@ -7,21 +8,19 @@ if (!isset($_SESSION["user"])) {
     exit();
 }
 
-require_once 'db.php';
-
 $cart_for_js = [];
 try {
     if (!isset($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
-    
+
     // Only fetch database prices for items ACTUALLY in the cart
     if (!empty($_SESSION['cart'])) {
         $ids = array_keys($_SESSION['cart']);
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $pdo->prepare("SELECT id, name, price, image FROM pets WHERE id IN ($placeholders)");
         $stmt->execute($ids);
-        
+
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $row['quantity'] = $_SESSION['cart'][$row['id']];
             $row['price'] = (float)$row['price'];
@@ -338,7 +337,7 @@ if (isset($_SESSION["user"])) {
             color: #2c1a0e;
             margin-bottom: 20px;
         }
-        
+
         .empty-cart-icon {
             font-size: 80px;
             margin-bottom: 20px;
@@ -622,10 +621,10 @@ if (isset($_SESSION["user"])) {
                             const postOffice = data[0].PostOffice[0];
                             const city = postOffice.District || postOffice.Block || postOffice.Region;
                             const state = postOffice.State;
-                            
+
                             const cityInput = document.getElementById('city');
                             const stateSelect = document.getElementById('state');
-                            
+
                             if (cityInput) cityInput.value = city;
                             if (stateSelect) {
                                 for (let i = 0; i < stateSelect.options.length; i++) {
@@ -654,12 +653,18 @@ if (isset($_SESSION["user"])) {
                 const item = cart.find(item => item.id == id);
                 if (item) {
                     item.quantity = newQuantity;
-                    
+
                     // Securely update session cart via AJAX
                     fetch('cart_action.php', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({action: 'update', id: id, quantity: newQuantity})
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'update',
+                            id: id,
+                            quantity: newQuantity
+                        })
                     }).then(() => {
                         renderCart();
                         applyPromoCode(false);
@@ -674,12 +679,17 @@ if (isset($_SESSION["user"])) {
                     showToast((itemToRemove.name) + " removed from cart!", "🗑️");
                 }
                 cart = cart.filter(item => item.id != id);
-                
+
                 // Securely remove from session cart via AJAX
                 fetch('cart_action.php', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({action: 'remove', id: id})
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'remove',
+                        id: id
+                    })
                 }).then(() => {
                     renderCart();
                     applyPromoCode(false);
@@ -870,7 +880,7 @@ if (isset($_SESSION["user"])) {
                 const cartCountElement = document.getElementById('cart-count');
                 const mobileCartCount = document.getElementById('mobile-cart-count');
                 const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                
+
                 if (cartCountElement) {
                     cartCountElement.textContent = totalItems;
                     cartCountElement.style.display = totalItems > 0 ? 'flex' : 'none';

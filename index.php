@@ -1,13 +1,40 @@
 <?php
-session_start();
 
+require_once 'config.php';
 require_once 'db.php';
 
+// Pagination & Caching
+$limit = ITEMS_PER_PAGE;
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$offset = ($page - 1) * $limit;
+$cache_key = "pets_page_{$page}";
+$cache_time = CACHE_DURATION;
+
+// Try to get from session cache
+if (isset($_SESSION[$cache_key]) && isset($_SESSION["cache_time_{$page}"]) && (time() - $_SESSION["cache_time_{$page}"]) < $cache_time) {
+  $db_pets = $_SESSION[$cache_key];
+} else {
+  try {
+    // FIX: Use prepared statement to prevent SQL injection
+    $stmt = $pdo->prepare("SELECT * FROM pets ORDER BY id ASC LIMIT ? OFFSET ?");
+    $stmt->execute([$limit, $offset]);
+    $db_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $_SESSION[$cache_key] = $db_pets;
+    $_SESSION["cache_time_{$page}"] = time();
+  } catch (PDOException $e) {
+    error_log("Database error in index.php: " . $e->getMessage());
+    $db_pets = [];
+  }
+}
+
+// Get total count for pagination
 try {
-  $stmt = $pdo->query("SELECT * FROM pets ORDER BY id ASC");
-  $db_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $total_result = $pdo->query("SELECT COUNT(*) as count FROM pets");
+  $total_count = $total_result->fetch(PDO::FETCH_ASSOC)['count'];
+  $total_pages = ceil($total_count / $limit);
 } catch (PDOException $e) {
-  $db_pets = [];
+  error_log("Database error in index.php: " . $e->getMessage());
+  $total_pages = 1;
 }
 ?>
 <!doctype html>
@@ -17,9 +44,12 @@ try {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paws Store — Homepage Mockup</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap"
-    rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap">
+  </noscript>
   <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -108,7 +138,7 @@ try {
       <div class="ps-carousel-track" id="ps-carousel-track">
         <!-- Slide 1 -->
         <div class="ps-slide">
-          <img src="Assets/Dog/Golden Retriever (Bella).jpg" alt="Dogs">
+          <img src="Assets/Dog/Golden Retriever (Bella).jpg" alt="Dogs" loading="lazy" width="800" height="500">
           <div class="ps-slide-content">
             <h2>Bring Home Joy</h2>
             <p>Find your perfect canine companion from our verified breeders across India.</p>
@@ -117,7 +147,7 @@ try {
         </div>
         <!-- Slide 2 -->
         <div class="ps-slide">
-          <img src="Assets/Cat/Maine Coon (Shadow).jpg" alt="Cats">
+          <img src="Assets/Cat/Maine Coon (Shadow).jpg" alt="Cats" loading="lazy" width="800" height="500">
           <div class="ps-slide-content">
             <h2>Purr-fect Friends</h2>
             <p>Explore our beautiful and healthy cat breeds available for adoption today.</p>
@@ -126,7 +156,7 @@ try {
         </div>
         <!-- Slide 3 -->
         <div class="ps-slide">
-          <img src="Assets/Birds/Macaw Parrot (Sunny).jpg" alt="Birds">
+          <img src="Assets/Birds/Macaw Parrot (Sunny).jpg" alt="Birds" loading="lazy" width="800" height="500">
           <div class="ps-slide-content">
             <h2>Feathered Wonders</h2>
             <p>Add some color to your life with our exotic, friendly, and talkative birds.</p>
@@ -135,7 +165,7 @@ try {
         </div>
         <!-- Slide 4 -->
         <div class="ps-slide">
-          <img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Fish">
+          <img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Fish" loading="lazy" width="800" height="500">
           <div class="ps-slide-content">
             <h2>Aquatic Beauties</h2>
             <p>Dive into our collection of vibrant and healthy freshwater and saltwater fish.</p>
@@ -174,7 +204,7 @@ try {
       </div>
     </div>
     <div class="ps-hero-img">
-      <img src="Assets/pet_group.png" alt="Pet Group">
+      <img src="Assets/pet_group.png" alt="Pet Group" loading="lazy">
     </div>
   </div>
 
@@ -226,25 +256,25 @@ try {
     <div class="ps-cats-grid">
       <a href="category.php?type=dogs" style="text-decoration: none; color: inherit;">
         <div class="ps-cat-card">
-          <div class="ps-cat-img"><img src="Assets/Dog/Labrador (Max).jpg" alt="Dogs"></div>
+          <div class="ps-cat-img"><img src="Assets/Dog/Labrador (Max).jpg" alt="Dogs" loading="lazy"></div>
           <div class="ps-cat-name">Dogs</div>
         </div>
       </a>
       <a href="category.php?type=cats" style="text-decoration: none; color: inherit;">
         <div class="ps-cat-card">
-          <div class="ps-cat-img"><img src="Assets/Cat/British Shorthair (Luna).jpg" alt="Cats"></div>
+          <div class="ps-cat-img"><img src="Assets/Cat/British Shorthair (Luna).jpg" alt="Cats" loading="lazy"></div>
           <div class="ps-cat-name">Cats</div>
         </div>
       </a>
       <a href="category.php?type=fish" style="text-decoration: none; color: inherit;">
         <div class="ps-cat-card">
-          <div class="ps-cat-img"><img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Fish"></div>
+          <div class="ps-cat-img"><img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Fish" loading="lazy"></div>
           <div class="ps-cat-name">Fish</div>
         </div>
       </a>
       <a href="category.php?type=birds" style="text-decoration: none; color: inherit;">
         <div class="ps-cat-card">
-          <div class="ps-cat-img"><img src="Assets/Birds/African Grey Parrot (Rio).jpg" alt="Birds"></div>
+          <div class="ps-cat-img"><img src="Assets/Birds/African Grey Parrot (Rio).jpg" alt="Birds" loading="lazy"></div>
           <div class="ps-cat-name">Birds</div>
         </div>
       </a>
@@ -291,7 +321,7 @@ try {
     <div class="ps-pets-grid">
       <div class="ps-pet-card" data-category="dogs" data-pet-id="1">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Dog/Labrador (Max).jpg" alt="Max" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Labrador (Max).jpg" alt="Max" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -308,7 +338,7 @@ try {
 
       <div class="ps-pet-card" data-category="dogs" data-pet-id="4">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Dog/Pug (Charlie).jpg" alt="Charlie" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Pug (Charlie).jpg" alt="Charlie" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -324,7 +354,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="5">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Dog/Golden Retriever (Bella).jpg" alt="Bella" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Golden Retriever (Bella).jpg" alt="Bella" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">House Trained</div>
         </div>
@@ -341,7 +371,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="7">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Dog/Bulldog(Daisy).jpg" alt="Daisy" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Bulldog(Daisy).jpg" alt="Daisy" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -357,7 +387,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="8">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Dog/Shih_Tzu(Teddy).jpg" alt="Teddy" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Shih_Tzu(Teddy).jpg" alt="Teddy" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">House Trained</div>
         </div>
@@ -373,7 +403,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="9">
         <div class="ps-pet-photo" style="background: #eef4f0">
-          <img src="Assets/Dog/Pomeranian (Coco).jpg" alt="Coco" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Pomeranian (Coco).jpg" alt="Coco" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Dewormed</div>
         </div>
@@ -389,7 +419,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="10">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Dog/Rottweiler Puppy (Bruno).jpg" alt="Bruno" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Rottweiler Puppy (Bruno).jpg" alt="Bruno" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -405,7 +435,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="dogs" data-pet-id="11">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Dog/Siberian Husky Puppy (Milo).jpg" alt="Milo" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Dog/Siberian Husky Puppy (Milo).jpg" alt="Milo" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">House Trained</div>
         </div>
@@ -421,7 +451,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="12">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Cat/British Shorthair (Luna).jpg" alt="Luna" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/British Shorthair (Luna).jpg" alt="Luna" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -437,7 +467,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="13">
         <div class="ps-pet-photo" style="background: #eef4f0">
-          <img src="Assets/Cat/Persian Cat (Whiskers).jpg" alt="Whiskers" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Persian Cat (Whiskers).jpg" alt="Whiskers" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">House Trained</div>
         </div>
@@ -453,7 +483,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="14">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Cat/Maine Coon (Shadow).jpg" alt="Shadow" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Maine Coon (Shadow).jpg" alt="Shadow" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Dewormed</div>
         </div>
@@ -469,7 +499,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="15">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Cat/Ragdoll (Misty).jpg" alt="Misty" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Ragdoll (Misty).jpg" alt="Misty" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -485,7 +515,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="16">
         <div class="ps-pet-photo" style="background: #eef4f0">
-          <img src="Assets/Cat/Bengal Cat (Tiger).jpg" alt="Tiger" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Bengal Cat (Tiger).jpg" alt="Tiger" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">House Trained</div>
         </div>
@@ -501,7 +531,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="17">
         <div class="ps-pet-photo" style="background: #f5ecd8">
-          <img src="Assets/Cat/Siamese Cat (Smudge).jpg" alt="Smudge" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Siamese Cat (Smudge).jpg" alt="Smudge" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Dewormed</div>
         </div>
@@ -517,7 +547,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="cats" data-pet-id="18">
         <div class="ps-pet-photo" style="background: #fceee0">
-          <img src="Assets/Cat/Abyssinian Cat (Nala).jpg" alt="Nala" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Cat/Abyssinian Cat (Nala).jpg" alt="Nala" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Vaccinated</div>
         </div>
@@ -533,7 +563,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="19">
         <div class="ps-pet-photo" style="background: #e0f2ff">
-          <img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Goldie" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Goldie" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Freshwater</div>
         </div>
@@ -549,7 +579,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="20">
         <div class="ps-pet-photo" style="background: #e8f5e9">
-          <img src="Assets/Fish/Clownfish (Nemo).jpg" alt="Nemo" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Clownfish (Nemo).jpg" alt="Nemo" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Saltwater</div>
         </div>
@@ -565,7 +595,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="21">
         <div class="ps-pet-photo" style="background: #fff3e0">
-          <img src="Assets/Fish/Betta Fish (Bubbles).jpg" alt="Bubbles" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Betta Fish (Bubbles).jpg" alt="Bubbles" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Freshwater</div>
         </div>
@@ -581,7 +611,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="22">
         <div class="ps-pet-photo" style="background: #e0f2ff">
-          <img src="Assets/Fish/Guppy (Finley).jpg" alt="Finley" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Guppy (Finley).jpg" alt="Finley" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Tropical</div>
         </div>
@@ -597,7 +627,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="23">
         <div class="ps-pet-photo" style="background: #e8f5e9">
-          <img src="Assets/Fish/Angelfish (Coral).jpg" alt="Coral" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Angelfish (Coral).jpg" alt="Coral" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Saltwater</div>
         </div>
@@ -613,7 +643,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="24">
         <div class="ps-pet-photo" style="background: #fff3e0">
-          <img src="Assets/Fish/Tetra Fish (Splash).jpg" alt="Splash" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Tetra Fish (Splash).jpg" alt="Splash" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Freshwater</div>
         </div>
@@ -629,7 +659,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="fish" data-pet-id="25">
         <div class="ps-pet-photo" style="background: #e0f2ff">
-          <img src="Assets/Fish/Molly Fish (Pearl).jpg" alt="Pearl" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Fish/Molly Fish (Pearl).jpg" alt="Pearl" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Tropical</div>
         </div>
@@ -645,7 +675,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="26">
         <div class="ps-pet-photo" style="background: #fff8e1">
-          <img src="Assets/Birds/African Grey Parrot (Rio).jpg" alt="Rio" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/African Grey Parrot (Rio).jpg" alt="Rio" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Talkative</div>
         </div>
@@ -661,7 +691,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="27">
         <div class="ps-pet-photo" style="background: #f3e5f5">
-          <img src="Assets/Birds/Macaw Parrot (Sunny).jpg" alt="Sunny" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Macaw Parrot (Sunny).jpg" alt="Sunny" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Colorful</div>
         </div>
@@ -677,7 +707,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="28">
         <div class="ps-pet-photo" style="background: #e8f5e9">
-          <img src="Assets/Birds/Canary (Tweety).jpg" alt="Tweety" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Canary (Tweety).jpg" alt="Tweety" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Melodious</div>
         </div>
@@ -693,7 +723,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="29">
         <div class="ps-pet-photo" style="background: #fff8e1">
-          <img src="Assets/Birds/Cockatiel (Coco).jpg" alt="Coco" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Cockatiel (Coco).jpg" alt="Coco" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Friendly</div>
         </div>
@@ -709,7 +739,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="30">
         <div class="ps-pet-photo" style="background: #f3e5f5">
-          <img src="Assets/Birds/Lovebird (Phoenix).jpg" alt="Phoenix" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Lovebird (Phoenix).jpg" alt="Phoenix" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Exotic</div>
         </div>
@@ -725,7 +755,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="31">
         <div class="ps-pet-photo" style="background: #e8f5e9">
-          <img src="Assets/Birds/Eagle (Zeus).jpg" alt="Zeus" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Eagle (Zeus).jpg" alt="Zeus" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Majestic</div>
         </div>
@@ -741,7 +771,7 @@ try {
       </div>
       <div class="ps-pet-card" data-category="birds" data-pet-id="32">
         <div class="ps-pet-photo" style="background: #fff8e1">
-          <img src="Assets/Birds/Swan (Sky).jpg" alt="Sky" style="width: 100%; height: 100%; object-fit: cover;">
+          <img src="Assets/Birds/Swan (Sky).jpg" alt="Sky" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
           <div class="ps-pet-badge">Graceful</div>
         </div>
@@ -765,17 +795,17 @@ try {
     <!-- Mix (shuffle) the pets randomly on every page load -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-          const grid = document.querySelector('#pets .ps-pets-grid');
-          if (grid) {
-              grid.style.display = 'none'; // Prevent layout thrashing
-              const fragment = document.createDocumentFragment();
-              const children = Array.from(grid.children);
-              while (children.length) {
-                  fragment.appendChild(children.splice(Math.floor(Math.random() * children.length), 1)[0]);
-              }
-              grid.appendChild(fragment);
-              grid.style.display = ''; // Restore visibility
+        const grid = document.querySelector('#pets .ps-pets-grid');
+        if (grid) {
+          grid.style.display = 'none'; // Prevent layout thrashing
+          const fragment = document.createDocumentFragment();
+          const children = Array.from(grid.children);
+          while (children.length) {
+            fragment.appendChild(children.splice(Math.floor(Math.random() * children.length), 1)[0]);
           }
+          grid.appendChild(fragment);
+          grid.style.display = ''; // Restore visibility
+        }
       });
     </script>
 
@@ -848,7 +878,7 @@ try {
   <!-- About Us -->
   <div class="ps-about" id="about">
     <div class="ps-about-img">
-      <img src="Assets/pet_group.png" alt="Pet Group">
+      <img src="Assets/pet_group.png" alt="Pet Group" loading="lazy">
     </div>
     <div class="ps-about-text">
       <div class="ps-about-title">About Paws Store</div>
@@ -1032,49 +1062,59 @@ try {
 
       // PHP SESSION CART SYSTEM
       function updateCartCount(count) {
-          const cartCountElement = document.getElementById('cart-count');
-          const mobileCartCount = document.getElementById('mobile-cart-count');
-          
-          if (cartCountElement) {
-              cartCountElement.textContent = count;
-              cartCountElement.style.display = count > 0 ? 'flex' : 'none';
-          }
-          if (mobileCartCount) {
-              mobileCartCount.textContent = count;
-              mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
-          }
+        const cartCountElement = document.getElementById('cart-count');
+        const mobileCartCount = document.getElementById('mobile-cart-count');
+
+        if (cartCountElement) {
+          cartCountElement.textContent = count;
+          cartCountElement.style.display = count > 0 ? 'flex' : 'none';
+        }
+        if (mobileCartCount) {
+          mobileCartCount.textContent = count;
+          mobileCartCount.style.display = count > 0 ? 'flex' : 'none';
+        }
       }
 
       // Fetch initial cart count on page load
       fetch('cart_action.php', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({action: 'get'})
-      })
-      .then(response => response.json())
-      .then(data => {
-          if(data.status === 'success') {
-              updateCartCount(data.cart_count);
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'get'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            updateCartCount(data.cart_count);
           }
-      });
+        });
 
       addToCartButtons.forEach(button => {
         button.addEventListener('click', function() {
           const petCard = this.closest('.ps-pet-card');
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
-          
+
           fetch('cart_action.php', {
               method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({action: 'add', id: petId, quantity: 1})
-          })
-          .then(response => response.json())
-          .then(data => {
-              if(data.status === 'success') {
-                  updateCartCount(data.cart_count);
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                action: 'add',
+                id: petId,
+                quantity: 1
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                updateCartCount(data.cart_count);
               }
-          });
+            });
 
           this.textContent = 'Added! ✓';
           this.classList.add('added-to-cart');
@@ -1157,7 +1197,7 @@ try {
 
           // Category match
           let matchCategory = (currentCategory === 'all' || cardCategory === currentCategory);
-          
+
           // Search match
           let matchSearch = true;
           if (currentSearchTerm !== '') {
@@ -1202,7 +1242,7 @@ try {
           currentCategory = this.getAttribute('data-category');
           currentSearchTerm = '';
           searchInput.value = ''; // Clear search when clicking category
-          
+
           applyFilters();
 
           categoryCards.forEach(c => c.classList.remove('active'));
@@ -1221,7 +1261,7 @@ try {
         } else if (this.value.trim() === '') {
           hasScrolledForSearch = false;
         }
-        
+
         currentSearchTerm = this.value.toLowerCase().trim();
         if (currentSearchTerm !== '') {
           currentCategory = 'all'; // Reset category when searching
@@ -1252,7 +1292,7 @@ try {
         searchInput.value = '';
         if (locationFilter) locationFilter.value = 'all';
         if (priceFilter) priceFilter.value = 'all';
-        
+
         applyFilters();
         categoryCards.forEach(c => c.classList.remove('active'));
       });
@@ -1372,7 +1412,10 @@ try {
           }
         });
         backToTopBtn.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
         });
       }
 

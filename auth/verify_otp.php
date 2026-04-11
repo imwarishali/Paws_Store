@@ -421,7 +421,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
             <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
             <div class="form-group">
                 <label for="otp">Enter OTP</label>
-                <input type="text" id="otp" name="otp" placeholder="123456" maxlength="6" pattern="\d{6}" required autocomplete="one-time-code">
+                <input type="text" id="otp" name="otp" maxlength="6" pattern="\d{6}" required autocomplete="one-time-code">
             </div>
             <button type="submit" class="btn">Verify & Create Account</button>
         </form>

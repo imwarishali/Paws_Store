@@ -501,6 +501,13 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             }
 
             cartBtn.addEventListener('click', function() {
+                // Check if user is logged in
+                if (currentUserId === 'guest') {
+                    alert('🔐 Login to add to cart\n\nPlease log in to your account to add items to your cart.');
+                    window.location.href = 'auth/login.php?redirect=pet_details.php?id=' + petId;
+                    return;
+                }
+
                 addToCart();
 
                 this.textContent = 'Added! ✓';
@@ -516,6 +523,13 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             });
 
             buyNowBtn.addEventListener('click', function() {
+                // Check if user is logged in
+                if (currentUserId === 'guest') {
+                    alert('🔐 Login to add to cart\n\nPlease log in to your account to add items to your cart.');
+                    window.location.href = 'auth/login.php?redirect=pet_details.php?id=' + petId;
+                    return;
+                }
+
                 addToCart();
                 window.location.href = 'cart.php';
             });

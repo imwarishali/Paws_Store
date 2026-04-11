@@ -171,7 +171,7 @@ function sendWelcomeEmail($to, $username)
  */
 function sendWhatsAppMessage($phone, $message)
 {
-    $env = parse_ini_file(__DIR__ . '/.env');
+    $env = parse_ini_file(__DIR__ . '/../.env');
     $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
     $token = $env['ULTRAMSG_TOKEN'] ?? '';
 

@@ -52,7 +52,7 @@
         }
 
         .header-inner {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: auto;
             display: flex;
             justify-content: space-between;
@@ -170,7 +170,7 @@
         /* Services */
         .services {
             padding: 2rem;
-            max-width: 1200px;
+            max-width: 1600px;
             margin: auto;
         }
 

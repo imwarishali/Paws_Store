@@ -122,7 +122,7 @@ session_start();
             font-size: 18px;
             color: #888;
         }
-        
+
         .no-results-msg {
             text-align: center;
             padding: 40px;
@@ -334,9 +334,15 @@ session_start();
             }
             fetch('cart_action.php', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: 'get'})
-            }).then(r => r.json()).then(d => { if(d.status === 'success') updateCartCount(d.cart_count); });
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'get'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') updateCartCount(d.cart_count);
+            });
         });
     </script>
 </body>

@@ -426,17 +426,17 @@ $userPhone = $user["phone"] ?? "";
             <form method="POST" action="profile.php">
                 <div class="ps-form-group">
                     <label for="fullName">Full Name</label>
-                    <input type="text" id="fullName" name="username" value="<?php echo htmlspecialchars($userName); ?>" placeholder="Enter your full name" required>
+                    <input type="text" id="fullName" name="username" value="<?php echo htmlspecialchars($userName); ?>" required>
                 </div>
 
                 <div class="ps-form-group">
                     <label for="emailId">Email ID</label>
-                    <input type="email" id="emailId" name="email" value="<?php echo htmlspecialchars($userEmail); ?>" placeholder="Enter your email address" required>
+                    <input type="email" id="emailId" name="email" value="<?php echo htmlspecialchars($userEmail); ?>" required>
                 </div>
 
                 <div class="ps-form-group">
                     <label for="mobileNo">Mobile Number</label>
-                    <input type="tel" id="mobileNo" name="phone" value="<?php echo htmlspecialchars($userPhone); ?>" placeholder="Enter your 10-digit mobile number" required>
+                    <input type="tel" id="mobileNo" name="phone" value="<?php echo htmlspecialchars($userPhone); ?>" required>
                 </div>
 
                 <div class="ps-profile-actions">
@@ -455,21 +455,21 @@ $userPhone = $user["phone"] ?? "";
                 <div class="ps-form-group">
                     <label for="current_password">Current Password</label>
                     <div class="ps-password-wrapper">
-                        <input type="password" id="current_password" name="current_password" placeholder="Enter your current password" required>
+                        <input type="password" id="current_password" name="current_password" required>
                         <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('current_password', this)">👁️</button>
                     </div>
                 </div>
                 <div class="ps-form-group">
                     <label for="new_password">New Password</label>
                     <div class="ps-password-wrapper">
-                        <input type="password" id="new_password" name="new_password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+                        <input type="password" id="new_password" name="new_password" required>
                         <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('new_password', this)">👁️</button>
                     </div>
                 </div>
                 <div class="ps-form-group">
                     <label for="confirm_password">Confirm New Password</label>
                     <div class="ps-password-wrapper">
-                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your new password" required>
+                        <input type="password" id="confirm_password" name="confirm_password" required>
                         <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
                     </div>
                 </div>

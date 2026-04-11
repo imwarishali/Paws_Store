@@ -783,6 +783,13 @@ try {
 
             document.querySelectorAll('.ps-pet-add').forEach(button => {
                 button.addEventListener('click', function() {
+                    // Check if user is logged in
+                    if (currentUserId === 'guest') {
+                        alert('🔐 Login to add to cart\n\nPlease log in to your account to add items to your cart.');
+                        window.location.href = 'auth/login.php?redirect=featured_pets.php';
+                        return;
+                    }
+
                     const petCard = this.closest('.ps-pet-card');
                     const petId = petCard.getAttribute('data-pet-id');
                     const petName = petCard.querySelector('.ps-pet-name').textContent;

@@ -175,12 +175,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="admin_login.php">
             <div class="ps-form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                <input type="text" id="username" name="username" required>
             </div>
             <div class="ps-form-group">
                 <label for="password">Password</label>
                 <div class="ps-password-wrapper">
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" id="password" name="password" required>
                     <button type="button" class="ps-password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
                 </div>
             </div>

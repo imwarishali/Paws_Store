@@ -281,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <input type="hidden" name="registered" value="<?php echo htmlspecialchars($registered); ?>">
         <div class="form-group">
           <label for="username">Username or Email</label>
-          <input type="text" id="username" name="username" placeholder="Enter username or email" required>
+          <input type="text" id="username" name="username" required>
         </div>
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
@@ -289,7 +289,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <a href="forgot_password.php" style="font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 500;">Forgot Password?</a>
           </div>
           <div class="password-wrapper">
-            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <input type="password" id="password" name="password" required>
             <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
           </div>
         </div>

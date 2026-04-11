@@ -237,6 +237,97 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       font-size: 18px;
       color: var(--text-muted);
     }
+
+    .password-tooltip {
+      position: static;
+      margin-top: 10px;
+      background-color: #fdfaf6;
+      color: #2c1a0e;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1.5px solid #d8c094;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: normal;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 3px 12px rgba(92, 64, 51, 0.1);
+      animation: slideDown 0.3s ease;
+      background: linear-gradient(135deg, #fdfaf6 0%, #faf7f2 100%);
+    }
+
+    .password-tooltip::after {
+      display: none;
+    }
+
+    .password-tooltip.show {
+      display: block;
+    }
+
+    .password-requirements {
+      white-space: normal;
+      font-size: 11px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .password-requirements div {
+      margin: 6px 0;
+      display: flex;
+      align-items: center;
+      line-height: 1.4;
+    }
+
+    .password-requirements div:first-child {
+      margin-top: 0;
+    }
+
+    .password-requirements div:last-child {
+      margin-bottom: 0;
+    }
+
+    .password-match-status {
+      white-space: normal;
+      font-size: 11px;
+      text-align: left;
+      width: 100%;
+    }
+
+    .password-match-status div {
+      margin: 6px 0;
+      display: flex;
+      align-items: center;
+      line-height: 1.4;
+    }
+
+    .password-requirements .req-check {
+      margin-right: 8px;
+      font-size: 14px;
+      min-width: 16px;
+      display: inline-block;
+    }
+
+    .requirement-valid {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
+    .requirement-invalid {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 
@@ -256,28 +347,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
       <div class="form-group">
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Your name" required>
+        <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required>
       </div>
       <div class="form-group">
         <label for="email">Email address</label>
-        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required onblur="validateEmail()">
+        <span id="emailError" style="color: #721c24; font-size: 12px; margin-top: 5px; display: none;"></span>
       </div>
       <div class="form-group">
         <label for="phone">Phone number</label>
-        <input type="tel" id="phone" name="phone" placeholder="98765 43210" required>
+        <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>" required>
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <div class="password-wrapper">
-          <input type="password" id="password" name="password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+        <div class="password-wrapper" id="passwordWrapper">
+          <input type="password" id="password" name="password" value="<?php echo htmlspecialchars($_POST['password'] ?? ''); ?>" required onfocus="showPasswordTooltip()" onblur="hidePasswordTooltip()" oninput="updatePasswordRequirements()">
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+        </div>
+        <div class="password-tooltip" id="passwordTooltip">
+          <div class="password-requirements" id="passwordRequirements">
+            <div>
+              <span class="req-check requirement-invalid" id="req-length">✗</span>
+              <span>Minimum 8 characters</span>
+            </div>
+            <div>
+              <span class="req-check requirement-invalid" id="req-number">✗</span>
+              <span>At least 1 number (0-9)</span>
+            </div>
+            <div>
+              <span class="req-check requirement-invalid" id="req-special">✗</span>
+              <span>At least 1 special character (!@#$%^&*)</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-group">
         <label for="confirm_password">Confirm Password</label>
-        <div class="password-wrapper">
-          <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required>
+        <div class="password-wrapper" id="confirmPasswordWrapper">
+          <input type="password" id="confirm_password" name="confirm_password" value="<?php echo htmlspecialchars($_POST['confirm_password'] ?? ''); ?>" required onfocus="showConfirmPasswordTooltip()" onblur="hideConfirmPasswordTooltip()" oninput="updateConfirmPasswordStatus()">
           <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
+        </div>
+        <div class="password-tooltip" id="confirmPasswordTooltip">
+          <div class="password-match-status" id="passwordMatchStatus">
+            <div>
+              <span class="req-check requirement-invalid" id="match-check">✗</span>
+              <span>Passwords must match</span>
+            </div>
+          </div>
         </div>
       </div>
       <button type="submit" class="btn">Register</button>
@@ -295,6 +411,120 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         button.textContent = '👁️';
       }
     }
+
+    function showPasswordTooltip() {
+      const tooltip = document.getElementById('passwordTooltip');
+      tooltip.classList.add('show');
+      updatePasswordRequirements();
+    }
+
+    function hidePasswordTooltip() {
+      const tooltip = document.getElementById('passwordTooltip');
+      tooltip.classList.remove('show');
+    }
+
+    function showConfirmPasswordTooltip() {
+      const tooltip = document.getElementById('confirmPasswordTooltip');
+      tooltip.classList.add('show');
+      updateConfirmPasswordStatus();
+    }
+
+    function hideConfirmPasswordTooltip() {
+      const tooltip = document.getElementById('confirmPasswordTooltip');
+      tooltip.classList.remove('show');
+    }
+
+    function updateConfirmPasswordStatus() {
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm_password').value;
+      const matchCheck = document.getElementById('match-check');
+
+      if (confirmPassword === '') {
+        matchCheck.textContent = '✗';
+        matchCheck.classList.remove('requirement-valid');
+        matchCheck.classList.add('requirement-invalid');
+      } else if (password === confirmPassword) {
+        matchCheck.textContent = '✓';
+        matchCheck.classList.remove('requirement-invalid');
+        matchCheck.classList.add('requirement-valid');
+      } else {
+        matchCheck.textContent = '✗';
+        matchCheck.classList.remove('requirement-valid');
+        matchCheck.classList.add('requirement-invalid');
+      }
+    }
+
+    function updatePasswordRequirements() {
+      const password = document.getElementById('password').value;
+
+      // Check requirements
+      const hasLength = password.length >= 8;
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+      // Update UI
+      updateRequirement('req-length', hasLength);
+      updateRequirement('req-number', hasNumber);
+      updateRequirement('req-special', hasSpecial);
+    }
+
+    function updateRequirement(elementId, isValid) {
+      const element = document.getElementById(elementId);
+      if (isValid) {
+        element.textContent = '✓';
+        element.classList.remove('requirement-invalid');
+        element.classList.add('requirement-valid');
+      } else {
+        element.textContent = '✗';
+        element.classList.remove('requirement-valid');
+        element.classList.add('requirement-invalid');
+      }
+    }
+
+    function validateEmail() {
+      const email = document.getElementById('email').value;
+      const emailError = document.getElementById('emailError');
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (email === '') {
+        emailError.style.display = 'none';
+        return true;
+      }
+
+      if (!emailRegex.test(email)) {
+        emailError.textContent = '❌ Please enter a valid email format (e.g., user@example.com)';
+        emailError.style.display = 'block';
+        alert('⚠️ Invalid Email Format!\nPlease enter a valid email address (e.g., user@example.com)');
+        return false;
+      } else {
+        emailError.style.display = 'none';
+        return true;
+      }
+    }
+
+    // Real-time email validation while typing
+    document.getElementById('email').addEventListener('input', function() {
+      const email = this.value;
+      const emailError = document.getElementById('emailError');
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (email === '') {
+        emailError.style.display = 'none';
+      } else if (!emailRegex.test(email)) {
+        emailError.textContent = '❌ Invalid email format';
+        emailError.style.display = 'block';
+      } else {
+        emailError.style.display = 'none';
+      }
+    });
+
+    // Validate email on form submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+      if (!validateEmail()) {
+        e.preventDefault();
+        return false;
+      }
+    });
   </script>
 </body>
 

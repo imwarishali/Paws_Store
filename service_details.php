@@ -9,66 +9,42 @@ $services = [
         'price' => 'Starting from ₹499',
         'image' => 'Assets/Services/grooming.jpg',
         'description' => 'Keep your pet looking sharp and feeling fresh! Our expert groomers use pet-safe products for a relaxing spa day. We handle pets of all sizes and temperaments with care.',
-        'features' => ['Bath & deep cleaning', 'Hair trimming & styling', 'Nail clipping & ear cleaning', 'Tick & flea treatment (add-on)'],
-        'faqs' => [
-            ['question' => 'Do I need an appointment?', 'answer' => 'Walk-ins are welcome, but we highly recommend booking an appointment to minimize waiting.'],
-            ['question' => 'How long does a session take?', 'answer' => 'A full grooming session typically takes about 1.5 to 2 hours depending on coat condition.']
-        ]
+        'features' => ['Bath & deep cleaning', 'Hair trimming & styling', 'Nail clipping & ear cleaning', 'Tick & flea treatment (add-on)']
     ],
     'vaccination' => [
         'title' => 'Vaccination',
         'price' => 'Starting from ₹299',
         'image' => 'Assets/Services/vaccination.jpg',
         'description' => 'Protect your furry friend from common illnesses with our comprehensive, age-appropriate immunization schedules. We provide safe, stress-free administration by certified vets.',
-        'features' => ['Core & Non-core vaccines', 'Digital health records', 'Vet certified administration', 'Reminders for next due dose'],
-        'faqs' => [
-            ['question' => 'When should puppies/kittens get their first shots?', 'answer' => 'Typically, the first round of core vaccinations should begin between 6 to 8 weeks of age.'],
-            ['question' => 'Will my pet experience side effects?', 'answer' => 'Mild lethargy or soreness at the injection site is normal for a day, but severe reactions are very rare.']
-        ]
+        'features' => ['Core & Non-core vaccines', 'Digital health records', 'Vet certified administration', 'Reminders for next due dose']
     ],
     'training' => [
         'title' => 'Pet Training',
         'price' => 'Starting from ₹999 / session',
         'image' => 'Assets/Services/training.jpg',
         'description' => 'Build a stronger bond through positive reinforcement, from puppy basics to advanced behavioral obedience. Our certified trainers work with you and your pet to ensure lasting results.',
-        'features' => ['Basic obedience commands', 'Behavioral correction', 'Potty training', 'Socialization skills'],
-        'faqs' => [
-            ['question' => 'Do you use treats for training?', 'answer' => 'Yes! We strictly use positive reinforcement methods, which include treats, praise, and play.'],
-            ['question' => 'Can older dogs be trained?', 'answer' => 'Absolutely. While it\'s easier to start young, dogs of any age can learn new behaviors with consistency.']
-        ]
+        'features' => ['Basic obedience commands', 'Behavioral correction', 'Potty training', 'Socialization skills']
     ],
     'health' => [
         'title' => 'Health Checkups',
         'price' => 'Starting from ₹399',
         'image' => 'Assets/Services/Health_Checkup.jpg',
         'description' => 'Regular checkups are key to a long, happy life. Our clinic offers full-body exams, expert diagnostics, and nutritional counseling to keep your pet in top shape.',
-        'features' => ['Full physical examination', 'Weight & diet consultation', 'Dental checkup', 'Parasite screening'],
-        'faqs' => [
-            ['question' => 'How often should I bring my pet in?', 'answer' => 'We recommend an annual checkup for adult pets, and twice a year for seniors (7+ years).'],
-            ['question' => 'Should I bring my pet\'s medical records?', 'answer' => 'Yes, bringing previous records helps our vets understand their full medical history.']
-        ]
+        'features' => ['Full physical examination', 'Weight & diet consultation', 'Dental checkup', 'Parasite screening']
     ],
     'boarding' => [
         'title' => 'Pet Boarding',
         'price' => 'Starting from ₹599 / day',
         'image' => 'Assets/Services/Pet_Boarding.jpg',
         'description' => 'Going out of town? We offer spacious, clean, and fully supervised boarding so your pet feels right at home. They will enjoy playtime, nutritious meals, and constant care.',
-        'features' => ['Climate-controlled kennels', 'Supervised playtime', 'Regular feeding schedules', 'Daily photo/video updates'],
-        'faqs' => [
-            ['question' => 'Can I pack my own pet food?', 'answer' => 'Yes! We encourage bringing their regular food to prevent any stomach upsets from diet changes.'],
-            ['question' => 'Will my pet interact with other animals?', 'answer' => 'Only if they are socialized and you permit it. We have separate playtimes for solo and group play.']
-        ]
+        'features' => ['Climate-controlled kennels', 'Supervised playtime', 'Regular feeding schedules', 'Daily photo/video updates']
     ],
     'photography' => [
         'title' => 'Photography',
         'price' => 'Starting from ₹1,499 / session',
         'image' => 'Assets/Services/Photography.jpg',
         'description' => 'Capture the unique personality of your furry friend with our professional pet photography sessions. Whether in our studio or outdoors, we create beautiful, lasting memories of your pet that you will cherish forever.',
-        'features' => ['1-hour professional session', '15 high-resolution edited photos', 'Choice of studio or outdoor setting', 'Fun props and treats included'],
-        'faqs' => [
-            ['question' => 'Can I be in the photos with my pet?', 'answer' => 'Of course! We love capturing the special bond between pets and their humans.'],
-            ['question' => 'What if my pet won\'t sit still?', 'answer' => 'Don\'t worry, our photographers are experienced with high-energy pets and have plenty of tricks (and treats) up their sleeves!']
-        ]
+        'features' => ['1-hour professional session', '15 high-resolution edited photos', 'Choice of studio or outdoor setting', 'Fun props and treats included']
     ]
 ];
 
@@ -277,71 +253,7 @@ $service = $services[$id];
             color: var(--brown);
         }
 
-        /* Service FAQs */
-        .service-faqs {
-            margin-top: 40px;
-            border-top: 1px solid #e8e0d4;
-            padding-top: 30px;
-        }
 
-        .service-faqs h3 {
-            font-family: "Playfair Display", serif;
-            font-size: 24px;
-            color: var(--brown);
-            margin-bottom: 20px;
-        }
-
-        .faq-item {
-            background: var(--white);
-            border: 1px solid #e8e0d4;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .faq-question {
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--brown);
-            user-select: none;
-            font-size: 15px;
-        }
-
-        .faq-icon {
-            font-size: 20px;
-            color: var(--accent);
-            transition: transform 0.3s ease;
-        }
-
-        .faq-answer {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease;
-            background: #fdfaf6;
-            color: var(--text-muted);
-            line-height: 1.6;
-            font-size: 14px;
-            padding: 0 20px;
-        }
-
-        .faq-item.active {
-            border-color: #d8c094;
-        }
-
-        .faq-item.active .faq-answer {
-            max-height: 300px;
-            padding: 0 20px 16px 20px;
-            border-top: 1px solid #f0eade;
-        }
-
-        .faq-item.active .faq-icon {
-            transform: rotate(45deg);
-        }
 
         /* Related Services */
         .related-section {
@@ -485,20 +397,6 @@ $service = $services[$id];
                 <div style="margin-top: 10px; padding: 16px; background: var(--accent-soft); border-radius: 8px; color: var(--brown); font-weight: 600; text-align: center; border: 1px solid #d8c094;">
                     🚶‍♂️ Walk-ins are welcome at our clinic!
                 </div>
-
-                <?php if (!empty($service['faqs'])): ?>
-                    <div class="service-faqs">
-                        <h3>Frequently Asked Questions</h3>
-                        <?php foreach ($service['faqs'] as $faq): ?>
-                            <div class="faq-item">
-                                <div class="faq-question"><?php echo htmlspecialchars($faq['question']); ?> <span class="faq-icon">+</span></div>
-                                <div class="faq-answer">
-                                    <div style="padding-top: 12px;"><?php echo htmlspecialchars($faq['answer']); ?></div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -538,18 +436,7 @@ $service = $services[$id];
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const faqItems = document.querySelectorAll('.faq-item');
-
-            faqItems.forEach(item => {
-                const question = item.querySelector('.faq-question');
-                question.addEventListener('click', () => {
-                    const isActive = item.classList.contains('active');
-                    faqItems.forEach(faq => faq.classList.remove('active'));
-                    if (!isActive) item.classList.add('active');
-                });
-            });
-        });
+        document.addEventListener('DOMContentLoaded', function() {});
     </script>
 </body>
 

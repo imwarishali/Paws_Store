@@ -52,10 +52,97 @@ if (isset($_SESSION["user"])) {
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        body {
+            background-color: #fff8f5;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .breadcrumb-section {
+            background: linear-gradient(135deg, #2c1a0e 0%, #8B4513 100%);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+
+        .breadcrumb-section h1 {
+            margin: 0;
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+        }
+
+        .checkout-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 20px;
+        }
+
+        .checkout-steps::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #ddd;
+            z-index: 0;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: 600;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .step.active .step-number {
+            background: #2c1a0e;
+            color: white;
+            border-color: #2c1a0e;
+        }
+
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .step-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .step.active .step-label {
+            color: #2c1a0e;
+            font-weight: 700;
+        }
+
         .cart-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
         .cart-header {
@@ -63,8 +150,7 @@ if (isset($_SESSION["user"])) {
             margin-bottom: 30px;
         }
 
-        .cart-header h1 {
-            font-family: 'Playfair Display', serif;
+        .cart-header h2 {
             color: #2c1a0e;
             margin-bottom: 10px;
         }
@@ -145,9 +231,11 @@ if (isset($_SESSION["user"])) {
         .cart-summary {
             background: #fff;
             border-radius: 12px;
-            padding: 20px;
+            padding: 25px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             height: fit-content;
+            position: sticky;
+            top: 20px;
         }
 
         .summary-section {
@@ -157,7 +245,10 @@ if (isset($_SESSION["user"])) {
         .summary-section h3 {
             margin: 0 0 15px 0;
             color: #2c1a0e;
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 700;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0e68c;
         }
 
         .form-group {
@@ -311,7 +402,7 @@ if (isset($_SESSION["user"])) {
 
         .checkout-btn {
             width: 100%;
-            background: #b5860d;
+            background: linear-gradient(135deg, #2c1a0e 0%, #8B4513 100%);
             color: white;
             border: none;
             padding: 15px;
@@ -320,11 +411,12 @@ if (isset($_SESSION["user"])) {
             font-weight: 600;
             cursor: pointer;
             margin-top: 20px;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
 
         .checkout-btn:hover {
-            background: #9a7210;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 26, 14, 0.3);
         }
 
         .empty-cart {
@@ -361,9 +453,45 @@ if (isset($_SESSION["user"])) {
             box-shadow: 0 4px 12px rgba(181, 134, 13, 0.2);
         }
 
+        /* Delivery Options Styles */
+        input[type="radio"]:checked+span,
+        input[type="checkbox"]:checked+span {
+            font-weight: 600;
+            color: #2c1a0e;
+        }
+
+        label[style*="border"] input[type="radio"]:checked {
+            border: 2px solid #b5860d;
+            accent-color: #b5860d;
+        }
+
+        input[type="date"],
+        input[type="text"],
+        select,
+        textarea {
+            font-size: 14px;
+        }
+
         @media (max-width: 768px) {
             .cart-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .cart-summary {
+                position: static;
+            }
+
+            .checkout-steps {
+                gap: 10px;
+                padding: 0 10px;
+            }
+
+            .step-label {
+                font-size: 10px;
+            }
+
+            .breadcrumb-section h1 {
+                font-size: 24px;
             }
         }
     </style>
@@ -388,11 +516,34 @@ if (isset($_SESSION["user"])) {
         </div>
     </nav>
 
+    <div class="breadcrumb-section">
+        <div class="container">
+            <h1>🛒 Shopping Cart</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Checkout Steps -->
+        <div class="checkout-steps">
+            <div class="step active">
+                <div class="step-number">1</div>
+                <div class="step-label">Cart Review</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-label">Delivery Address</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
+    </div>
+
     <div class="ps-wrap">
         <div class="cart-container">
             <div class="cart-header">
-                <h1>Shopping Cart</h1>
-                <p>Review your items and complete your purchase</p>
+                <h2>Review your items and proceed to checkout</h2>
             </div>
 
             <div id="cart-content">
@@ -505,76 +656,14 @@ if (isset($_SESSION["user"])) {
             </div>
 
             <div class="cart-summary">
-              <div class="summary-section">
-                <h3>Delivery Address</h3>
-                <div class="form-group">
-                  <label>Full Name</label>
-                  <input type="text" id="fullName" placeholder="Enter your full name">
-                </div>
-                <div class="form-group">
-                  <label>Phone Number</label>
-                  <input type="tel" id="phone" placeholder="Enter your 10-digit phone number" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                </div>
-                <div class="form-group">
-                  <label>Address</label>
-                  <textarea id="address" rows="3" placeholder="Enter your complete address"></textarea>
-                </div>
-                <div class="form-group">
-                  <label>City</label>
-                  <input type="text" id="city" placeholder="Enter your city">
-                </div>
-                <div class="form-group">
-                  <label>State</label>
-                  <select id="state">
-                    <option value="">Select State/UT</option>
-                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                    <option value="Assam">Assam</option>
-                    <option value="Bihar">Bihar</option>
-                    <option value="Chandigarh">Chandigarh</option>
-                    <option value="Chhattisgarh">Chhattisgarh</option>
-                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Goa">Goa</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Haryana">Haryana</option>
-                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                    <option value="Jharkhand">Jharkhand</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Ladakh">Ladakh</option>
-                    <option value="Lakshadweep">Lakshadweep</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Manipur">Manipur</option>
-                    <option value="Meghalaya">Meghalaya</option>
-                    <option value="Mizoram">Mizoram</option>
-                    <option value="Nagaland">Nagaland</option>
-                    <option value="Odisha">Odisha</option>
-                    <option value="Puducherry">Puducherry</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Sikkim">Sikkim</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Tripura">Tripura</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Uttarakhand">Uttarakhand</option>
-                    <option value="West Bengal">West Bengal</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>PIN Code</label>
-                  <input type="text" id="pincode" placeholder="Enter 6-digit PIN code" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value.length === 6) fetchPincodeDetails(this.value);">
-                </div>
-              </div>
+
+
+
 
               <div class="summary-section">
                 <h3>Promo Code</h3>
                 <div style="display: flex; gap: 10px;">
-                  <input type="text" id="promoCodeInput" placeholder="Enter promo code" value="${appliedPromoCode}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif;">
+                  <input type="text" id="promoCodeInput" value="${appliedPromoCode}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif;">
                 <button type="button" onclick="applyPromoCode(true)" style="padding: 10px 20px; background: #2c1a0e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Apply</button>
                 </div>
                 <div style="margin-top: 8px; font-size: 13px; color: #666;">Try codes: <strong>FIRST10</strong>, <strong>BULK5</strong>, <strong>VET500</strong>, <strong>SAVE20</strong></div>
@@ -607,7 +696,7 @@ if (isset($_SESSION["user"])) {
                 </div>
               </div>
 
-              <button class="checkout-btn" onclick="processPayment()">Complete Purchase</button>
+              <button class="checkout-btn" onclick="continueToDeliveryAddress()">Continue to Delivery Address →</button>
             </div>
           </div>
         `;
@@ -782,31 +871,9 @@ if (isset($_SESSION["user"])) {
                 document.getElementById('total').textContent = `₹${total.toLocaleString()}`;
             };
 
-            window.processPayment = function() {
-                const fullName = document.getElementById('fullName').value;
-                const phone = document.getElementById('phone').value;
-                const address = document.getElementById('address').value;
-                const city = document.getElementById('city').value;
-                const state = document.getElementById('state').value;
-                const pincode = document.getElementById('pincode').value;
-
-                if (!fullName || !phone || !address || !city || !pincode) {
-                    showToast('Please fill in all address fields.', '⚠️');
-                    return;
-                }
-
-                if (!state) {
-                    showToast('Please select a State/UT from the dropdown.', '⚠️');
-                    return;
-                }
-
-                if (!/^\d{10}$/.test(phone)) {
-                    showToast('Please enter a valid 10-digit phone number.', '⚠️');
-                    return;
-                }
-
-                if (!/^\d{6}$/.test(pincode)) {
-                    showToast('Please enter a valid 6-digit PIN code.', '⚠️');
+            window.continueToDeliveryAddress = function() {
+                if (cart.length === 0) {
+                    showToast('Please add items to your cart.', '⚠️');
                     return;
                 }
 
@@ -828,20 +895,10 @@ if (isset($_SESSION["user"])) {
                 const tax = Math.round((subtotal - discount) * 0.18);
                 const total = subtotal - discount + shipping + tax;
 
-                // Create form data
-                const addressData = {
-                    fullName,
-                    phone,
-                    address,
-                    city,
-                    state,
-                    pincode
-                };
-
-                // Create and submit form to payment.php
+                // Create and submit form to delivery_address.php
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = 'payment.php';
+                form.action = 'delivery_address.php';
 
                 // Add cart data
                 const cartInput = document.createElement('input');
@@ -849,13 +906,6 @@ if (isset($_SESSION["user"])) {
                 cartInput.name = 'cart';
                 cartInput.value = JSON.stringify(cart);
                 form.appendChild(cartInput);
-
-                // Add address data
-                const addressInput = document.createElement('input');
-                addressInput.type = 'hidden';
-                addressInput.name = 'address';
-                addressInput.value = JSON.stringify(addressData);
-                form.appendChild(addressInput);
 
                 // Add total
                 const totalInput = document.createElement('input');

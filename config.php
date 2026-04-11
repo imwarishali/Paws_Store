@@ -5,6 +5,13 @@
  * Store all constants and configurations here
  */
 
+// Session configuration MUST be set BEFORE session_start() is called anywhere
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', 0);  // Set to 1 in production with HTTPS
+    ini_set('session.use_strict_mode', 1);
+}
+
 // Security & Authentication
 define('OTP_TIMEOUT', 600);           // 10 minutes in seconds
 define('OTP_MAX_ATTEMPTS', 6);        // Max failed OTP attempts
@@ -45,11 +52,6 @@ define('VALID_PAYMENT_STATUSES', ['Pending', 'Completed', 'Failed', 'Refunded'])
 
 // Database
 define('DB_CHARSET', 'utf8mb4');
-
-// Session
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 0);  // Set to 1 in production with HTTPS
-ini_set('session.use_strict_mode', 1);
 
 // Create logs directory if not exists
 if (LOG_ERRORS && !is_dir(__DIR__ . '/logs')) {

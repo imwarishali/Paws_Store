@@ -904,8 +904,7 @@ try {
     <div class="ps-nl-form">
       <input
         class="ps-nl-input"
-        type="email"
-        placeholder="Enter your email address" />
+        type="email" />
       <button class="ps-nl-btn" id="subscribe-btn">Subscribe</button>
     </div>
   </div>
@@ -1094,6 +1093,13 @@ try {
 
       addToCartButtons.forEach(button => {
         button.addEventListener('click', function() {
+          // Check if user is logged in
+          if (currentUserId === 'guest') {
+            alert('🔐 Login to add to cart\n\nPlease log in to your account to add items to your cart.');
+            window.location.href = 'auth/login.php?redirect=index.php';
+            return;
+          }
+
           const petCard = this.closest('.ps-pet-card');
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
@@ -1189,6 +1195,14 @@ try {
         const locationVal = locationFilter ? locationFilter.value : 'all';
         const priceVal = priceFilter ? priceFilter.value : 'all';
 
+        console.log('[Search Debug] Applying filters:', {
+          searchTerm: currentSearchTerm,
+          category: currentCategory,
+          location: locationVal,
+          price: priceVal,
+          totalCards: petCards.length
+        });
+
         petCards.forEach(card => {
           const cardCategory = card.getAttribute('data-category');
           const petName = card.querySelector('.ps-pet-name').textContent.toLowerCase();
@@ -1201,7 +1215,10 @@ try {
           // Search match
           let matchSearch = true;
           if (currentSearchTerm !== '') {
-            matchSearch = petName.includes(currentSearchTerm) || cardCategory.includes(currentSearchTerm);
+            // Enhanced search: split search term by spaces and check if all parts match
+            const searchTerms = currentSearchTerm.split(/\s+/).filter(term => term.length > 0);
+            const searchText = `${petName} ${cardCategory}`;
+            matchSearch = searchTerms.every(term => searchText.includes(term));
           }
 
           // Location match
@@ -1228,6 +1245,11 @@ try {
           }
         });
 
+        console.log('[Search Debug] Results:', {
+          visibleCount,
+          totalCards: petCards.length
+        });
+
         if (noPetsMsg) {
           noPetsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
         }
@@ -1252,38 +1274,63 @@ try {
 
       // Search event listeners
       let hasScrolledForSearch = false;
-      searchInput.addEventListener('input', function() {
-        if (this.value.trim() !== '' && !hasScrolledForSearch) {
-          document.getElementById('pets').scrollIntoView({
-            behavior: 'smooth'
-          });
-          hasScrolledForSearch = true;
-        } else if (this.value.trim() === '') {
-          hasScrolledForSearch = false;
-        }
 
-        currentSearchTerm = this.value.toLowerCase().trim();
-        if (currentSearchTerm !== '') {
-          currentCategory = 'all'; // Reset category when searching
-          categoryCards.forEach(c => c.classList.remove('active'));
-        }
-        applyFilters();
+      console.log('[Search Debug] Initializing search:', {
+        searchInput: !!searchInput,
+        searchBtn: !!searchBtn,
+        petCards: petCards.length,
+        currentSearchTerm,
+        currentCategory
       });
 
-      searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          const previousSearchTerm = currentSearchTerm;
           currentSearchTerm = this.value.toLowerCase().trim();
-          applyFilters();
-        }
-      });
 
-      searchBtn.addEventListener('click', function() {
-        document.getElementById('pets').scrollIntoView({
-          behavior: 'smooth'
+          console.log('[Search Debug] Input event:', {
+            previousValue: previousSearchTerm,
+            currentValue: currentSearchTerm
+          });
+
+          // Only scroll to pets section when user TYPES (goes from empty to non-empty)
+          // Don't scroll when user is backspacing (clearing the search)
+          if (previousSearchTerm === '' && currentSearchTerm !== '') {
+            // User just started typing - scroll to results
+            document.getElementById('pets').scrollIntoView({
+              behavior: 'smooth'
+            });
+          }
+
+          if (currentSearchTerm !== '') {
+            currentCategory = 'all'; // Reset category when searching
+            categoryCards.forEach(c => c.classList.remove('active'));
+          }
+          applyFilters();
         });
-        currentSearchTerm = searchInput.value.toLowerCase().trim();
-        applyFilters();
-      });
+
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            currentSearchTerm = this.value.toLowerCase().trim();
+            applyFilters();
+          }
+        });
+      }
+
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+          console.log('[Search Debug] Search button clicked');
+          // Don't scroll automatically on button click - just apply filter
+          currentSearchTerm = searchInput.value.toLowerCase().trim();
+
+          if (currentSearchTerm !== '') {
+            currentCategory = 'all'; // Reset category when searching
+            categoryCards.forEach(c => c.classList.remove('active'));
+          }
+
+          applyFilters();
+        });
+      }
 
       // SHOW ALL PETS
       showAllButton.addEventListener('click', function() {

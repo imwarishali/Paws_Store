@@ -1066,15 +1066,15 @@ body.nav-scrolled .fk-cat-img {
   .mobile-bottom-nav {
     display: flex;
   }
-  
+
   body {
     padding-bottom: 75px !important; /* Prevent content from hiding behind the nav */
   }
-  
+
   .float-whatsapp {
     bottom: 95px !important;
   }
-  
+
   .float-top {
     bottom: 160px !important;
   }
@@ -1732,7 +1732,9 @@ footer {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    visibility 0.5s ease;
 }
 
 .splash-logo {

@@ -144,6 +144,7 @@ try {
         LEFT JOIN pets p ON o.pet_id = p.id
         LEFT JOIN payments pm ON o.id = pm.order_id
         WHERE o.user_id = ?
+        GROUP BY o.id
         ORDER BY o.created_at DESC
     ");
     $stmt->execute([$_SESSION['user']['id']]);
@@ -165,7 +166,7 @@ try {
     <link rel="stylesheet" href="css/style.css">
     <style>
         .history-container {
-            max-width: 1100px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 30px 20px;
         }
@@ -251,9 +252,19 @@ try {
             box-shadow: 0 0 0 2px rgba(181, 134, 13, 0.1);
         }
 
+        .status-Confirmed {
+            background: #e3f2fd !important;
+            color: #1976d2 !important;
+        }
+
         .status-Shipped {
             background: #cce5ff !important;
             color: #004085 !important;
+        }
+
+        .status-Out\ for\ Delivery {
+            background: #fff3e0 !important;
+            color: #e65100 !important;
         }
 
         .status-Delivered {
@@ -435,6 +446,9 @@ try {
             <div class="history-header">
                 <h1>Your Order History</h1>
                 <p>Track your past orders and see their current status.</p>
+                <a href="track_order.php" style="display: inline-block; margin-top: 15px; color: #b5860d; text-decoration: none; font-weight: 600; padding: 10px 20px; border: 2px solid #b5860d; border-radius: 6px; transition: all 0.3s;">
+                    🚚 Track Pet Delivery
+                </a>
                 <?php if (!empty($orders)): ?>
                     <div style="margin-top: 20px; max-width: 400px; margin-left: auto; margin-right: auto; position: relative;">
                         <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #888;">🔍</span>
@@ -479,12 +493,22 @@ try {
                                 <span><strong>Status:</strong>
                                     <?php if ($order['order_status'] === 'Cancelled'): ?>
                                         <span class="status-badge status-Cancelled">🚫 Cancelled</span>
+                                    <?php elseif ($order['order_status'] === 'Out for Delivery'): ?>
+                                        <span class="status-badge status-Out\ for\ Delivery">🚚 Out for Delivery</span>
+                                    <?php elseif ($order['order_status'] === 'Delivered'): ?>
+                                        <span class="status-badge status-Delivered">✅ Delivered</span>
+                                    <?php elseif ($order['order_status'] === 'Confirmed'): ?>
+                                        <span class="status-badge status-Confirmed">📦 Confirmed</span>
+                                    <?php elseif ($order['order_status'] === 'Shipped'): ?>
+                                        <span class="status-badge status-Shipped">📤 Shipped</span>
                                     <?php else: ?>
                                         <span class="status-badge status-<?php echo htmlspecialchars($order['order_status']); ?>"><?php echo htmlspecialchars($order['order_status']); ?></span>
                                     <?php endif; ?>
                                 </span>
                                 <?php if (in_array($order['order_status'], ['Confirmed', 'Shipped'])): ?>
                                     <span style="color: #0c5460; background: #e0f7fa;"><strong>Est. Delivery:</strong> <?php echo date('d M Y', strtotime($order['created_at'] . ' + 5 days')); ?></span>
+                                <?php elseif (in_array($order['order_status'], ['Out for Delivery', 'Delivered']) && !empty($order['delivery_date'])): ?>
+                                    <span style="color: #e65100; background: #fff3e0;"><strong>📅 Delivery:</strong> <?php echo date('d M Y', strtotime($order['delivery_date'])); ?> @ <?php echo htmlspecialchars($order['delivery_time'] ?? 'TBD'); ?></span>
                                 <?php endif; ?>
                             </div>
 
@@ -519,6 +543,9 @@ try {
                             <?php endif; ?>
 
                             <div class="order-actions" style="gap: 10px; margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">
+                                <?php if (in_array($order['order_status'], ['Shipped', 'Out for Delivery'])): ?>
+                                    <a href="track_order.php?ref=<?php echo urlencode($order['order_number']); ?>&pet_id=<?php echo urlencode($order['pet_id']); ?>" class="btn-track" style="flex: 1; min-width: 150px; padding: 8px; text-align: center; background: #7b1fa2; color: white; text-decoration: none; border-radius: 6px; box-sizing: border-box; font-weight: 600; transition: all 0.3s;" onmouseover="this.style.background='#6a1b9a'" onmouseout="this.style.background='#7b1fa2'">🚚 Track Delivery</a>
+                                <?php endif; ?>
                                 <?php if (!in_array($order['order_status'], ['Shipped', 'Delivered', 'Cancelled'])): ?>
                                     <form method="POST" style="margin: 0; flex: 1; min-width: 150px;">
                                         <input type="hidden" name="cancel_order_number" value="<?php echo $order['order_number']; ?>">

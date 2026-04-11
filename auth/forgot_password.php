@@ -338,23 +338,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form method="POST" action="forgot_password.php">
             <div class="form-group">
                 <label for="email">Registered Email</label>
-                <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Your username" required>
+                <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
                 <label for="new_password">New Password</label>
                 <div class="password-wrapper">
-                    <input type="password" id="new_password" name="new_password" placeholder="Min 8 chars, 1 number, 1 symbol" required>
+                    <input type="password" id="new_password" name="new_password" required>
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password', this)">👁️</button>
                 </div>
             </div>
             <div class="form-group">
                 <label for="confirm_password">Confirm New Password</label>
                 <div class="password-wrapper">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your new password" required>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
                     <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
                 </div>
             </div>

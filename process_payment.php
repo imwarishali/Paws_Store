@@ -1,25 +1,31 @@
 <?php
+header('Content-Type: application/json');
 session_start();
 
 if (!isset($_SESSION["user"])) {
-    header("Location: auth/login.php");
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'User not logged in']);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: cart.php");
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
     exit();
 }
 
 // Get form data
 $cart = json_decode($_POST['cart'], true);
-$address = json_decode($_POST['address'], true);
+$address = json_decode($_POST['address'], true) ?? [];
+$delivery = json_decode($_POST['delivery'], true) ?? [];
 $transaction_id = trim($_POST['razorpay_payment_id'] ?? '');
 $razorpay_signature = trim($_POST['razorpay_signature'] ?? '');
 $special_offer = $_POST['special_offer'] ?? 'none';
 
 if (empty($transaction_id)) {
-    die("Invalid Payment ID from Razorpay.");
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => 'Invalid Payment ID from Razorpay']);
+    exit();
 }
 
 $payment_method = $_POST['payment_method'] ?? 'Razorpay';
@@ -38,7 +44,9 @@ $razorpay_order_id = $_POST['razorpay_order_id'] ?? '';
 if ($keySecret && $razorpay_order_id && $transaction_id) {
     $expected_signature = hash_hmac('sha256', $razorpay_order_id . '|' . $transaction_id, $keySecret);
     if (!hash_equals($expected_signature, $razorpay_signature)) {
-        die("Payment signature verification failed.");
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Payment signature verification failed']);
+        exit();
     }
 }
 
@@ -86,7 +94,20 @@ $total = $subtotal - $discount + $shipping + $tax;
 try {
     // 1. Insert into orders table
     $order_number = 'ORD' . time() . rand(100, 999);
-    $shipping_address = is_array($address) ? implode(', ', $address) : (string)$address; // Store as a clean, comma-separated string
+
+    // Format address as a readable string
+    if (is_array($address) && !empty($address)) {
+        $address_parts = [
+            $address['address'] ?? '',
+            $address['city'] ?? '',
+            $address['state'] ?? '',
+            $address['pincode'] ?? ''
+        ];
+        $shipping_address = implode(', ', array_filter($address_parts));
+        $shipping_address = trim($shipping_address);
+    } else {
+        $shipping_address = (string)$address ?? 'Address not provided';
+    }
 
     $remaining_total = $total;
     $items_count = count($cart);
@@ -112,9 +133,20 @@ try {
         $remaining_total -= $item_total;
 
         $stmt = $pdo->prepare("
-            INSERT INTO orders (order_number, user_id, pet_id, quantity, total_amount, shipping_address, order_status) 
-            VALUES (?, ?, ?, ?, ?, ?, 'Confirmed')
+            INSERT INTO orders (order_number, user_id, pet_id, quantity, total_amount, shipping_address, delivery_type, delivery_date, delivery_time, delivery_preferences, order_status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Confirmed')
         ");
+
+        // Prepare delivery data
+        $deliveryType = $delivery['type'] ?? 'standard';
+        $deliveryDate = $delivery['date'] ?? date('Y-m-d');
+        $deliveryTime = $delivery['timeSlot'] ?? '9am-12pm';
+        $deliveryPrefs = json_encode([
+            'callBeforeDelivery' => $delivery['callBeforeDelivery'] ?? false,
+            'whatsappNotification' => $delivery['whatsappNotification'] ?? false,
+            'petInstructions' => $delivery['petInstructions'] ?? '',
+            'deliveryNotes' => $delivery['deliveryNotes'] ?? ''
+        ]);
 
         $stmt->execute([
             $order_number,
@@ -123,6 +155,10 @@ try {
             $quantity,
             $item_total,
             $shipping_address,
+            $deliveryType,
+            $deliveryDate,
+            $deliveryTime,
+            $deliveryPrefs
         ]);
 
         $order_id = $pdo->lastInsertId();
@@ -138,7 +174,9 @@ try {
         ]);
     }
 } catch (PDOException $e) {
-    die("Database error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+    exit();
 }
 
 // Send Confirmation Email
@@ -227,6 +265,13 @@ if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
 // Clear cart
 unset($_SESSION['cart']); // If using session cart
 
-// Redirect to success page
-header("Location: payment_success.php?order_id=" . $order_number);
+// Return success response
+http_response_code(200);
+echo json_encode([
+    'success' => true,
+    'message' => 'Payment processed successfully',
+    'order_number' => $order_number,
+    'address' => $shipping_address,
+    'total' => $total
+]);
 exit();

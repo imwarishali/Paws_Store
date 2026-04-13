@@ -58,7 +58,369 @@ try {
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap">
     </noscript>
     <link rel="stylesheet" href="css/style.css">
-</head>
+    <style>
+        .featured-header-section {
+            background: linear-gradient(135deg, #2c1a0e 0%, #5c3d2e 100%);
+            padding: 40px 30px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .featured-header-section .ps-section-title {
+            color: #ffffff !important;
+            font-size: 42px !important;
+            margin: 0 0 10px 0 !important;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .featured-header-section .ps-section-sub {
+            color: #f0f0f0 !important;
+            margin: 0 !important;
+            font-size: 16px !important;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .featured-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .featured-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ps-filter-select {
+            padding: 11px 16px !important;
+            border-radius: 20px !important;
+            border: none !important;
+            background: white !important;
+            color: #2c1a0e !important;
+            font-weight: 600;
+            font-size: 14px !important;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .ps-filter-select:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.25) !important;
+        }
+
+        .ps-filter-select:focus {
+            outline: none !important;
+            border: 2px solid #b5860d !important;
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.3) !important;
+        }
+
+        .ps-section.ps-featured {
+            padding: 30px 20px !important;
+        }
+
+        .ps-pets-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .ps-pet-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .ps-pet-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #b5860d, #d4af37);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+            z-index: 1;
+        }
+
+        .ps-pet-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            border-color: #b5860d;
+        }
+
+        .ps-pet-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .ps-pet-photo {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .ps-pet-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .ps-pet-card:hover .ps-pet-photo img {
+            transform: scale(1.08);
+        }
+
+        .ps-pet-wish {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 2px solid #f5f2eb;
+        }
+
+        .ps-pet-wish:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            color: #e74c3c;
+        }
+
+        .ps-pet-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #4caf50;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e8f5e9;
+            width: fit-content;
+            white-space: nowrap;
+        }
+
+        .ps-pet-body {
+            padding: 18px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ps-pet-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c1a0e;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .ps-pet-meta,
+        .ps-pet-loc {
+            font-size: 12px;
+            color: #666;
+            margin: 4px 0;
+            font-weight: 500;
+        }
+
+        .ps-pet-stars {
+            color: #b5860d;
+            font-size: 13px;
+            margin: 6px 0;
+        }
+
+        .ps-pet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .ps-pet-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #b5860d;
+        }
+
+        .ps-pet-add {
+            flex: 1;
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.25);
+        }
+
+        .ps-pet-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.35);
+        }
+
+        .ps-pet-add.added-to-cart {
+            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.25);
+        }
+
+        .ps-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 40px;
+            padding: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .ps-pagination a,
+        .ps-pagination span {
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: 1px solid #e8e0d4;
+        }
+
+        .ps-pagination a {
+            color: #2c1a0e;
+            background: white;
+            cursor: pointer;
+        }
+
+        .ps-pagination a:hover {
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
+            color: white;
+            border-color: #b5860d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.25);
+        }
+
+        .ps-pagination span.current {
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
+            color: white;
+            border-color: #b5860d;
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.25);
+        }
+
+        @media (max-width: 1024px) {
+            .ps-pets-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+            }
+
+            .featured-header-section .ps-section-title {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .featured-header-section {
+                padding: 30px 20px;
+                margin-bottom: 25px;
+                border-radius: 16px;
+            }
+
+            .featured-header-section .ps-section-title {
+                font-size: 28px;
+                margin-bottom: 8px;
+            }
+
+            .featured-header-section .ps-section-sub {
+                font-size: 14px;
+            }
+
+            .featured-header-content {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .featured-filters {
+                flex-direction: column;
+            }
+
+            .ps-filter-select {
+                width: 100% !important;
+            }
+
+            .ps-pets-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .ps-section.ps-featured {
+                padding: 20px 10px !important;
+            }
+
+            .ps-pet-card {
+                border-radius: 12px;
+            }
+
+            .ps-pet-photo {
+                height: 150px;
+            }
+
+            .ps-pet-body {
+                padding: 14px;
+            }
+
+            .ps-pet-name {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+
+            .ps-pet-price {
+                font-size: 16px;
+            }
+
+            .ps-pet-add {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+
+            .ps-pagination a,
+            .ps-pagination span {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+    </style>
+
 
 <body>
     <nav class="fk-nav-header">
@@ -81,13 +443,13 @@ try {
     </nav>
 
     <div class="ps-wrap">
-        <div class="ps-section ps-featured" style="padding-top: 40px; min-height: 60vh;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div class="featured-header-section">
+            <div class="featured-header-content">
                 <div>
                     <div class="ps-section-title"><?php echo $pageTitle; ?></div>
-                    <div class="ps-section-sub" style="margin-bottom: 0;">Find your perfect companion. All pets are vaccinated, dewormed & vet-checked.</div>
+                    <div class="ps-section-sub">Find your perfect companion. All pets are vaccinated, dewormed & vet-checked.</div>
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div class="featured-filters">
                     <select id="location-filter" class="ps-filter-select">
                         <option value="all">Location: All</option>
                         <option value="Ahmedabad">Ahmedabad</option>
@@ -115,7 +477,9 @@ try {
                     </select>
                 </div>
             </div>
+        </div>
 
+        <div class="ps-section ps-featured">
             <div class="ps-pets-grid" id="pets-grid">
                 <!-- DOGS -->
                 <div class="ps-pet-card" data-category="dogs" data-pet-id="1">

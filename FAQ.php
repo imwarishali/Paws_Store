@@ -13,21 +13,28 @@ session_start();
     <style>
         .ps-faq-header {
             text-align: center;
-            padding: 60px 20px 20px;
+            padding: 60px 30px;
+            background: linear-gradient(135deg, #2c1a0e 0%, #5c3d2e 100%);
+            border-radius: 20px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
         .ps-faq-header h1 {
             font-family: "Playfair Display", serif;
-            font-size: 42px;
-            color: #2c1a0e;
+            font-size: 48px;
+            color: #ffffff;
             margin-bottom: 15px;
+            letter-spacing: 0.3px;
+            font-weight: 700;
         }
 
         .ps-faq-header p {
-            font-size: 18px;
-            color: #666;
+            font-size: 17px;
+            color: #f0f0f0;
             max-width: 600px;
             margin: 0 auto;
+            opacity: 0.95;
         }
 
         .ps-faq-container {
@@ -38,17 +45,17 @@ session_start();
 
         .faq-item {
             background: #fff;
-            border: 1px solid #e8e0d4;
+            border: 1px solid #e0e0e0;
             border-radius: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .faq-item:hover {
-            border-color: #d8c094;
-            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.08);
+            border-color: #b5860d;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
         }
 
         .faq-question {
@@ -92,26 +99,27 @@ session_start();
         }
 
         .ps-faq-search {
-            margin: 30px auto 0;
+            margin: 40px auto 0;
             max-width: 600px;
             position: relative;
         }
 
         .ps-faq-search input {
             width: 100%;
-            padding: 14px 20px 14px 45px;
-            border: 1px solid #d4b87a;
+            padding: 16px 50px 16px 48px;
+            border: 2px solid #e0e0e0;
             border-radius: 30px;
             font-family: "Nunito", sans-serif;
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            background: white;
         }
 
         .ps-faq-search input:focus {
             border-color: #b5860d;
-            box-shadow: 0 0 0 2px rgba(181, 134, 13, 0.1);
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.2);
         }
 
         .ps-faq-search-icon {

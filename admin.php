@@ -399,7 +399,7 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
             margin-bottom: 35px;
             text-align: center;
             padding-bottom: 15px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .sidebar-menu {
@@ -414,7 +414,7 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
             display: flex;
             align-items: center;
             padding: 12px 15px;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.95);
             text-decoration: none;
             border-radius: 8px;
             transition: all 0.3s ease;

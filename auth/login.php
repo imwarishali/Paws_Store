@@ -82,156 +82,263 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --cream: #faf6f0;
-      --brown: #5c4033;
-      --accent: #c9a227;
-      --accent-soft: #e8d5a3;
-      --text: #2d2a26;
-      --text-muted: #6b6560;
-      --white: #ffffff;
-      --shadow: 0 4px 20px rgba(92, 64, 51, 0.08);
-      --radius: 16px;
-    }
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-15px);
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes eyesBlink {
+      0% {
+        height: 36px;
+      }
+
+      50% {
+        height: 4px;
+      }
+
+      100% {
+        height: 4px;
+      }
+    }
+
     body {
       font-family: 'Outfit', sans-serif;
-      background: var(--cream);
+      background: linear-gradient(135deg, #faf6f0 0%, #e8dcc4 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 2rem;
+      overflow-x: hidden;
     }
 
-    .login-wrap {
-      display: flex;
-      max-width: 900px;
+    .login-card {
+      max-width: 500px;
       width: 100%;
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
+      background: #ffffff;
+      border-radius: 40px;
+      padding: 3rem 2.5rem;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(92, 64, 51, 0.2);
+      animation: slideUp 0.8s ease-out;
+      border: 3px solid #c9a227;
     }
 
-    .login-left {
-      flex: 1;
-      background: linear-gradient(135deg, var(--brown) 0%, #8b6914 100%);
-      padding: 3rem;
-      color: var(--cream);
+    /* Decorative dots on left */
+    .login-card::before {
+
+      position: absolute;
+      left: -30px;
+      top: 80px;
+      font-size: 20px;
+      color: #c9a227;
+      letter-spacing: 20px;
     }
 
-    .login-left h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.75rem;
-      margin-bottom: 0.5rem;
+    /* Decorative dots on right */
+    .login-card::after {
+
+      position: absolute;
+      right: -50px;
+      bottom: 150px;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 15px;
     }
 
-    .login-left p {
-      opacity: 0.9;
-      font-size: 0.95rem;
+    /* Mascot Section */
+    .mascot-section {
+      text-align: center;
       margin-bottom: 2rem;
     }
 
-    .login-left .art {
-      font-size: 4rem;
-      margin-top: 2rem;
+    .pet-mascot {
+      width: 160px;
+      height: 160px;
+      background: linear-gradient(135deg, #5c4033 0%, #8b6c59 100%);
+      border-radius: 50%;
+      margin: 0 auto 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 15px 40px rgba(92, 64, 51, 0.3);
+      animation: float 3s ease-in-out infinite;
+      border: 3px solid #c9a227;
     }
 
-    .login-right {
-      flex: 1;
-      padding: 3rem;
+    .pet-mascot::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 70%);
+      border-radius: 50%;
     }
 
-    .login-right h2 {
-      font-size: 1.5rem;
-      color: var(--brown);
-      margin-bottom: 0.5rem;
+    .eyes-container {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 35px;
+      width: 100%;
+      justify-content: center;
+      z-index: 2;
     }
 
-    .login-right .sub {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 1.5rem;
+    .eye {
+      width: 28px;
+      height: 36px;
+      background: white;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border: 2px solid #333;
+      transition: all 0.4s ease;
     }
 
+    .pupil {
+      width: 16px;
+      height: 16px;
+      background: #333;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .pupil::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+    }
+
+    .eyes-container.open .pupil {
+      top: 50%;
+      opacity: 1;
+    }
+
+    .hand-cover {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      font-size: 60px;
+      z-index: 5;
+      transition: all 0.5s ease;
+      opacity: 0;
+    }
+
+    .hand-cover.show {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+
+    .eyes-container.closed .eye {
+      opacity: 0;
+    }
+
+    .mascot-nose {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      z-index: 3;
+    }
+
+    .mascot-mouth {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 32px;
+      z-index: 3;
+    }
+
+    /* Form Elements */
     .form-group {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.8rem;
+      animation: slideUp 0.8s ease-out backwards;
+    }
+
+    .form-group:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .form-group:nth-child(2) {
+      animation-delay: 0.2s;
     }
 
     .form-group label {
       display: block;
-      font-weight: 500;
-      color: var(--text);
-      margin-bottom: 0.4rem;
-      font-size: 0.9rem;
+      font-weight: 700;
+      color: #2C1A0E;
+      margin-bottom: 0.6rem;
+      font-size: 0.95rem;
     }
 
     .form-group input {
       width: 100%;
-      padding: 0.85rem 1rem;
-      border: 1px solid rgba(92, 64, 51, 0.2);
-      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      border: 2px solid #e8dcc4;
+      border-radius: 15px;
       font-size: 1rem;
       font-family: inherit;
+      background-color: #faf6f0;
+      color: #2d2a26;
+      transition: all 0.3s ease;
     }
 
-    .btn {
-      width: 100%;
-      padding: 0.9rem;
-      background: var(--accent);
-      color: var(--white);
-      border: none;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
+    .form-group input:focus {
+      outline: none;
+      background-color: #ffffff;
+      border-color: #c9a227;
+      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
+      transform: scale(1.02);
     }
 
-    .btn:hover {
-      background: #8b6914;
-    }
-
-    .message {
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .error {
-      color: #721c24;
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
-    }
-
-    .info {
-      color: #004085;
-      background-color: #cce5ff;
-      border: 1px solid #b8daff;
-    }
-
-    .register-link {
-      margin-top: 1rem;
-      font-size: 1rem;
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    @media(max-width:600px) {
-      .login-left {
-        display: none;
-      }
+    .form-group input::placeholder {
+      color: #999;
     }
 
     .password-wrapper {
@@ -239,68 +346,230 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     .password-wrapper input {
-      padding-right: 45px;
+      padding-right: 50px;
     }
 
     .password-toggle {
       position: absolute;
-      right: 16px;
-      top: 50%;
+      right: 8px;
+      top: 45%;
       transform: translateY(-50%);
       background: none;
       border: none;
       cursor: pointer;
       font-size: 18px;
-      color: var(--text-muted);
+      transition: transform 0.2s ease, color 0.2s ease;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      color: #999;
+    }
+
+    .password-toggle:hover {
+      color: #c9a227;
+    }
+
+    .password-toggle:active {
+      transform: translateY(-50%);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #5c4033 0%, #3d2a21 100%);
+      color: white;
+      border: none;
+      border-radius: 15px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      margin-top: 1.5rem;
+      box-shadow: 0 8px 20px rgba(92, 64, 51, 0.2);
+      animation: slideUp 0.8s ease-out 0.3s backwards;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(92, 64, 51, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(-1px);
+    }
+
+    .message {
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      text-align: center;
+      animation: slideUp 0.5s ease-out;
+      font-weight: 600;
+    }
+
+    .error {
+      background-color: #FFE0E0;
+      color: #C41E3A;
+      border: 2px solid #FF6B6B;
+    }
+
+    .info {
+      background-color: #E3F2FD;
+      color: #0052CC;
+      border: 2px solid #2196F3;
+    }
+
+    .forgot-password {
+      text-align: center;
+      margin-top: -1rem;
+      margin-bottom: 1rem;
+    }
+
+    .forgot-password a {
+      color: #2C1A0E;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
+
+    .register-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: #2C1A0E;
+      font-weight: 600;
+    }
+
+    .register-link a {
+      color: #2C1A0E;
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    @media(max-width: 600px) {
+      .login-card {
+        padding: 2rem 1.5rem;
+        border-radius: 30px;
+      }
+
+      .pet-mascot {
+        width: 130px;
+        height: 130px;
+      }
+
+      .login-card::before,
+      .login-card::after {
+        display: none;
+      }
     }
   </style>
-
 </head>
 
 <body>
-  <div class="login-wrap">
-    <div class="login-left">
-      <h1>Paws Store</h1>
-      <p>Your one-stop pet shop for adoption, food, and care.</p>
-      <div class="art">🐕 🐈 🐹</div>
-    </div>
-
-    <div class="login-right">
-      <h2>Welcome back</h2>
-      <p class="sub">Sign in to your account to continue</p>
-
-      <?php if (!empty($error)): ?>
-        <p class="message error"><?php echo htmlspecialchars($error); ?></p>
-      <?php endif; ?>
-      <?php if (!empty($info_message)): ?>
-        <p class="message info"><?php echo htmlspecialchars($info_message); ?></p>
-      <?php endif; ?>
-
-      <form method="POST">
-        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
-        <input type="hidden" name="registered" value="<?php echo htmlspecialchars($registered); ?>">
-        <div class="form-group">
-          <label for="username">Username or Email</label>
-          <input type="text" id="username" name="username" required>
-        </div>
-        <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <label for="password" style="margin-bottom: 0;">Password</label>
-            <a href="forgot_password.php" style="font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 500;">Forgot Password?</a>
+  <div class="login-card">
+    <!-- Mascot with Eyes -->
+    <div class="mascot-section">
+      <div class="pet-mascot">
+        <div class="hand-cover">✋</div>
+        <div class="eyes-container open">
+          <div class="eye">
+            <div class="pupil"></div>
           </div>
-          <div class="password-wrapper">
-            <input type="password" id="password" name="password" required>
-            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+          <div class="eye">
+            <div class="pupil"></div>
           </div>
         </div>
-        <button type="submit" class="btn">Sign In</button>
-      </form>
-
-      <p class="register-link">Don't have an account? <a href="register.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>">Register here</a></p>
+        <div class="mascot-nose">👃</div>
+        <div class="mascot-mouth">😊</div>
+      </div>
     </div>
+
+    <!-- Error/Info Messages -->
+    <?php if (!empty($error)): ?>
+      <p class="message error"><?php echo htmlspecialchars($error); ?></p>
+    <?php endif; ?>
+    <?php if (!empty($info_message)): ?>
+      <p class="message info"><?php echo htmlspecialchars($info_message); ?></p>
+    <?php endif; ?>
+
+    <!-- Login Form -->
+    <form method="POST">
+      <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
+      <input type="hidden" name="registered" value="<?php echo htmlspecialchars($registered); ?>">
+
+      <div class="form-group">
+        <label for="username">Email</label>
+        <input type="text" id="username" name="username" placeholder="Enter your email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)">👁️</button>
+        </div>
+      </div>
+
+      <div class="forgot-password">
+        <a href="forgot_password.php">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="btn">Log in</button>
+    </form>
+
+    <p class="register-link">Not registered? <a href="register.php<?php echo !empty($redirect) ? '?redirect=' . urlencode($redirect) : ''; ?>">Create account</a></p>
   </div>
 
   <script>
+    const eyesContainer = document.querySelector('.eyes-container');
+    const handCover = document.querySelector('.hand-cover');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    // Eye animation based on input focus
+    usernameInput.addEventListener('focus', () => {
+      eyesContainer.classList.remove('closed');
+      eyesContainer.classList.add('open');
+      handCover.classList.remove('show');
+    });
+
+    usernameInput.addEventListener('blur', () => {
+      if (passwordInput !== document.activeElement) {
+        eyesContainer.classList.remove('closed');
+        eyesContainer.classList.add('open');
+        handCover.classList.remove('show');
+      }
+    });
+
+    passwordInput.addEventListener('focus', () => {
+      eyesContainer.classList.remove('open');
+      eyesContainer.classList.add('closed');
+      handCover.classList.add('show');
+    });
+
+    passwordInput.addEventListener('blur', () => {
+      eyesContainer.classList.remove('closed');
+      eyesContainer.classList.add('open');
+      handCover.classList.remove('show');
+    });
+
+    // Password visibility toggle
     function togglePasswordVisibility(inputId, button) {
       const input = document.getElementById(inputId);
       if (input.type === 'password') {

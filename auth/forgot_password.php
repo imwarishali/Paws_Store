@@ -1,169 +1,102 @@
 <?php
 
+/**
+ * Forgot Password - Step 1 of 3
+ * Handles user password reset initiation via email or mobile number
+ * Sends OTP via email and WhatsApp for verification
+ */
+
 require_once '../config.php';
 require_once '../db.php';
 require_once '../helpers/email_helper.php';
 
+// Redirect if already logged in
 if (isset($_SESSION["user"])) {
     header("Location: ../index.php");
     exit();
 }
 
+// Initialize variables
 $error = "";
 $success = "";
 
+// Process password reset request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
-        $email = trim($_POST["email"]);
-        $username = trim($_POST["username"]);
-        $new_password = $_POST["new_password"];
-        $confirm_password = $_POST["confirm_password"];
+        $email_or_mobile = trim($_POST["email_or_mobile"] ?? '');
 
-        if (empty($email) || empty($username) || empty($new_password) || empty($confirm_password)) {
-            $error = "All fields are required.";
-        } elseif ($new_password !== $confirm_password) {
-            $error = "Passwords do not match.";
-        } elseif (strlen($new_password) < 8) {
-            $error = "Password must be at least 8 characters long.";
-        } elseif (!preg_match('/[0-9]/', $new_password)) {
-            $error = "Password must contain at least one number.";
-        } elseif (!preg_match('/[^a-zA-Z0-9]/', $new_password)) {
-            $error = "Password must contain at least one special character.";
+        // Validation: Check required field
+        if (empty($email_or_mobile)) {
+            $error = "Please enter your email or mobile number.";
         } else {
-            // Rate Limiting: Max 3 OTP requests per hour
-            if (!isset($_SESSION['otp_requests'])) {
-                $_SESSION['otp_requests'] = [];
-            }
-            $_SESSION['otp_requests'] = array_filter($_SESSION['otp_requests'], function ($timestamp) {
-                return ($timestamp > time() - 3600);
-            });
+            // Check if input is email or phone
+            $is_email = filter_var($email_or_mobile, FILTER_VALIDATE_EMAIL);
+            $is_phone = preg_match('/^[6-9]\d{9}$/', preg_replace('/[^0-9]/', '', $email_or_mobile));
 
-            if (count($_SESSION['otp_requests']) >= 6) {
-                $error = "You have exceeded the maximum number of OTP requests. Please try again after an hour.";
+            // Validation: Check valid email or phone format
+            if (!$is_email && !$is_phone) {
+                $error = "Please enter a valid email or 10-digit mobile number.";
             } else {
-                // Verify user exists with given email and username
-                $stmt = $pdo->prepare("SELECT id, phone FROM users WHERE email = ? AND username = ?");
-                $stmt->execute([$email, $username]);
+                // Rate limiting: Check OTP requests per hour
+                if (!isset($_SESSION['otp_requests'])) {
+                    $_SESSION['otp_requests'] = [];
+                }
+                $_SESSION['otp_requests'] = array_filter($_SESSION['otp_requests'], function ($timestamp) {
+                    return ($timestamp > time() - 3600);
+                });
 
-                if ($stmt->rowCount() > 0) {
-                    $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $user_id = $user_data['id'];
-                    $phone = $user_data['phone'];
-                    $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
-                    $otp = rand(100000, 999999);
-
-                    $_SESSION['pending_reset'] = [
-                        'user_id' => $user_id,
-                        'username' => $username,
-                        'email' => $email,
-                        'phone' => $phone,
-                        'password_hash' => $password_hash,
-                        'otp' => $otp,
-                        'otp_time' => time()
-                    ];
-
-                    // Send OTP Email
-                    $to = $email;
-                    $subject = "Password Reset OTP - Paws Store";
-                    $message = "
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset='UTF-8'>
-                    <title>Password Reset OTP</title>
-                </head>
-                <body style='margin: 0; padding: 0; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif; background-color: #faf7f2; color: #333333;'>
-                    <table width='100%' cellpadding='0' cellspacing='0' style='background-color: #faf7f2; padding: 20px;'>
-                        <tr>
-                            <td align='center'>
-                                <table width='600' cellpadding='0' cellspacing='0' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
-                                    <tr>
-                                        <td style='background-color: #2c1a0e; padding: 30px; text-align: center;'>
-                                            <h1 style='color: #b5860d; margin: 0; font-size: 28px; font-weight: normal;'>🐾 Paws Store</h1>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style='padding: 40px 30px;'>
-                                            <h2 style='color: #2c1a0e; margin-top: 0;'>Password Reset OTP</h2>
-                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>Hello " . htmlspecialchars($username) . ",</p>
-                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>We received a request to reset the password for your account. Please use the following One-Time Password (OTP) to proceed:</p>
-                                            
-                                            <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;'>
-                                                <h1 style='margin: 0; font-size: 36px; color: #b5860d; letter-spacing: 5px;'>" . $otp . "</h1>
-                                            </div>
-                                            
-                                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>This OTP is valid for 10 minutes. If you did not request a password reset, please ignore this email or contact support immediately.</p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;'>
-                                            <p style='margin: 0; color: #888888; font-size: 14px;'>Best Regards,<br><strong style='color: #2c1a0e;'>🐾 Paws Store Team</strong></p>
-                                            <p style='margin: 10px 0 0 0; color: #aaaaaa; font-size: 12px;'>© " . date('Y') . " Paws Store. Made with love in India.</p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>
-                ";
-
-                    $env = parse_ini_file('../.env');
-                    $system_email = $env['SYSTEM_EMAIL'] ?? 'noreply@localhost';
-                    $headers = "MIME-Version: 1.0\r\n";
-                    $headers .= "Content-type:text/html;charset=UTF-8\r\n";
-                    $headers .= "From: Paws Store <" . $system_email . ">\r\n";
-
-                    @mail($to, $subject, $message, $headers);
-
-                    // Send OTP via WhatsApp (Using UltraMsg API)
-                    $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
-                    $token = $env['ULTRAMSG_TOKEN'] ?? '';
-                    $clean_phone = preg_replace('/[^0-9]/', '', $phone);
-
-                    if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
-                        if (strlen($clean_phone) == 10) {
-                            $clean_phone = "91" . $clean_phone; // Add India country code if 10 digits
-                        }
-
-                        $curl = curl_init();
-                        curl_setopt_array($curl, [
-                            CURLOPT_URL => "https://api.ultramsg.com/" . $instance_id . "/messages/chat",
-                            CURLOPT_RETURNTRANSFER => true,
-                            CURLOPT_POST => true,
-                            CURLOPT_POSTFIELDS => http_build_query([
-                                "token" => $token,
-                                "to" => "+" . $clean_phone,
-                                "body" => "🐾 *Paws Store*\n\nHello! 👋\nYour One-Time Password (OTP) for password reset is: *" . $otp . "*\n\n⏳ This code is valid for the next 10 minutes.\nFor your security, please do not share this code with anyone.\n\nThank you for choosing Paws Store!"
-                            ]),
-                            CURLOPT_HTTPHEADER => [
-                                "Content-Type: application/x-www-form-urlencoded"
-                            ],
-                            CURLOPT_SSL_VERIFYPEER => false,
-                            CURLOPT_SSL_VERIFYHOST => false
-                        ]);
-                        $response = curl_exec($curl);
-                        $err = curl_error($curl);
-                        curl_close($curl);
-
-                        if ($err) {
-                            error_log("cURL Error (WhatsApp): " . $err);
-                        } else {
-                            error_log("WhatsApp API Response: " . $response);
-                        }
+                if (count($_SESSION['otp_requests']) >= MAX_OTP_REQUESTS_PER_HOUR) {
+                    $error = "You have exceeded the maximum OTP requests. Please try again after an hour.";
+                } else {
+                    // Query: Search user by email or phone
+                    if ($is_email) {
+                        $stmt = $pdo->prepare("SELECT id, username, email, phone FROM users WHERE email = ?");
+                        $stmt->execute([$email_or_mobile]);
+                    } else {
+                        $clean_phone = '91' . preg_replace('/[^0-9]/', '', $email_or_mobile);
+                        $stmt = $pdo->prepare("SELECT id, username, email, phone FROM users WHERE phone = ? OR phone = ?");
+                        $stmt->execute([$clean_phone, preg_replace('/[^0-9]/', '', $email_or_mobile)]);
                     }
 
-                    $_SESSION['otp_requests'][] = time(); // Log the successful request
+                    if ($stmt->rowCount() > 0) {
+                        // User found - prepare reset data
+                        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $otp = rand(100000, 999999);
 
-                    $success = "OTP sent to your email and WhatsApp! Redirecting to verification...";
-                    echo "<script>setTimeout(function(){ window.location.href = 'verify_forgot_password_otp.php'; }, 2000);</script>";
-                } else {
-                    $error = "No account found with this Email and Username combination.";
+                        $_SESSION['pending_reset'] = [
+                            'user_id' => $user_data['id'],
+                            'username' => $user_data['username'],
+                            'email' => $user_data['email'],
+                            'phone' => $user_data['phone'],
+                            'otp' => $otp,
+                            'otp_time' => time(),
+                            'attempts' => 0,
+                            'step' => 'otp_verification'
+                        ];
+
+                        // Send OTP via email
+                        sendOTPEmail($user_data['email'], $user_data['username'], $otp);
+
+                        // Send OTP via WhatsApp (if configured)
+                        if (!empty($user_data['phone'])) {
+                            sendWhatsAppMessage(
+                                $user_data['phone'],
+                                "🐾 *Paws Store*\n\nHello! 👋\nYour One-Time Password (OTP) for password reset is: *" . $otp . "*\n\n⏳ This code is valid for the next 10 minutes.\nFor your security, please do not share this code with anyone.\n\nThank you for choosing Paws Store!"
+                            );
+                        }
+
+                        // Track OTP request and redirect
+                        $_SESSION['otp_requests'][] = time();
+                        $success = "OTP sent successfully! Redirecting to verification...";
+                        echo "<script>setTimeout(function(){ window.location.href = 'verify_forgot_password_otp.php'; }, 2000);</script>";
+                    } else {
+                        $error = "No account found with this email or mobile number.";
+                    }
                 }
             }
         }
     } catch (PDOException $e) {
+        error_log("Password reset error: " . $e->getMessage());
         $error = "Database error: " . $e->getMessage();
     }
 }
@@ -174,23 +107,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - Paws Store</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <title>Forgot Password - Paws Store</title>
     <style>
-        :root {
-            --cream: #faf6f0;
-            --brown: #5c4033;
-            --accent: #c9a227;
-            --accent-soft: #e8d5a3;
-            --text: #2d2a26;
-            --text-muted: #6b6560;
-            --white: #ffffff;
-            --shadow: 0 4px 20px rgba(92, 64, 51, 0.08);
-            --radius: 16px;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -198,182 +116,397 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--cream);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #5c4033 0%, #8b6f47 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 20px;
         }
 
-        .register-wrap {
-            max-width: 440px;
+        .container {
             width: 100%;
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 2.5rem;
+            max-width: 450px;
         }
 
-        h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            color: var(--brown);
-            margin-bottom: 0.5rem;
+        .form-wrapper {
+            background: #faf6f0;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            animation: slideUp 0.5s ease-out;
         }
 
-        .sub {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            font-size: 0.9rem;
-            margin-bottom: 0.4rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.85rem 1rem;
-            border: 1px solid rgba(92, 64, 51, 0.2);
-            border-radius: 10px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 0.9rem;
-            background: var(--accent);
-            color: var(--white);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            font-family: inherit;
-            margin-top: 0.5rem;
-        }
-
-        .login-link {
+        .header {
             text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.95rem;
-            color: var(--text-muted);
+            margin-bottom: 30px;
         }
 
-        .login-link a {
-            color: var(--accent);
-            font-weight: 500;
-            text-decoration: none;
-        }
-
-        .message {
-            padding: 10px;
-            border-radius: 5px;
+        .logo {
+            font-size: 40px;
             margin-bottom: 15px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .title {
+            color: #5c4033;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8b7355;
             font-size: 14px;
-            text-align: center;
+            margin-bottom: 15px;
         }
 
-        .error {
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
-
-        .success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-        }
-
-        .password-wrapper {
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
             position: relative;
         }
 
-        .password-wrapper input {
-            padding-right: 45px;
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0d5c4;
+            z-index: 0;
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0d5c4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #8b7355;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: #c9a227;
+            color: white;
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
+
+        .step.completed {
+            background: #5c4033;
+            color: white;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-error {
+            background: #ffe0e0;
+            color: #c81e1e;
+            border-left: 4px solid #c81e1e;
+        }
+
+        .alert-success {
+            background: #e0f7e0;
+            color: #1e7e1e;
+            border-left: 4px solid #1e7e1e;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #5c4033;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="tel"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0d5c4;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+            color: #2d2a26;
+        }
+
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #c9a227;
+            box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: #8b7355;
+            margin-top: 5px;
+        }
+
+        .form-group-note {
+            background: #fdfaf6;
+            border: 1px solid #e8dcc4;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #6b5d52;
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #c9a227 0%, #a67e1f 100%);
+            color: white;
             border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 18px;
-            color: var(--text-muted);
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(201, 162, 39, 0.3);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background: white;
+            color: #5c4033;
+            border: 2px solid #c9a227;
+            margin-top: 10px;
+        }
+
+        .secondary-btn:hover {
+            background: #fdfaf6;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .form-footer p {
+            color: #8b7355;
+            font-size: 14px;
+        }
+
+        .form-footer a {
+            color: #c9a227;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .form-footer a:hover {
+            color: #a67e1f;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #5c4033;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0d5c4;
+            border-top-color: #c9a227;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-wrapper {
+                padding: 25px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .step-indicator {
+                margin-bottom: 25px;
+            }
+
+            .step {
+                width: 35px;
+                height: 35px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="register-wrap">
-        <h1>Reset Password</h1>
-        <p class="sub">Verify your identity to create a new password.</p>
+    <div class="container">
+        <div class="form-wrapper">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">🐾</div>
+                <h1 class="title">Reset Password</h1>
+                <p class="subtitle">Step 1 of 3</p>
+            </div>
 
-        <?php if ($error != ""): ?>
-            <p class="message error"><?php echo $error; ?></p>
-        <?php endif; ?>
-        <?php if ($success != ""): ?>
-            <p class="message success"><?php echo $success; ?></p>
-        <?php endif; ?>
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active">1</div>
+                <div class="step">2</div>
+                <div class="step">3</div>
+            </div>
 
-        <form method="POST" action="forgot_password.php">
-            <div class="form-group">
-                <label for="email">Registered Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="new_password">New Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="new_password" name="new_password" required>
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password', this)">👁️</button>
+            <!-- Error/Success Messages -->
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-error">
+                    <strong>Error:</strong> <?php echo htmlspecialchars($error); ?>
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm New Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="confirm_password" name="confirm_password" required>
-                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">👁️</button>
+            <?php endif; ?>
+
+            <?php if (!empty($success)): ?>
+                <div class="alert alert-success">
+                    <strong>Success!</strong> <?php echo htmlspecialchars($success); ?>
                 </div>
+            <?php endif; ?>
+
+            <!-- Form -->
+            <form method="POST" action="">
+                <div class="form-group-note">
+                    📧 Enter the email or mobile number associated with your Paws Store account
+                </div>
+
+                <div class="form-group">
+                    <label for="email_or_mobile">Email or Mobile Number</label>
+                    <input
+                        type="text"
+                        id="email_or_mobile"
+                        name="email_or_mobile"
+                        placeholder="Enter email or 10-digit mobile"
+                        required
+                        autocomplete="off">
+
+                </div>
+
+                <button type="submit" name="submit">Send OTP</button>
+            </form>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Sending OTP...</p>
             </div>
-            <button type="submit" class="btn">Reset Password</button>
-        </form>
-        <p class="login-link">Remembered your password? <a href="login.php">Login here</a></p>
+
+            <!-- Footer -->
+            <div class="form-footer">
+                <p>
+                    Remembered your password? <a href="login.php">Log in</a>
+                </p>
+            </div>
+        </div>
     </div>
 
     <script>
-        function togglePasswordVisibility(inputId, button) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                button.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                button.textContent = '👁️';
+        // Form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const input = document.getElementById('email_or_mobile').value.trim();
+
+            if (!input) {
+                e.preventDefault();
+                alert('Please enter your email or mobile number');
+                return;
             }
-        }
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.querySelector('button[type="submit"]').disabled = true;
+        });
+
+        // Input validation helper
+        document.getElementById('email_or_mobile').addEventListener('input', function(e) {
+            let value = e.target.value;
+            // Allow only email-like or phone-like characters
+            if (value && !value.includes('@')) {
+                value = value.replace(/[^0-9\s\-+()\[\]]/g, '');
+                e.target.value = value;
+            }
+        });
     </script>
 </body>
 

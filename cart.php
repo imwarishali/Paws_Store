@@ -73,7 +73,7 @@ if (isset($_SESSION["user"])) {
         .checkout-steps {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             position: relative;
             max-width: 1200px;
             margin-left: auto;
@@ -84,11 +84,11 @@ if (isset($_SESSION["user"])) {
         .checkout-steps::before {
             content: '';
             position: absolute;
-            top: 25px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #ddd;
+            top: 26px;
+            left: 5%;
+            right: 5%;
+            height: 3px;
+            background: linear-gradient(90deg, #b5860d 0%, #ddd 100%);
             z-index: 0;
         }
 
@@ -100,42 +100,53 @@ if (isset($_SESSION["user"])) {
         }
 
         .step-number {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             background: white;
-            border: 3px solid #ddd;
+            border: 3px solid #e0e0e0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
-            font-weight: 600;
-            color: #666;
-            font-size: 18px;
+            margin: 0 auto 12px;
+            font-weight: 700;
+            color: #999;
+            font-size: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .step.active .step-number {
-            background: #2c1a0e;
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
             color: white;
-            border-color: #2c1a0e;
+            border-color: #b5860d;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.3);
         }
 
         .step.completed .step-number {
-            background: #28a745;
+            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
             color: white;
-            border-color: #28a745;
+            border-color: #4caf50;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
         }
 
         .step-label {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
+            color: #888;
             font-weight: 600;
             text-transform: uppercase;
-            margin-top: 5px;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
         }
 
         .step.active .step-label {
             color: #2c1a0e;
+            font-weight: 700;
+        }
+
+        .step.completed .step-label {
+            color: #4caf50;
             font-weight: 700;
         }
 
@@ -163,38 +174,50 @@ if (isset($_SESSION["user"])) {
 
         .cart-items {
             background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
         }
 
         .cart-item {
             display: flex;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
         }
 
         .cart-item:last-child {
             border-bottom: none;
         }
 
+        .cart-item:hover {
+            background: rgba(181, 134, 13, 0.02);
+            padding-left: 8px;
+        }
+
         .cart-item img {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            margin-right: 15px;
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            margin-right: 20px;
             object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .cart-item-details h4 {
-            margin: 0 0 5px 0;
+            margin: 0 0 6px 0;
             color: #2c1a0e;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
         }
 
         .cart-item-price {
             color: #b5860d;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 16px;
         }
 
         .quantity-controls {

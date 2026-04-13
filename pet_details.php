@@ -43,25 +43,39 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
     <link rel="stylesheet" href="css/style.css">
     <style>
         .ps-details-container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 40px auto 80px;
             display: flex;
             gap: 50px;
             background: #fff;
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid #e8e0d4;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 50px;
+            border-radius: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .ps-details-left {
             flex: 1.2;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
             background: #f9f9f9;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
         }
 
         .ps-details-left img {
@@ -69,6 +83,11 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             height: 100%;
             object-fit: cover;
             max-height: 600px;
+            transition: transform 0.4s ease;
+        }
+
+        .ps-details-container:hover .ps-details-left img {
+            transform: scale(1.05);
         }
 
         .ps-details-right {
@@ -80,48 +99,56 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
         .ps-details-header {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .ps-meta-badge {
-            background: #f5ecd8;
-            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(181, 134, 13, 0.15) 0%, rgba(76, 175, 80, 0.15) 100%);
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            color: #8b6840;
+            color: #2c1a0e;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border: 1px solid rgba(181, 134, 13, 0.2);
         }
 
         .status-badge {
-            background: #e8f5e9;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
             color: #2e7d32;
+            border-color: rgba(76, 175, 80, 0.3);
         }
 
         .ps-details-title {
             font-family: "Playfair Display", serif;
-            font-size: 38px;
+            font-size: 42px;
             color: #2c1a0e;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
 
         .ps-details-id {
             font-size: 14px;
             color: #888;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             font-weight: 500;
             display: flex;
-            gap: 15px;
+            gap: 20px;
         }
 
         .ps-details-price {
-            font-size: 34px;
+            font-size: 38px;
             font-weight: 700;
-            color: #b5860d;
-            margin-bottom: 24px;
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 28px;
         }
 
         .ps-details-desc {
@@ -129,9 +156,9 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             line-height: 1.8;
             color: #555;
             margin-bottom: 35px;
-            border-top: 1px solid #f0f0f0;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 24px 0;
+            border-top: 2px solid #f0f0f0;
+            border-bottom: 2px solid #f0f0f0;
+            padding: 28px 0;
         }
 
         .ps-details-actions {
@@ -141,20 +168,22 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
 
         .ps-btn-add {
             flex: 1;
-            background: #b5860d;
+            background: linear-gradient(135deg, #b5860d 0%, #d4af37 100%);
             color: white;
             border: none;
-            padding: 18px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
+            padding: 16px 20px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: 0.2s;
+            font-weight: 700;
+            font-size: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             font-family: 'Nunito', sans-serif;
+            box-shadow: 0 6px 20px rgba(181, 134, 13, 0.3);
         }
 
         .ps-btn-add:hover {
-            background: #9a7210;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(181, 134, 13, 0.4);
         }
 
         @keyframes pop {
@@ -163,7 +192,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             }
 
             50% {
-                transform: scale(1.05);
+                transform: scale(1.08);
             }
 
             100% {
@@ -172,51 +201,57 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
         }
 
         .ps-btn-add.added-to-cart {
-            background: #28a745 !important;
-            animation: pop 0.3s ease;
+            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3) !important;
+            animation: pop 0.4s ease;
         }
 
         .ps-btn-buy {
             flex: 1;
-            background: #2c1a0e;
+            background: linear-gradient(135deg, #2c1a0e 0%, #5c3d2e 100%);
             color: white;
             border: none;
-            padding: 18px;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             font-family: 'Nunito', sans-serif;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
 
         .ps-btn-buy:hover {
-            background: #4a3020;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
         }
 
         .ps-btn-wish {
-            width: 60px;
-            background: transparent;
-            border: 2px solid #e8e0d4;
-            border-radius: 8px;
+            width: 56px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
             font-size: 26px;
             color: #666;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .ps-btn-wish:hover {
             background: #fdfaf6;
-            border-color: #d8c094;
+            border-color: #b5860d;
+            transform: scale(1.1);
         }
 
         .ps-btn-wish.active {
             color: #e74c3c;
             border-color: #e74c3c;
-            background: #fdf5f5;
+            background: #fff5f5;
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.2);
         }
 
         /* Suggested Pets */

@@ -376,6 +376,7 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
         </div>
     </nav>
 
+
     <div class="ps-wrap">
         <div class="ps-details-container">
             <div class="ps-details-left">
@@ -426,6 +427,8 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
                 </div>
             </div>
         <?php endif; ?>
+
+
     </div>
 
     <footer id="contact">

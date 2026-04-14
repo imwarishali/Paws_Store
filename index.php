@@ -965,6 +965,7 @@ try {
           <a href="#pets">Pets</a>
           <a href="#categories">Shop</a>
           <a href="#about">About Us</a>
+          <a href="testimonials.php">Testimonials</a>
         </div>
         <div class="ps-footer-col">
           <h4>Support</h4>
@@ -984,6 +985,14 @@ try {
             <a href="https://twitter.com/pawsstore" target="_blank" title="Follow on Twitter" style="color: #faf7f2; font-size: 18px; text-decoration: none;">𝕏</a>
             <a href="https://youtube.com/@pawsstore" target="_blank" title="Subscribe on YouTube" style="color: #faf7f2; font-size: 18px; text-decoration: none;">▶️</a>
           </div>
+          <div class="ps-mobile-badges" style="margin-top: 15px;">
+            <a href="#" class="ps-badge-item" title="Download on App Store">
+              <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-example-horz.svg" alt="App Store" style="height: 40px;">
+            </a>
+            <a href="#" class="ps-badge-item" title="Get it on Google Play">
+              <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Google Play" style="height: 40px;">
+            </a>
+          </div>
         </div>
       </div>
       <div class="ps-footer-bottom">
@@ -998,6 +1007,33 @@ try {
     </div>
   </footer>
   </div>
+
+  <!-- Live Chat Widget (Tawk.to) -->
+  <script>
+    var Tawk_API = Tawk_API || {},
+      Tawk_LoadStart = new Date();
+    (function() {
+      var s1 = document.createElement("script"),
+        s0 = document.getElementsByTagName("script")[0];
+      s1.async = true;
+      s1.src = 'https://embed.tawk.to/REPLACE_WITH_YOUR_TAWK_ID/1hpojkd1g';
+      s1.charset = 'UTF-8';
+      s1.setAttribute('crossorigin', '*');
+      s0.parentNode.insertBefore(s1, s0);
+    })();
+  </script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+    gtag('config', 'GA_TRACKING_ID');
+  </script>
 
   <!-- Floating Action Buttons -->
   <a href="https://wa.me/919798889456?text=Hi!%20I%20am%20interested%20in%20adopting%20a%20pet%20from%20Paws%20Store." target="_blank" class="float-whatsapp" title="Chat with us on WhatsApp">

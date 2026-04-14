@@ -452,7 +452,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     .register-link a {
-      color: #2C1A0E;
+      color: #c9a227;
       text-decoration: none;
       font-weight: 700;
       transition: all 0.3s ease;
@@ -560,7 +560,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     passwordInput.addEventListener('focus', () => {
       eyesContainer.classList.remove('open');
       eyesContainer.classList.add('closed');
-      handCover.classList.add('show');
+      handCover.classList.remove('show');
     });
 
     passwordInput.addEventListener('blur', () => {

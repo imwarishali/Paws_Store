@@ -28,3 +28,8 @@ desktop.ini
 *.tmp
 *.bak
 *.cache
+
+# Database & Configuration files (Contains sensitive credentials)
+config.php
+db.php
+auth/database.php

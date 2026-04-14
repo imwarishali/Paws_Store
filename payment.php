@@ -6,31 +6,25 @@ if (!isset($_SESSION["user"])) {
     exit();
 }
 
-// Get cart data from POST or session
+// Get cart data from POST
 $cart = isset($_POST['cart']) ? json_decode($_POST['cart'], true) : [];
 $total = isset($_POST['total']) ? $_POST['total'] : 0;
 $special_offer = isset($_POST['special_offer']) ? $_POST['special_offer'] : 'none';
 
-// Handle address data - can come from either JSON format or individual fields from delivery_address.php
-if (isset($_POST['address']) && is_string($_POST['address'])) {
-    // Check if it's valid JSON (from cart.php legacy)
-    $decoded = json_decode($_POST['address'], true);
-    if ($decoded !== null && is_array($decoded)) {
-        // Successfully decoded JSON
-        $address = $decoded;
-    } else {
-        // Not JSON - treat as plain form fields from delivery_address.php
-        $address = [
-            'fullName' => $_POST['fullName'] ?? '',
-            'phone' => $_POST['phone'] ?? '',
-            'address' => $_POST['address'] ?? '',
-            'city' => $_POST['city'] ?? '',
-            'state' => $_POST['state'] ?? '',
-            'pincode' => $_POST['pincode'] ?? ''
-        ];
+// Parse address data
+$address = [];
+if (isset($_POST['address'])) {
+    $address_data = $_POST['address'];
+    if (is_string($address_data)) {
+        $decoded = json_decode($address_data, true);
+        if (is_array($decoded)) {
+            $address = $decoded;
+        }
     }
-} else {
-    // From delivery_address.php - individual form fields
+}
+
+// If address is still empty, try individual fields
+if (empty($address)) {
     $address = [
         'fullName' => $_POST['fullName'] ?? '',
         'phone' => $_POST['phone'] ?? '',
@@ -41,19 +35,14 @@ if (isset($_POST['address']) && is_string($_POST['address'])) {
     ];
 }
 
-// Handle delivery data - can come from either JSON format or individual fields
+// Parse delivery data
 $delivery = isset($_POST['delivery']) && is_string($_POST['delivery'])
     ? json_decode($_POST['delivery'], true)
-    : [];
-
-// If delivery data not in JSON format, reconstruct from individual fields
-if (empty($delivery)) {
-    $delivery = [
+    : [
         'type' => $_POST['deliveryType'] ?? 'standard',
         'petInstructions' => $_POST['petInstructions'] ?? '',
         'deliveryNotes' => $_POST['deliveryNotes'] ?? ''
     ];
-}
 
 if (empty($cart)) {
     header("Location: cart.php");
@@ -688,21 +677,29 @@ try {
                 "name": "Paws Store",
                 "description": "Pet Purchase",
                 "order_id": "<?php echo $razorpayOrderId; ?>",
-                "handler": function(response) {
-                    // Store payment details
-                    document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
-                    document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
-                    document.getElementById('razorpay_signature').value = response.razorpay_signature;
 
-                    // Submit via AJAX instead of form.submit()
-                    submitPaymentFormAjax();
+                "handler": function(response) {
+                    if (response.razorpay_payment_id) {
+                        document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                        document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+                        document.getElementById('razorpay_signature').value = response.razorpay_signature;
+                        submitPaymentFormAjax();
+                    }
                 },
+
                 "prefill": {
                     "name": "<?php echo htmlspecialchars($_SESSION['user']['username'] ?? ''); ?>",
                     "email": "<?php echo htmlspecialchars($_SESSION['user']['email'] ?? ''); ?>"
                 },
+
                 "theme": {
                     "color": "#b5860d"
+                },
+
+                "modal": {
+                    "ondismiss": function() {
+                        showToast("Payment cancelled", "❌");
+                    }
                 }
             };
 
@@ -750,21 +747,11 @@ try {
             rzp1.on('payment.failed', function(response) {
                 showToast("Payment Failed: " + response.error.description, '❌');
             });
-            document.getElementById('rzp-button1').onclick = function(e) {
-                rzp1.open();
-                e.preventDefault();
-            }
 
-            // Update Cart Count
-            function updateCartCount(count) {
-                const cartCountElement = document.getElementById('cart-count');
-                if (cartCountElement) {
-                    cartCountElement.textContent = count;
-                    cartCountElement.style.display = count > 0 ? 'flex' : 'none';
-                }
+            document.getElementById('rzp-button1').onclick = function(e) {
+                e.preventDefault();
+                rzp1.open();
             }
-            // We can just use the PHP cart array length since it's already on the server
-            updateCartCount(<?php echo isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0; ?>);
         </script>
 </body>
 

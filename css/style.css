@@ -642,6 +642,67 @@ body.nav-scrolled .fk-cat-img {
   overflow: hidden;
 }
 
+/* Trust Stats Section */
+.ps-trust-stats {
+  background: linear-gradient(135deg, #f5e8c8 0%, #f0e0b8 100%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  padding: 40px 48px;
+  max-width: 1600px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.ps-trust-stat-item {
+  text-align: center;
+}
+
+.ps-trust-stat-number {
+  font-family: "Playfair Display", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #b5860d;
+  margin-bottom: 8px;
+}
+
+.ps-trust-stat-label {
+  font-size: 12px;
+  color: #2c1a0e;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@media (max-width: 1024px) {
+  .ps-trust-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ps-trust-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 30px 16px;
+  }
+
+  .ps-trust-stat-number {
+    font-size: 22px;
+  }
+
+  .ps-trust-stat-label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ps-trust-stats {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 20px 16px;
+  }
+}
+
 /* Sections */
 .ps-section {
   padding: 52px 48px 0;
@@ -1411,57 +1472,97 @@ body.nav-scrolled .fk-cat-img {
 
 /* Newsletter */
 .ps-newsletter {
-  background: #f5e8c8;
-  padding: 40px 48px;
+  background: linear-gradient(135deg, #2c1a0e 0%, #4a3020 100%);
+  padding: 60px 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.ps-nl-text h3 {
+.ps-nl-container {
+  width: 100%;
+  max-width: 700px;
+  text-align: center;
+}
+
+.ps-nl-text h2 {
   font-family: "Playfair Display", serif;
-  font-size: 24px;
-  color: #2c1a0e;
-  margin-bottom: 6px;
+  font-size: 32px;
+  color: #ffffff;
+  margin-bottom: 12px;
+  font-weight: 700;
 }
 
 .ps-nl-text p {
-  font-size: 13px;
-  color: #6b4c2a;
+  font-size: 15px;
+  color: #e8dcc8;
+  margin-bottom: 28px;
+  line-height: 1.6;
 }
 
 .ps-nl-form {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  margin-bottom: 14px;
+  justify-content: center;
 }
 
 .ps-nl-input {
-  border: 1px solid #d4b87a;
-  border-radius: 28px;
-  padding: 12px 22px;
-  font-size: 14px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 15px;
   font-family: "Nunito", sans-serif;
   outline: none;
-  background: #fff;
-  width: 260px;
+  background: #ffffff;
+  width: 100%;
+  max-width: 320px;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+  color: #2c1a0e;
+}
+
+.ps-nl-input::placeholder {
+  color: #999999;
+}
+
+.ps-nl-input:focus {
+  border-color: #b5860d;
+  box-shadow: 0 0 0 3px rgba(181, 134, 13, 0.1);
 }
 
 .ps-nl-btn {
-  background: #2c1a0e;
-  color: #f5d98a;
+  background: #b5860d;
+  color: #ffffff;
   border: none;
-  border-radius: 28px;
-  padding: 12px 26px;
-  font-size: 14px;
+  border-radius: 8px;
+  padding: 14px 32px;
+  font-size: 15px;
   font-family: "Nunito", sans-serif;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(181, 134, 13, 0.3);
 }
 
 .ps-nl-btn:hover {
-  background: #4a3020;
+  background: #9a7210;
+  box-shadow: 0 6px 16px rgba(181, 134, 13, 0.4);
+  transform: translateY(-2px);
+}
+
+.ps-nl-btn:active {
+  transform: translateY(0);
+}
+
+.ps-nl-notice {
+  font-size: 12px;
+  color: #b5860d;
+  margin: 0;
+  font-weight: 500;
 }
 
 /* About */
@@ -1629,7 +1730,29 @@ footer {
   }
 
   .ps-newsletter {
+    padding: 48px 24px;
+  }
+
+  .ps-nl-text h2 {
+    font-size: 24px;
+  }
+
+  .ps-nl-text p {
+    font-size: 14px;
+  }
+
+  .ps-nl-form {
     flex-direction: column;
+    align-items: center;
+  }
+
+  .ps-nl-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .ps-nl-btn {
+    width: 100%;
   }
 
   .ps-section,
@@ -1789,10 +1912,21 @@ footer {
 
   /* Newsletter responsive */
   .ps-newsletter {
-    flex-direction: column;
-    text-align: center;
-    gap: 16px;
-    padding: 32px 20px;
+    padding: 40px 16px;
+  }
+
+  .ps-nl-container {
+    max-width: 100%;
+  }
+
+  .ps-nl-text h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .ps-nl-text p {
+    font-size: 13px;
+    margin-bottom: 20px;
   }
 
   .ps-nl-form {
@@ -1802,10 +1936,17 @@ footer {
 
   .ps-nl-input {
     width: 100%;
+    max-width: 100%;
+    padding: 12px 18px;
   }
 
   .ps-nl-btn {
     width: 100%;
+    padding: 12px 20px;
+  }
+
+  .ps-nl-notice {
+    font-size: 11px;
   }
 
   /* Footer */

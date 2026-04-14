@@ -104,7 +104,7 @@
         .hero {
             padding: 8rem 2rem 3rem;
             text-align: center;
-            max-width: 900px;
+            max-width: 1600px;
             margin: auto;
             animation: fadeInDown 0.8s ease;
         }
@@ -201,7 +201,7 @@
         }
 
         #location {
-            max-width: 900px;
+            max-width: 1600px;
             margin: auto;
             padding: 2rem 2rem 4rem;
             text-align: center;
@@ -338,7 +338,7 @@
         }
 
         #location {
-            max-width: 900px;
+            max-width: 1600px;
             margin: auto;
             padding: 3rem 2rem 4rem;
             text-align: center;

@@ -1275,8 +1275,8 @@ try {
 
             let html = '';
             steps.forEach((step, index) => {
-                let isCompleted = index < currentIndex;
-                let isActive = index === currentIndex;
+                let isCompleted = index < currentIndex || (index === currentIndex && currentStatus === 'delivered');
+                let isActive = index === currentIndex && currentStatus !== 'delivered';
                 let isFuture = index > currentIndex;
 
                 html += `

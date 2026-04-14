@@ -105,7 +105,7 @@ $service = $services[$id];
         }
 
         .header-inner {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: auto;
             display: flex;
             justify-content: space-between;
@@ -150,7 +150,7 @@ $service = $services[$id];
         /* Details Container */
         .ps-wrap {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1400px;
             margin: auto;
             padding: 0 20px;
         }
@@ -272,7 +272,7 @@ $service = $services[$id];
 
         .related-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 24px;
         }
 

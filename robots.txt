@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /auth/
+
+Sitemap: https://pawsstore.in/sitemap.xml
+
+# Google crawlers
+User-agent: Googlebot
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Delay for other bots (crawl-delay in seconds)
+User-agent: *
+Crawl-delay: 1

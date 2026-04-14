@@ -43,7 +43,18 @@ try {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Paws Store — Homepage Mockup</title>
+  <meta name="description" content="Paws Store - Buy healthy puppies, kittens, fish & birds online across India. Verified breeders, 100% vaccinated pets, home delivery. Shop now!" />
+  <meta name="keywords" content="buy pets online, puppies, kittens, fish, birds, pet store India, healthy pets, vaccinated pets, pet delivery" />
+  <meta name="author" content="Paws Store" />
+  <meta property="og:title" content="Paws Store — India's Most Trusted Online Pet Store" />
+  <meta property="og:description" content="Find your perfect pet! Verified breeders, healthy puppies, kittens & more. Free delivery across India." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://pawsstore.in" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Paws Store — Buy Pets Online India" />
+  <meta name="twitter:description" content="Verified pet breeders, healthy vaccinated pets, fast delivery." />
+  <title>Paws Store — India's Most Trusted Online Pet Store | Buy Healthy Pets</title>
+  <link rel="canonical" href="https://pawsstore.in" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -213,6 +224,30 @@ try {
     🐾 FREE VET CONSULTATION ON YOUR FIRST PURCHASE &nbsp;&bull;&nbsp; SAFE
     DELIVERY PAN INDIA &nbsp;&bull;&nbsp; ALL PETS VACCINATED &amp; DEWORMED
     &nbsp;&bull;&nbsp; VERIFIED BREEDERS ONLY
+  </div>
+
+  <!-- Trust Stats Section -->
+  <div class="ps-trust-stats">
+    <div class="ps-trust-stat-item">
+      <div class="ps-trust-stat-number">10,000+</div>
+      <div class="ps-trust-stat-label">Happy Pet Owners</div>
+    </div>
+    <div class="ps-trust-stat-item">
+      <div class="ps-trust-stat-number">500+</div>
+      <div class="ps-trust-stat-label">Dog Breeds & Varieties</div>
+    </div>
+    <div class="ps-trust-stat-item">
+      <div class="ps-trust-stat-number">100%</div>
+      <div class="ps-trust-stat-label">Verified Breeders</div>
+    </div>
+    <div class="ps-trust-stat-item">
+      <div class="ps-trust-stat-number">24/7</div>
+      <div class="ps-trust-stat-label">Customer Support</div>
+    </div>
+    <div class="ps-trust-stat-item">
+      <div class="ps-trust-stat-number">PAN</div>
+      <div class="ps-trust-stat-label">India Delivery</div>
+    </div>
   </div>
 
   <!-- Why Choose Us -->
@@ -897,15 +932,20 @@ try {
 
   <!-- Newsletter -->
   <div class="ps-newsletter">
-    <div class="ps-nl-text">
-      <h3>🐾 Get pet care tips &amp; exclusive offers</h3>
-      <p>Join 10,000+ pet lovers — no spam, only love!</p>
-    </div>
-    <div class="ps-nl-form">
-      <input
-        class="ps-nl-input"
-        type="email" />
-      <button class="ps-nl-btn" id="subscribe-btn">Subscribe</button>
+    <div class="ps-nl-container">
+      <div class="ps-nl-text">
+        <h2>Stay Updated with Paws Store</h2>
+        <p>Subscribe to our newsletter and receive expert pet care tips, exclusive deals, and new arrivals delivered to your inbox.</p>
+      </div>
+      <div class="ps-nl-form">
+        <input
+          class="ps-nl-input"
+          type="email"
+          placeholder="Enter your email address"
+          required />
+        <button class="ps-nl-btn" id="subscribe-btn">Subscribe Now</button>
+      </div>
+      <p class="ps-nl-notice">✓ Unsubscribe anytime | 100% spam-free</p>
     </div>
   </div>
 
@@ -936,9 +976,24 @@ try {
           <div class="ps-footer-contact">📞 <a href="tel:+919798889456" style="color: inherit; text-decoration: none;">+91 97988 89456</a></div>
           <div class="ps-footer-contact">✉️ <a href="mailto:support@pawsstore.in" style="color: inherit; text-decoration: none;">support@pawsstore.in</a></div>
         </div>
+        <div class="ps-footer-col">
+          <h4>Follow Us</h4>
+          <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <a href="https://instagram.com/pawsstore" target="_blank" title="Follow on Instagram" style="color: #faf7f2; font-size: 18px; text-decoration: none;">📷</a>
+            <a href="https://facebook.com/pawsstore" target="_blank" title="Like on Facebook" style="color: #faf7f2; font-size: 18px; text-decoration: none;">👍</a>
+            <a href="https://twitter.com/pawsstore" target="_blank" title="Follow on Twitter" style="color: #faf7f2; font-size: 18px; text-decoration: none;">𝕏</a>
+            <a href="https://youtube.com/@pawsstore" target="_blank" title="Subscribe on YouTube" style="color: #faf7f2; font-size: 18px; text-decoration: none;">▶️</a>
+          </div>
+        </div>
       </div>
       <div class="ps-footer-bottom">
-        © 2025 Paws Store. Made with 🐾 in India.
+        © 2026 Paws Store. Made with 🐾 in India.
+        <div style="margin-top: 10px; font-size: 12px; text-align: center;">
+          <a href="privacy-policy.php" style="color: inherit; text-decoration: none; margin: 0 10px;">Privacy Policy</a> |
+          <a href="terms-conditions.php" style="color: inherit; text-decoration: none; margin: 0 10px;">Terms & Conditions</a> |
+          <a href="refund-policy.php" style="color: inherit; text-decoration: none; margin: 0 10px;">Refund Policy</a> |
+          <a href="contact.php" style="color: inherit; text-decoration: none; margin: 0 10px;">Contact Us</a>
+        </div>
       </div>
     </div>
   </footer>

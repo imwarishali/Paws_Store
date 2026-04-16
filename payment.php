@@ -714,25 +714,24 @@ try {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Update success section with order details
-                            document.getElementById('success-order-number').textContent = data.order_number;
-                            document.getElementById('success-total').textContent = '₹' + new Intl.NumberFormat('en-IN').format(<?php echo $total; ?>);
-                            document.getElementById('success-address').textContent = data.address;
+                            // Store order details in session for the success page
+                            const orderDetails = {
+                                order_number: data.order_number,
+                                total: <?php echo $total; ?>,
+                                address: data.address,
+                                delivery_type: '<?php echo htmlspecialchars($delivery['type'] ?? 'standard'); ?>'
+                            };
 
-                            // Hide payment form and show success section
-                            document.getElementById('payment-form-section').style.display = 'none';
-                            document.getElementById('success-section').style.display = 'block';
+                            // Store in session storage temporarily
+                            sessionStorage.setItem('paymentSuccess', JSON.stringify(orderDetails));
 
-                            // Scroll to top
-                            window.scrollTo({
-                                top: 0,
-                                behavior: 'smooth'
-                            });
-
-                            // Clear cart from localStorage/session
+                            // Clear cart from localStorage immediately
                             if (typeof(Storage) !== 'undefined') {
                                 localStorage.removeItem('petStoreCart');
                             }
+
+                            // Redirect to success page for faster response
+                            window.location.href = 'payment_success.php?order=' + data.order_number + '&total=' + <?php echo $total; ?> + '&address=' + encodeURIComponent(data.address);
                         } else {
                             showToast("Payment processing failed: " + (data.error || 'Unknown error'), '❌');
                         }

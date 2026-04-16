@@ -985,14 +985,6 @@ try {
             <a href="https://twitter.com/pawsstore" target="_blank" title="Follow on Twitter" style="color: #faf7f2; font-size: 18px; text-decoration: none;">𝕏</a>
             <a href="https://youtube.com/@pawsstore" target="_blank" title="Subscribe on YouTube" style="color: #faf7f2; font-size: 18px; text-decoration: none;">▶️</a>
           </div>
-          <div class="ps-mobile-badges" style="margin-top: 15px;">
-            <a href="#" class="ps-badge-item" title="Download on App Store">
-              <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-example-horz.svg" alt="App Store" style="height: 40px;">
-            </a>
-            <a href="#" class="ps-badge-item" title="Get it on Google Play">
-              <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Google Play" style="height: 40px;">
-            </a>
-          </div>
         </div>
       </div>
       <div class="ps-footer-bottom">

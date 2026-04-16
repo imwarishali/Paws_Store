@@ -272,6 +272,83 @@ session_start();
                     <br>Currently, to ensure a smooth and secure adoption process, we do not offer Cash on Delivery (COD) or Pay on Delivery options. All payments must be completed securely online via our payment gateway (which accepts UPI, Credit/Debit Cards, Net Banking, and Wallets) before your pet is dispatched.
                 </div>
             </div>
+            <!-- FAQ Item 15 -->
+            <div class="faq-item">
+                <div class="faq-question">How do I create an account on Paws Store? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Creating an account is simple and free! Click on the 'Login' option in the navigation menu, then select 'Sign Up' or 'Register'. Fill in your email, name, phone number, and set a password. You'll receive a verification OTP via email and SMS to confirm your account.
+                </div>
+            </div>
+            <!-- FAQ Item 16 -->
+            <div class="faq-item">
+                <div class="faq-question">Can I save my favorite pets to a wishlist? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes! You can save your favorite pets to your personal wishlist by clicking the heart icon on any pet's profile. Your wishlist is saved to your account so you can easily compare and revisit your favorites anytime. Access it from the navigation menu or your profile.
+                </div>
+            </div>
+            <!-- FAQ Item 17 -->
+            <div class="faq-item">
+                <div class="faq-question">Can I filter pets by location, price, or breed? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Absolutely! We provide advanced filtering options on our shop page. You can filter pets by location, price range, type (dogs, cats, birds, fish), breed, age, and more to find the perfect match for your family and budget.
+                </div>
+            </div>
+            <!-- FAQ Item 18 -->
+            <div class="faq-item">
+                <div class="faq-question">How do I view detailed information about a specific pet? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Click on any pet's profile card to view comprehensive details including breed information, age, health certifications, vaccination records, breeder details, customer reviews, and recommended care tips. You can also view high-quality photos and videos of the pet.
+                </div>
+            </div>
+            <!-- FAQ Item 19 -->
+            <div class="faq-item">
+                <div class="faq-question">Can I search for specific pet breeds on your website? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes! Use the search bar at the top of any page to search by pet name, breed, or type. You can also browse by category (Dogs, Cats, Birds, Fish) to explore specific pet types and then use our filters to narrow down by breed.
+                </div>
+            </div>
+            <!-- FAQ Item 20 -->
+            <div class="faq-item">
+                <div class="faq-question">Are there customer reviews for the pets and breeders? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes! Each pet profile and breeder features verified customer reviews and ratings. You can read real feedback from previous buyers about their experience with the pet and the breeder, helping you make an informed decision.
+                </div>
+            </div>
+            <!-- FAQ Item 21 -->
+            <div class="faq-item">
+                <div class="faq-question">How can I view my order history and invoices? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Log into your account and navigate to the 'Orders' or 'Order History' section in your profile. Here you can view all past and current orders, track deliveries, download invoices, and view health certificates and documentation for your pet.
+                </div>
+            </div>
+            <!-- FAQ Item 22 -->
+            <div class="faq-item">
+                <div class="faq-question">Is my personal information secure on Paws Store? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes, absolutely! We use industry-standard SSL encryption to protect all your personal and payment information. Our platform complies with data protection regulations and we never share your information with third parties without your consent.
+                </div>
+            </div>
+            <!-- FAQ Item 23 -->
+            <div class="faq-item">
+                <div class="faq-question">Can I get pet care tips and guidance on your website? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>Yes! Each pet profile includes recommended care tips, nutritional guidelines, and breed-specific information. Additionally, our expert team provides free initial vet consultation with every purchase to help you care for your new pet properly.
+                </div>
+            </div>
+            <!-- FAQ Item 24 -->
+            <div class="faq-item">
+                <div class="faq-question">Which cities and states does Paws Store deliver to? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>We offer PAN India delivery! We ship to all major cities and towns across India. During the order process, you can enter your delivery location to check if delivery is available in your area. Our coverage continues to expand regularly.
+                </div>
+            </div>
+            <!-- FAQ Item 25 -->
+            <div class="faq-item">
+                <div class="faq-question">How can I provide feedback or suggest improvements? <span class="faq-icon">+</span></div>
+                <div class="faq-answer">
+                    <br>We value your feedback! You can contact us through our <a href="contact.php" style="color: #b5860d; text-decoration: none; font-weight: bold;">Contact Us</a> page, email us at support@pawsstore.in, or call +91 97988 89456. We are always interested in hearing your suggestions for improving our service.
+                </div>
+            </div>
             <div id="no-results-msg" class="no-results-msg">No FAQs found matching your search criteria.</div>
         </div>
     </div>

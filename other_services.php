@@ -207,17 +207,47 @@
             text-align: center;
         }
 
+        /* Services Section Title */
+        .services-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .services-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--brown);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .services-header p {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
         /* Services */
         .services {
-            padding: 3rem 2rem;
+            padding: 4rem 2rem;
             max-width: 1600px;
             margin: auto;
         }
 
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
         .card {
             border-radius: var(--radius);
-            box-shadow: 0 4px 15px rgba(44, 26, 14, 0.08);
-            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 12px rgba(44, 26, 14, 0.06);
+            border: 1px solid #ede8df;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
             position: relative;
@@ -233,7 +263,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 4px;
             background: linear-gradient(90deg, var(--accent), var(--accent-light));
             transform: translateX(-100%);
             transition: transform 0.4s ease;
@@ -241,9 +271,9 @@
         }
 
         .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 35px rgba(44, 26, 14, 0.15);
-            border-color: var(--accent);
+            transform: translateY(-10px);
+            box-shadow: 0 16px 40px rgba(44, 26, 14, 0.12);
+            border-color: var(--accent-soft);
         }
 
         .card:hover::before {
@@ -251,7 +281,7 @@
         }
 
         .card img {
-            height: 200px;
+            height: 220px;
             object-fit: cover;
             border-top-left-radius: var(--radius);
             border-top-right-radius: var(--radius);
@@ -259,11 +289,11 @@
         }
 
         .card:hover img {
-            transform: scale(1.06);
+            transform: scale(1.08);
         }
 
         .card-body {
-            padding: 1.8rem;
+            padding: 2rem;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
@@ -272,22 +302,23 @@
         .card-title {
             color: var(--brown);
             font-weight: 700;
-            font-size: 1.3rem;
-            margin-bottom: 0.8rem;
-            letter-spacing: 0.3px;
+            font-size: 1.35rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.2px;
         }
 
         .service-price {
             color: white;
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             font-weight: 700;
-            font-size: 0.95rem;
-            padding: 8px 14px;
+            font-size: 0.9rem;
+            padding: 6px 14px;
             border-radius: 20px;
             display: inline-block;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.25);
+            margin-bottom: 1rem;
+            box-shadow: 0 3px 10px rgba(181, 134, 13, 0.2);
             width: fit-content;
+            letter-spacing: 0.3px;
         }
 
         .card-text {
@@ -303,6 +334,31 @@
             line-height: 1.7;
             margin: 0;
             flex-grow: 1;
+        }
+
+        .card-cta {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #ede8df;
+            text-align: center;
+        }
+
+        .card-cta a {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(181, 134, 13, 0.2);
+        }
+
+        .card-cta a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(181, 134, 13, 0.3);
         }
 
         .card.fade-in {
@@ -358,8 +414,17 @@
                 font-size: 2.8rem;
             }
 
+            .services-header h2 {
+                font-size: 2.4rem;
+            }
+
             .card {
                 border-radius: 14px;
+            }
+
+            .services-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
             }
         }
 
@@ -411,29 +476,43 @@
             }
 
             .services {
-                padding: 2rem 1rem;
+                padding: 2.5rem 1rem;
+            }
+
+            .services-header h2 {
+                font-size: 2rem;
+            }
+
+            .services-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
             }
 
             .card img {
-                height: 160px;
+                height: 180px;
             }
 
             .card-body {
-                padding: 1.3rem;
+                padding: 1.5rem;
             }
 
             .card-title {
-                font-size: 1.1rem;
-                margin-bottom: 0.6rem;
+                font-size: 1.15rem;
+                margin-bottom: 0.5rem;
             }
 
             .service-price {
-                font-size: 0.85rem;
-                padding: 6px 12px;
+                font-size: 0.8rem;
+                padding: 5px 12px;
             }
 
             .card-text,
             .card p {
+                font-size: 0.85rem;
+            }
+
+            .card-cta a {
+                padding: 0.65rem 1.2rem;
                 font-size: 0.85rem;
             }
         }
@@ -466,116 +545,125 @@
 
     <!-- SERVICES -->
     <section class="services">
-        <div class="row g-4">
+        <div class="services-header">
+            <h2>Premium Care Services</h2>
+            <p>Explore our comprehensive range of professional pet care services designed to keep your furry friend healthy, happy, and well-groomed.</p>
+        </div>
+        <div class="services-grid">
             <!-- Grooming -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="grooming">
-                    <img
-                        src="Assets/Services/grooming.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Grooming</h5>
-                        <div class="service-price">Starting from ₹499</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Keep your pet looking sharp and feeling fresh! Our expert groomers use pet-safe products for a relaxing spa day.
-                        </p>
-                        <p>• Bath & cleaning<br />• Hair trimming<br />• Hygiene care</p>
+            <div class="card" data-service-id="grooming">
+                <img
+                    src="Assets/Services/grooming.jpg"
+                    alt="Pet Grooming Service" />
+                <div class="card-body">
+                    <h5 class="card-title">🛁 Grooming</h5>
+                    <div class="service-price">From ₹499</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Keep your pet looking sharp and feeling fresh with our expert groomers using pet-safe products.
+                    </p>
+                    <p>&#x2022; Bath & cleaning<br />&#x2022; Hair trimming<br />&#x2022; Hygiene care</p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=grooming">Learn More →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Vaccination -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="vaccination">
-                    <img
-                        src="Assets/Services/vaccination.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Vaccination</h5>
-                        <div class="service-price">Starting from ₹299</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Protect your furry friend from common illnesses with our comprehensive, age-appropriate immunization schedules.
-                        </p>
-                        <p>
-                            • Regular vaccines<br />• Prevent diseases<br />• Vet certified
-                        </p>
+            <div class="card" data-service-id="vaccination">
+                <img
+                    src="Assets/Services/vaccination.jpg"
+                    alt="Pet Vaccination Service" />
+                <div class="card-body">
+                    <h5 class="card-title">💉 Vaccination</h5>
+                    <div class="service-price">From ₹299</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Protect your furry friend from common illnesses with comprehensive, age-appropriate immunization schedules.
+                    </p>
+                    <p>
+                        &#x2022; Regular vaccines<br />&#x2022; Prevent diseases<br />&#x2022; Vet certified
+                    </p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=vaccination">Learn More →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Training -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="training">
-                    <img
-                        src="Assets/Services/training.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Pet Training</h5>
-                        <div class="service-price">Starting from ₹999 / session</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Build a stronger bond through positive reinforcement, from puppy basics to advanced behavioral obedience.
-                        </p>
-                        <p>
-                            • Basic commands<br />• Behavior training<br />• Professional
-                            trainers
-                        </p>
+            <div class="card" data-service-id="training">
+                <img
+                    src="Assets/Services/training.jpg"
+                    alt="Pet Training Service" />
+                <div class="card-body">
+                    <h5 class="card-title">🎓 Pet Training</h5>
+                    <div class="service-price">From ₹999 / session</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Build a stronger bond through positive reinforcement, from puppy basics to advanced behavioral obedience.
+                    </p>
+                    <p>
+                        &#x2022; Basic commands<br />&#x2022; Behavior training<br />&#x2022; Professional trainers
+                    </p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=training">Learn More →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Health -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="health">
-                    <img
-                        src="Assets/Services/Health_Checkup.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Health Checkups</h5>
-                        <div class="service-price">Starting from ₹399</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Regular checkups are key to a long, happy life. Our clinic offers full-body exams and expert diagnostics.
-                        </p>
-                        <p>
-                            • Routine checkups<br />• Health monitoring<br />• Expert vets
-                        </p>
+            <div class="card" data-service-id="health">
+                <img
+                    src="Assets/Services/Health_Checkup.jpg"
+                    alt="Pet Health Checkup Service" />
+                <div class="card-body">
+                    <h5 class="card-title">🏥 Health Checkups</h5>
+                    <div class="service-price">From ₹399</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Regular checkups are key to a long, happy life with full-body exams and expert diagnostics.
+                    </p>
+                    <p>
+                        &#x2022; Routine checkups<br />&#x2022; Health monitoring<br />&#x2022; Expert vets
+                    </p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=health">Learn More →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Boarding -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="boarding">
-                    <img
-                        src="Assets/Services/Pet_Boarding.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Pet Boarding</h5>
-                        <div class="service-price">Starting from ₹599 / day</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Going out of town? We offer spacious, clean, and fully supervised boarding so your pet feels right at home.
-                        </p>
-                        <p>
-                            • Safe stay<br />• Daily care<br />• Comfortable environment
-                        </p>
+            <div class="card" data-service-id="boarding">
+                <img
+                    src="Assets/Services/Pet_Boarding.jpg"
+                    alt="Pet Boarding Service" />
+                <div class="card-body">
+                    <h5 class="card-title">🏠 Pet Boarding</h5>
+                    <div class="service-price">From ₹599 / day</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Spacious, clean, and fully supervised boarding so your pet feels right at home while you're away.
+                    </p>
+                    <p>
+                        &#x2022; Safe stay<br />&#x2022; Daily care<br />&#x2022; Comfortable environment
+                    </p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=boarding">Learn More →</a>
                     </div>
                 </div>
             </div>
 
             <!-- Photography -->
-            <div class="col-md-4">
-                <div class="card" data-service-id="photography">
-                    <img
-                        src="Assets/Services/Photography.jpg"
-                        alt="" />
-                    <div class="card-body">
-                        <h5 class="card-title">Pet Photography</h5>
-                        <div class="service-price">Starting from ₹1,499 / session</div>
-                        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 10px;">
-                            Capture the unique personality of your furry friend with our professional pet photography sessions.
-                        </p>
-                        <p>
-                            • Studio & outdoor<br />• Edited photos<br />• Props included
-                        </p>
+            <div class="card" data-service-id="photography">
+                <img
+                    src="Assets/Services/Photography.jpg"
+                    alt="Pet Photography Service" />
+                <div class="card-body">
+                    <h5 class="card-title">📸 Pet Photography</h5>
+                    <div class="service-price">From ₹1,499 / session</div>
+                    <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.8rem;">
+                        Capture the unique personality of your furry friend with professional pet photography sessions.
+                    </p>
+                    <p>
+                        &#x2022; Studio & outdoor<br />&#x2022; Edited photos<br />&#x2022; Props included
+                    </p>
+                    <div class="card-cta">
+                        <a href="service_details.php?id=photography">Learn More →</a>
                     </div>
                 </div>
             </div>

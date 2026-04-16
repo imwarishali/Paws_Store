@@ -413,7 +413,7 @@ $service = $services[$id];
                 }
                 $keys = array_keys($related_services);
                 shuffle($keys);
-                $selected_keys = array_slice($keys, 0, 3);
+                $selected_keys = array_slice($keys, 0, 16);
 
                 foreach ($selected_keys as $rel_key):
                     $rel_svc = $related_services[$rel_key];

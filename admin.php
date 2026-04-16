@@ -125,8 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $headers = "MIME-Version: 1.0\r\nContent-type: text/html; charset=UTF-8\r\nFrom: noreply@pawsstore.com\r\n";
                     @mail($to, $subject, $message, $headers);
 
-                    // Send WhatsApp notification for Out for Delivery, Delivered, and Cancelled
-                    if (in_array($new_status, ['Out for Delivery', 'Delivered', 'Cancelled'])) {
+                    // Send WhatsApp notification for Shipped, Out for Delivery, Delivered, and Cancelled
+                    if (in_array($new_status, ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'])) {
                         $env = parse_ini_file('.env');
                         $instance_id = $env['ULTRAMSG_INSTANCE_ID'] ?? '';
                         $token = $env['ULTRAMSG_TOKEN'] ?? '';
@@ -138,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
 
                             $wa_messages = [
+                                'Shipped' => "📦 Order Shipped!\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour order *{$order_number}* has been shipped and is on its way to you! You can expect delivery within 3-5 business days.\n\nThank you for shopping with Paws Store!",
                                 'Out for Delivery' => "🚗 Order Out for Delivery!\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour order *{$order_number}* is out for delivery today! Please be available to receive your pet(s).\n\nThank you!",
                                 'Delivered' => "✅ Order Delivered!\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour order *{$order_number}* has been successfully delivered! We hope you and your new pet(s) are doing great.\n\nThank you for shopping with Paws Store!",
                                 'Cancelled' => "❌ Order Cancelled\n\nHello *" . htmlspecialchars($username) . "*,\n\nYour order *{$order_number}* has been cancelled. A full refund is being processed to your account.\n\nThank you!"

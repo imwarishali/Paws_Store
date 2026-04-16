@@ -265,6 +265,12 @@ if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
 // Clear cart
 unset($_SESSION['cart']); // If using session cart
 
+// Store order details in session for payment_success.php
+$_SESSION['last_order_number'] = $order_number;
+$_SESSION['last_order_total'] = $total;
+$_SESSION['last_order_address'] = $shipping_address;
+$_SESSION['last_delivery_type'] = $delivery_type ?? 'standard';
+
 // Return success response
 http_response_code(200);
 echo json_encode([

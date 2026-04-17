@@ -544,34 +544,6 @@ try {
     </div>
 
     <div class="ps-wrap">
-        <!-- Success Message Section (Initially Hidden) -->
-        <div id="success-section" style="display: none;">
-            <div class="payment-container">
-                <div style="text-align: center; background: #e8f5e9; padding: 40px; border-radius: 12px; border: 2px solid #4caf50;">
-                    <h2 style="color: #2e7d32; margin-top: 0;">✅ Payment Successful!</h2>
-                    <p style="color: #666; font-size: 16px; margin: 20px 0;">Your order has been confirmed and payment has been successfully processed.</p>
-
-                    <div style="background: white; padding: 30px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        <h3 style="color: #2c1a0e; margin-top: 0; border-bottom: 2px solid #b5860d; padding-bottom: 10px;">Order Details</h3>
-                        <p style="margin: 15px 0;"><strong>Order Number:</strong> <span id="success-order-number" style="color: #b5860d; font-weight: bold;">ORD000000000</span></p>
-                        <p style="margin: 15px 0;"><strong>Total Amount:</strong> <span id="success-total" style="color: #2c1a0e; font-weight: bold; font-size: 18px;">₹0</span></p>
-                        <p style="margin: 15px 0;"><strong>Delivery Address:</strong> <span id="success-address" style="color: #555;">--</span></p>
-                        <p style="margin: 15px 0;"><strong>Expected Delivery:</strong> <span id="success-delivery" style="color: #555;">3-5 business days</span></p>
-                    </div>
-
-                    <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        <p style="margin: 0; color: #e65100;"><strong>📧 A confirmation email has been sent to your registered email address.</strong></p>
-                        <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">You can track your order status in your Order History page.</p>
-                    </div>
-
-                    <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
-                        <a href="order_history.php" style="background: #b5860d; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">📦 View Order History</a>
-                        <a href="index.php" style="background: #2c1a0e; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">🏠 Continue Shopping</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Payment Form Section (Initially Visible) -->
         <div id="payment-form-section">
             <div class="payment-container">
@@ -714,24 +686,21 @@ try {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Store order details in session for the success page
-                            const orderDetails = {
+                            // Store in session storage temporarily
+                            sessionStorage.setItem('paymentSuccess', JSON.stringify({
                                 order_number: data.order_number,
-                                total: <?php echo $total; ?>,
+                                total: data.total,
                                 address: data.address,
                                 delivery_type: '<?php echo htmlspecialchars($delivery['type'] ?? 'standard'); ?>'
-                            };
+                            }));
 
-                            // Store in session storage temporarily
-                            sessionStorage.setItem('paymentSuccess', JSON.stringify(orderDetails));
-
-                            // Clear cart from localStorage immediately
+                            // Clear cart from localStorage
                             if (typeof(Storage) !== 'undefined') {
                                 localStorage.removeItem('petStoreCart');
                             }
 
-                            // Redirect to success page for faster response
-                            window.location.href = 'payment_success.php?order=' + data.order_number + '&total=' + <?php echo $total; ?> + '&address=' + encodeURIComponent(data.address);
+                            // Redirect to success page immediately
+                            window.location.href = 'payment_success.php?order=' + data.order_number + '&total=' + data.total + '&address=' + encodeURIComponent(data.address);
                         } else {
                             showToast("Payment processing failed: " + (data.error || 'Unknown error'), '❌');
                         }

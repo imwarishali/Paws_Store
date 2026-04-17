@@ -1010,9 +1010,24 @@ try {
                                     <?php endif; ?>
                                 </span>
                                 <?php if (in_array($order['order_status'], ['Confirmed', 'Shipped'])): ?>
-                                    <span style="color: #0c5460; background: #e0f7fa;"><strong>Est. Delivery:</strong> <?php echo date('d M Y', strtotime($order['created_at'] . ' + 5 days')); ?></span>
-                                <?php elseif (in_array($order['order_status'], ['Out for Delivery', 'Delivered']) && !empty($order['delivery_date'])): ?>
-                                    <span style="color: #e65100; background: #fff3e0;"><strong>📅 Delivery:</strong> <?php echo date('d M Y', strtotime($order['delivery_date'])); ?> @ <?php echo htmlspecialchars($order['delivery_time'] ?? 'TBD'); ?></span>
+                                    <?php
+                                    $delivery_type = $order['delivery_type'] ?? 'standard';
+                                    if ($delivery_type === 'express') {
+                                        $est_days = 3;
+                                        $est_label = 'Express (2-3 days)';
+                                    } elseif ($delivery_type === 'sameday') {
+                                        $est_days = 0;
+                                        $est_label = 'Same Day';
+                                    } else {
+                                        $est_days = 5;
+                                        $est_label = 'Standard (5 days)';
+                                    }
+                                    $est_date = new DateTime($order['created_at']);
+                                    if ($est_days > 0) {
+                                        $est_date->modify('+' . $est_days . ' days');
+                                    }
+                                    ?>
+                                    <span style="color: #0c5460; background: #e0f7fa;"><strong>Est. Delivery:</strong> <?php echo $est_date->format('d M Y'); ?> (<?php echo $est_label; ?>)</span>
                                 <?php endif; ?>
                             </div>
 

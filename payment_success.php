@@ -13,6 +13,14 @@ $total = $_GET['total'] ?? $_SESSION['last_order_total'] ?? '0';
 $address = $_GET['address'] ?? $_SESSION['last_order_address'] ?? 'Your delivery address';
 $delivery_type = $_SESSION['last_delivery_type'] ?? 'standard';
 
+// Get estimated delivery text based on delivery type
+$delivery_estimates = [
+    'standard' => '5 business days',
+    'express' => '2-3 business days',
+    'sameday' => 'Same day (if ordered before 12 PM)'
+];
+$estimated_delivery = $delivery_estimates[$delivery_type] ?? '5 business days';
+
 // Store in session for reference
 $_SESSION['last_order_number'] = $order_number;
 $_SESSION['last_order_total'] = $total;
@@ -295,11 +303,7 @@ $_SESSION['last_order_address'] = $address;
                     <div class="subtitle">A detailed confirmation email with your order receipt has been sent to your registered email address.</div>
                 </div>
 
-                <!-- Delivery Information -->
-                <div class="delivery-info">
-                    <h4>🚚 Expected Delivery</h4>
-                    <p>Your pet will be carefully transported and delivered to you within <strong>3-5 business days</strong>. You can track your order status in real-time.</p>
-                </div>
+
 
                 <!-- Action Buttons -->
                 <div class="success-actions">

@@ -514,8 +514,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <input type="hidden" name="registered" value="<?php echo htmlspecialchars($registered); ?>">
 
       <div class="form-group">
-        <label for="username">Email</label>
-        <input type="text" id="username" name="username" placeholder="Enter your email" required>
+        <label for="username">Username or Email</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
       </div>
 
       <div class="form-group">

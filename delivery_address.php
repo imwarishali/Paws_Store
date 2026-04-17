@@ -32,6 +32,15 @@ $deliveryType = $deliveryData['type'] ?? 'standard';
 $petInstructions = $deliveryData['petInstructions'] ?? '';
 $deliveryNotes = $deliveryData['deliveryNotes'] ?? '';
 
+// Calculate delivery fees based on delivery type
+$deliveryFee = 0;
+if ($deliveryType === 'express') {
+    $deliveryFee = 100;  // Express delivery fee
+} elseif ($deliveryType === 'sameday') {
+    $deliveryFee = 200;  // Same day delivery fee
+}
+// Standard delivery has no extra fee
+
 // If no cart data, redirect back
 if (empty($cart)) {
     header('Location: cart.php');
@@ -458,7 +467,8 @@ if (empty($cart)) {
                                         <input type="radio" name="deliveryType" value="standard" <?php echo ($deliveryType === 'standard') ? 'checked' : ''; ?>>
                                         <span>
                                             Standard<br>
-                                            <small style="font-size: 12px;">3-5 days</small>
+                                            <small style="font-size: 12px;">3-5 days</small><br>
+                                            <small style="font-size: 11px; color: #28a745; font-weight: 600;">FREE</small>
                                         </span>
                                     </label>
                                 </div>
@@ -467,7 +477,8 @@ if (empty($cart)) {
                                         <input type="radio" name="deliveryType" value="express" <?php echo ($deliveryType === 'express') ? 'checked' : ''; ?>>
                                         <span>
                                             Express<br>
-                                            <small style="font-size: 12px;">1-2 days</small>
+                                            <small style="font-size: 12px;">1-2 days</small><br>
+                                            <small style="font-size: 11px; color: #ff9800; font-weight: 600;">+ Rs 100</small>
                                         </span>
                                     </label>
                                 </div>
@@ -476,20 +487,16 @@ if (empty($cart)) {
                                         <input type="radio" name="deliveryType" value="sameday" <?php echo ($deliveryType === 'sameday') ? 'checked' : ''; ?>>
                                         <span>
                                             Same Day<br>
-                                            <small style="font-size: 12px;">If available</small>
+                                            <small style="font-size: 12px;">If available</small><br>
+                                            <small style="font-size: 11px; color: #f44336; font-weight: 600;">+ Rs 200</small>
                                         </span>
                                     </label>
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label>🐾 Special Instructions for Pet</label>
-                                <textarea name="petInstructions" id="petInstructions" rows="3" placeholder="E.g., Pet is shy, needs gentle handling, has anxiety, medical conditions, etc."><?php echo htmlspecialchars($petInstructions); ?></textarea>
-                            </div>
-
-                            <div class="form-group">
-                                <label>📝 Delivery Notes</label>
-                                <textarea name="deliveryNotes" id="deliveryNotes" rows="2" placeholder="E.g., Gate code, Building description, preferred exit point, etc."><?php echo htmlspecialchars($deliveryNotes); ?></textarea>
+                                <label>� Delivery Notes</label>
+                                <textarea name="deliveryNotes" id="deliveryNotes" rows="3" placeholder="E.g., Gate code, Building description, preferred exit point, etc."><?php echo htmlspecialchars($deliveryNotes); ?></textarea>
                             </div>
                         </div>
 
@@ -497,6 +504,8 @@ if (empty($cart)) {
                         <input type="hidden" name="cart" value="<?php echo htmlspecialchars(json_encode($cart)); ?>">
                         <input type="hidden" name="total" value="<?php echo $total; ?>">
                         <input type="hidden" name="special_offer" value="<?php echo htmlspecialchars($appliedPromo); ?>">
+                        <input type="hidden" name="deliveryFee" value="<?php echo $deliveryFee; ?>">
+                        <input type="hidden" name="deliveryType" value="<?php echo $deliveryType; ?>">
 
                         <div class="button-container">
                             <button type="button" class="btn-back" onclick="history.back()">← Back to Cart</button>
@@ -506,68 +515,99 @@ if (empty($cart)) {
                 </div>
             </div>
 
-            <!-- Summary Card Sidebar -->
             <div class="col-md-4">
                 <div class="summary-card" style="position: sticky; top: 20px;">
                     <h5 style="color: #2c1a0e; font-weight: 700; margin-bottom: 15px;">📦 Order Summary</h5>
 
                     <?php
                     $subtotal = 0;
-                    $itemCount = 0;
+                    $count = 0;
                     foreach ($cart as $item) {
-                        $itemCount++;
+                        $count++;
                         $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
                     }
 
                     $shipping = $subtotal > 5000 ? 0 : 500;
-                    $discount = 0;
+                    $discountAmount = 0;
 
-                    if ($appliedPromo === 'firstTime') {
-                        $discount = round($subtotal * 0.1);
-                    } elseif ($appliedPromo === 'bulkDiscount' && count($cart) >= 2) {
-                        $discount = round($subtotal * 0.05);
-                    } elseif ($appliedPromo === 'freeVet') {
-                        $discount = 500;
-                    } elseif ($appliedPromo === 'save20') {
-                        $discount = 2000;
+                    if ($appliedPromo == 'firstTime') {
+                        $discountAmount = round($subtotal * 0.1);
+                    }
+                    if ($appliedPromo == 'bulkDiscount' && count($cart) >= 2) {
+                        $discountAmount = round($subtotal * 0.05);
+                    }
+                    if ($appliedPromo == 'freeVet') {
+                        $discountAmount = 500;
+                    }
+                    if ($appliedPromo == 'save20') {
+                        $discountAmount = 2000;
                     }
 
-                    $tax = round(($subtotal - $discount) * 0.18);
-                    $finalTotal = $subtotal - $discount + $shipping + $tax;
+                    $beforeTax = $subtotal - $discountAmount + $shipping + $deliveryFee;
+                    $tax = round($beforeTax * 0.18);
+                    $finalTotal = $beforeTax + $tax;
+
+                    $petCountStr = $count . " Pet(s)";
+                    $subtotalStr = "Rs " . number_format($subtotal, 0);
+                    $shippingStr = "Rs " . number_format($shipping, 0);
+                    $deliveryFeeStr = "Rs " . number_format($deliveryFee, 0);
+                    $taxStr = "Rs " . number_format($tax, 0);
+                    $discountStr = "- Rs " . number_format($discountAmount, 0);
+                    $totalStr = "Rs " . number_format($finalTotal, 0);
                     ?>
 
                     <div class="summary-row">
-                        <span><?php echo $itemCount; ?> Pet(s)</span>
-                        <span>₹<?php echo number_format($subtotal, 0); ?></span>
+                        <span><?php echo $petCountStr; ?></span>
+                        <span><?php echo $subtotalStr; ?></span>
                     </div>
 
                     <?php if ($shipping > 0): ?>
-                        <div class="summary-row">
+                        <div class="summary-row" data-type="shipping">
                             <span>Shipping</span>
-                            <span>₹<?php echo number_format($shipping, 0); ?></span>
+                            <span><?php echo $shippingStr; ?></span>
                         </div>
                     <?php else: ?>
-                        <div class="summary-row">
+                        <div class="summary-row" data-type="shipping" style="display:none;">
                             <span>Shipping</span>
                             <span style="color: #28a745; font-weight: 600;">FREE</span>
                         </div>
                     <?php endif; ?>
 
-                    <div class="summary-row">
-                        <span>Tax (18%)</span>
-                        <span>₹<?php echo number_format($tax, 0); ?></span>
-                    </div>
-
-                    <?php if ($discount > 0): ?>
-                        <div class="summary-row" style="color: #28a745;">
-                            <span>Discount</span>
-                            <span>-₹<?php echo number_format($discount, 0); ?></span>
+                    <?php if ($deliveryFee > 0): ?>
+                        <div class="summary-row" data-type="delivery">
+                            <span>
+                                <?php
+                                if ($deliveryType === 'express') {
+                                    echo 'Express Delivery Fee';
+                                } elseif ($deliveryType === 'sameday') {
+                                    echo 'Same Day Delivery Fee';
+                                }
+                                ?>
+                            </span>
+                            <span><?php echo $deliveryFeeStr; ?></span>
+                        </div>
+                    <?php else: ?>
+                        <div class="summary-row" data-type="delivery">
+                            <span>Delivery Type</span>
+                            <span style="color: #28a745; font-weight: 600;">Standard (FREE)</span>
                         </div>
                     <?php endif; ?>
 
-                    <div class="summary-row total">
+                    <div class="summary-row" data-type="tax">
+                        <span>Tax (18%)</span>
+                        <span><?php echo $taxStr; ?></span>
+                    </div>
+
+                    <?php if ($discountAmount > 0): ?>
+                        <div class="summary-row" style="color: #28a745;">
+                            <span>Discount</span>
+                            <span><?php echo $discountStr; ?></span>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="summary-row total" data-type="total">
                         <span>Total Amount</span>
-                        <span>₹<?php echo number_format($finalTotal, 0); ?></span>
+                        <span><?php echo $totalStr; ?></span>
                     </div>
 
                     <?php if ($appliedPromo !== 'none' && $appliedPromo !== ''): ?>
@@ -581,6 +621,19 @@ if (empty($cart)) {
     </div>
 
     <script>
+        // Store initial values for recalculation
+        const initialData = {
+            subtotal: <?php echo $subtotal; ?>,
+            baseShipping: <?php echo 500; ?>,
+            minShippingThreshold: <?php echo 5000; ?>,
+            discount: <?php echo $discountAmount; ?>,
+            deliveryFees: {
+                standard: 0,
+                express: 100,
+                sameday: 200
+            }
+        };
+
         function showToast(message, icon = '📝') {
             const toast = document.createElement('div');
             toast.textContent = icon + ' ' + message;
@@ -603,8 +656,71 @@ if (empty($cart)) {
             }, 3000);
         }
 
+        function updateOrderSummary() {
+            const selectedDeliveryType = document.querySelector('input[name="deliveryType"]:checked').value;
+            const deliveryFee = initialData.deliveryFees[selectedDeliveryType];
+
+            // Update hidden fields (use type="hidden" selector to avoid radio buttons)
+            document.querySelector('input[type="hidden"][name="deliveryFee"]').value = deliveryFee;
+            document.querySelector('input[type="hidden"][name="deliveryType"]').value = selectedDeliveryType;
+
+            // Calculate new totals
+            const shipping = initialData.subtotal > initialData.minShippingThreshold ? 0 : initialData.baseShipping;
+            const beforeTax = initialData.subtotal - initialData.discount + shipping + deliveryFee;
+            const tax = Math.round(beforeTax * 0.18);
+            const finalTotal = beforeTax + tax;
+
+            // Update summary display
+            updateSummaryDisplay(selectedDeliveryType, shipping, deliveryFee, tax, finalTotal);
+        }
+
+        function updateSummaryDisplay(deliveryType, shipping, deliveryFee, tax, finalTotal) {
+            // Update delivery fee/type row
+            const summaryCard = document.querySelector('.summary-card');
+            let deliveryRow = summaryCard.querySelector('[data-type="delivery"]');
+
+            if (!deliveryRow) {
+                deliveryRow = document.createElement('div');
+                deliveryRow.setAttribute('data-type', 'delivery');
+                deliveryRow.className = 'summary-row';
+                summaryCard.appendChild(deliveryRow);
+            }
+
+            if (deliveryFee > 0) {
+                const deliveryLabel = deliveryType === 'express' ? 'Express Delivery Fee' : 'Same Day Delivery Fee';
+                deliveryRow.innerHTML = '<span>' + deliveryLabel + '</span><span>Rs ' + deliveryFee + '</span>';
+                deliveryRow.style.display = 'flex';
+            } else {
+                // Standard delivery - show FREE
+                deliveryRow.innerHTML = '<span>Delivery Type</span><span style="color: #28a745; font-weight: 600;">Standard (FREE)</span>';
+                deliveryRow.style.display = 'flex';
+            }
+
+            // Update tax row value
+            const taxRow = summaryCard.querySelector('[data-type="tax"]');
+            if (taxRow) {
+                taxRow.innerHTML = '<span>Tax (18%)</span><span>Rs ' + tax.toLocaleString('en-IN') + '</span>';
+            }
+
+            // Update total row value
+            const totalRow = summaryCard.querySelector('[data-type="total"]');
+            if (totalRow) {
+                totalRow.innerHTML = '<span>Total Amount</span><span>Rs ' + finalTotal.toLocaleString('en-IN') + '</span>';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('deliveryAddressForm');
+
+            // Add event listener for delivery type changes
+            const deliveryTypeRadios = document.querySelectorAll('input[name="deliveryType"]');
+            deliveryTypeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    updateOrderSummary();
+                    showToast(`${this.value.charAt(0).toUpperCase() + this.value.slice(1)} delivery selected`, '✓');
+                });
+            });
+
             form.addEventListener('submit', function(e) {
                 const fullName = document.getElementById('fullName').value.trim();
                 const phone = document.getElementById('phone').value.trim();

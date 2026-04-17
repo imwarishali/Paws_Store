@@ -612,16 +612,6 @@ if ($show_otp_form && isset($_SESSION['pending_profile_changes'])) {
                         <input type="tel" id="mobileNo" name="phone" value="<?php echo htmlspecialchars($userPhone); ?>" required>
                     </div>
 
-                    <div class="ps-form-group" style="background-color: #fdfaf6; padding: 15px; border-radius: 8px; border: 1px solid #e8e0d4;">
-                        <label style="display: flex; align-items: center; font-weight: 500; cursor: pointer; margin-bottom: 0;">
-                            <input type="checkbox" id="newsletter" name="newsletter" style="width: 18px; height: 18px; margin-right: 10px; cursor: pointer;">
-                            <span>Subscribe to our newsletter for exclusive offers and updates</span>
-                        </label>
-                        <small style="color: #999; font-size: 12px; margin-top: 8px; display: block;">
-                            📧 Get the latest news about new pets, special promotions, and more!
-                        </small>
-                    </div>
-
                     <div class="ps-profile-actions">
                         <a href="index.php" class="ps-btn-cancel">Cancel</a>
                         <button type="submit" name="save_changes" class="ps-btn-save">Save Changes</button>

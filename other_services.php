@@ -523,7 +523,7 @@
     <!-- HEADER -->
     <header>
         <div class="header-inner">
-            <a href="index.php" class="logo" style="text-decoration: none;">🐾 Paws Store<span>.</span></a>
+            <a href="index.php" class="logo" style="text-decoration: none;">🐾 Paws Store</a>
             <nav>
                 <ul>
                     <li><a href="index.php">🏠 Home</a></li>

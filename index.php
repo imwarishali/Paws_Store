@@ -930,25 +930,6 @@ try {
     </div>
   </div>
 
-  <!-- Newsletter -->
-  <div class="ps-newsletter">
-    <div class="ps-nl-container">
-      <div class="ps-nl-text">
-        <h2>Stay Updated with Paws Store</h2>
-        <p>Subscribe to our newsletter and receive expert pet care tips, exclusive deals, and new arrivals delivered to your inbox.</p>
-      </div>
-      <div class="ps-nl-form">
-        <input
-          class="ps-nl-input"
-          type="email"
-          placeholder="Enter your email address"
-          required />
-        <button class="ps-nl-btn" id="subscribe-btn">Subscribe Now</button>
-      </div>
-      <p class="ps-nl-notice">✓ Unsubscribe anytime | 100% spam-free</p>
-    </div>
-  </div>
-
   <!-- Footer (Outside ps-wrap for full width) -->
   <footer id="contact">
     <div class="ps-footer">
@@ -1238,6 +1219,13 @@ try {
 
       wishButtons.forEach(button => {
         button.addEventListener('click', function() {
+          // Check if user is logged in
+          if (currentUserId === 'guest') {
+            alert('❤️ Login to add to wishlist\n\nPlease log in to your account to add items to your wishlist.');
+            window.location.href = 'auth/login.php?redirect=index.php';
+            return;
+          }
+
           const petCard = this.closest('.ps-pet-card');
           const petId = petCard.getAttribute('data-pet-id');
           const petName = petCard.querySelector('.ps-pet-name').textContent;
@@ -1513,22 +1501,6 @@ try {
           carouselContainer.addEventListener('mouseleave', startInterval);
         }
         startInterval();
-      }
-
-      // NEWSLETTER SUBSCRIPTION
-      const subscribeBtn = document.getElementById('subscribe-btn');
-      const newsletterInput = document.querySelector('.ps-nl-input');
-
-      if (subscribeBtn && newsletterInput) {
-        subscribeBtn.addEventListener('click', function() {
-          const email = newsletterInput.value;
-          if (email && email.includes('@') && email.includes('.')) { // Basic email validation
-            showToast('Thank you for subscribing to our newsletter!', '💌');
-            newsletterInput.value = ''; // Clear the input field
-          } else {
-            showToast('Please enter a valid email address.', '⚠️');
-          }
-        });
       }
 
       // BACK TO TOP BUTTON

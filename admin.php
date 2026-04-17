@@ -268,6 +268,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_stmt->execute([$new_status, $delivery_date, $delivery_time, $order_id]);
             $success_message = "✓ Delivery updated to <strong>{$new_status}</strong>";
         }
+
+        // Restore Cancelled Order
+        elseif (isset($_POST['restore_order'])) {
+            $order_id = $_POST['order_id'] ?? null;
+
+            if (!$order_id) {
+                throw new Exception("Missing order_id");
+            }
+
+            // Update order status back to Confirmed
+            $restore_stmt = $pdo->prepare("UPDATE orders SET order_status = 'Confirmed' WHERE id = ?");
+            $restore_stmt->execute([$order_id]);
+
+            // Also update payment status if it was refunded
+            $payment_stmt = $pdo->prepare("UPDATE payments SET payment_status = 'Successful' WHERE order_id = ? AND payment_status = 'Refunded'");
+            $payment_stmt->execute([$order_id]);
+
+            // Get order info for email notification
+            $info_stmt = $pdo->prepare("SELECT o.order_number, u.email, u.username FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+            $info_stmt->execute([$order_id]);
+            $order_info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($order_info && !empty($order_info['email'])) {
+                $to = $order_info['email'];
+                $order_number = $order_info['order_number'];
+                $username = $order_info['username'] ?? 'Customer';
+
+                $subject = "Order Restored - Paws Store [{$order_number}]";
+                $message = "
+                <!DOCTYPE html>
+                <html>
+                <head><meta charset='UTF-8'><title>Order Restored</title></head>
+                <body style='font-family: Arial, sans-serif; background-color: #f5f5f5;'>
+                    <table width='100%' style='background-color: #f5f5f5; padding: 20px;'>
+                        <tr><td align='center'>
+                            <table width='600' style='background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05);'>
+                                <tr style='background: linear-gradient(135deg, #2c1a0e 0%, #8B4513 100%); padding: 30px; text-align: center;'>
+                                    <td><h1 style='color: #ffffff; margin: 0;'>🐾 Paws Store</h1></td>
+                                </tr>
+                                <tr><td style='padding: 40px;'>
+                                    <h2 style='color: #2c1a0e;'>Order Restored</h2>
+                                    <p style='font-size: 16px; line-height: 1.6; color: #555;'>Good news! Your cancelled order <strong>#{$order_number}</strong> has been restored and is now active again. Thank you for your business!</p>
+                                    <p style='font-size: 14px; color: #888;'>If you did not request this, please contact our support team.</p>
+                                </td></tr>
+                                <tr style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
+                                    <td><p style='margin: 0; color: #666;'>Best Regards, <strong>Paws Store Team</strong></p></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                    </table>
+                </body>
+                </html>";
+
+                mail($to, $subject, $message, "Content-Type: text/html; charset=UTF-8\r\n");
+            }
+
+            $success_message = "✓ Order <strong>#{$order_number}</strong> restored to Confirmed status";
+        }
+
+        // Delete Cancelled Order (Permanent Deletion)
+        elseif (isset($_POST['delete_cancelled_order'])) {
+            $order_id = $_POST['order_id'] ?? null;
+
+            if (!$order_id) {
+                throw new Exception("Missing order_id");
+            }
+
+            // Get order info before deletion
+            $info_stmt = $pdo->prepare("SELECT o.order_number FROM orders WHERE id = ?");
+            $info_stmt->execute([$order_id]);
+            $order_info = $info_stmt->fetch(PDO::FETCH_ASSOC);
+            $order_number = $order_info['order_number'] ?? 'Unknown';
+
+            // Delete payment records first
+            $pdo->prepare("DELETE FROM payments WHERE order_id=?")->execute([$order_id]);
+
+            // Delete order record
+            $pdo->prepare("DELETE FROM orders WHERE id=?")->execute([$order_id]);
+
+            $success_message = "✓ Cancelled order <strong>#{$order_number}</strong> permanently deleted from archive";
+        }
     } catch (Exception $e) {
         $error_message = "Error: " . $e->getMessage();
     }
@@ -290,7 +371,7 @@ try {
         $dashboard_stats['pending_orders'] = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE order_status IN ('Confirmed', 'Shipped')")->fetchColumn();
         $dashboard_stats['total_users'] = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 
-        $recent_orders = $pdo->query("SELECT o.id, o.order_number, o.total_amount, o.order_status, o.created_at, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 8")->fetchAll(PDO::FETCH_ASSOC);
+        $recent_orders = $pdo->query("SELECT o.id, o.order_number, o.total_amount, o.order_status, o.created_at, o.delivery_type, u.username FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 8")->fetchAll(PDO::FETCH_ASSOC);
     }
 
     if ($page === 'orders') {
@@ -298,7 +379,7 @@ try {
         $status_filter = $_GET['status_filter'] ?? '';
 
         // Always include order_status in SELECT to ensure fresh data
-        $sql = "SELECT o.id, o.order_number, o.pet_id, o.quantity, o.total_amount, o.order_status, o.delivery_date, o.delivery_time, o.created_at, u.username, u.email, p.name as pet_name 
+        $sql = "SELECT o.id, o.order_number, o.pet_id, o.quantity, o.total_amount, o.order_status, o.delivery_type, o.delivery_date, o.delivery_time, o.created_at, u.username, u.email, p.name as pet_name 
                 FROM orders o 
                 LEFT JOIN users u ON o.user_id = u.id 
                 LEFT JOIN pets p ON o.pet_id = p.id";
@@ -575,7 +656,7 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            overflow: auto;
             margin-bottom: 25px;
         }
 
@@ -905,6 +986,7 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
         <ul class="sidebar-menu">
             <li><a href="admin.php" class="<?php echo $page === 'dashboard' ? 'active' : ''; ?>"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             <li><a href="?page=orders" class="<?php echo $page === 'orders' ? 'active' : ''; ?>"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+            <li><a href="?page=cancelled_orders" class="<?php echo $page === 'cancelled_orders' ? 'active' : ''; ?>"><i class="fas fa-ban"></i> Cancelled Orders</a></li>
             <li><a href="?page=pets" class="<?php echo $page === 'pets' ? 'active' : ''; ?>"><i class="fas fa-paw"></i> Pets</a></li>
             <li><a href="?page=users" class="<?php echo $page === 'users' ? 'active' : ''; ?>"><i class="fas fa-users"></i> Users</a></li>
             <li><a href="?page=deliveries" class="<?php echo $page === 'deliveries' ? 'active' : ''; ?>"><i class="fas fa-truck"></i> Deliveries</a></li>
@@ -963,7 +1045,7 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
                             <th>Customer</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Date</th>
+                            <th>Est. Delivery</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -973,7 +1055,23 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
                                 <td><?php echo htmlspecialchars($order['username'] ?? 'N/A'); ?></td>
                                 <td><strong>₹<?php echo number_format($order['total_amount']); ?></strong></td>
                                 <td><span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $order['order_status'])); ?>"><?php echo $order['order_status']; ?></span></td>
-                                <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
+                                <td>
+                                    <?php
+                                    $delivery_type = $order['delivery_type'] ?? 'standard';
+                                    $order_date = new DateTime($order['created_at']);
+                                    $delivery_date = clone $order_date;
+
+                                    if ($delivery_type === 'standard') {
+                                        $delivery_date->modify('+5 days');
+                                    } elseif ($delivery_type === 'express') {
+                                        $delivery_date->modify('+3 days');
+                                    } elseif ($delivery_type === 'sameday') {
+                                        // Same day - already is today
+                                    }
+
+                                    echo $delivery_date->format('d M Y');
+                                    ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -1007,6 +1105,8 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
                             <th>Customer</th>
                             <th>Pet</th>
                             <th>Amount</th>
+                            <th>Delivery Type</th>
+                            <th>Est. Delivery</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Actions</th>
@@ -1019,26 +1119,142 @@ if (isset($_GET['edit_id']) && $page === 'pets') {
                                 <td><?php echo htmlspecialchars($order['username'] ?? 'N/A'); ?></td>
                                 <td><?php echo htmlspecialchars($order['pet_name'] ?? 'N/A'); ?></td>
                                 <td>₹<?php echo number_format($order['total_amount']); ?></td>
+                                <td>
+                                    <?php
+                                    $delivery_type = $order['delivery_type'] ?? 'standard';
+                                    $delivery_labels = [
+                                        'standard' => '📦 Standard (5 days)',
+                                        'express' => '⚡ Express (2-3 days)',
+                                        'sameday' => '🚀 Same Day'
+                                    ];
+                                    echo htmlspecialchars($delivery_labels[$delivery_type] ?? $delivery_type);
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    $order_date = new DateTime($order['created_at']);
+                                    $delivery_date = clone $order_date;
+
+                                    if ($delivery_type === 'standard') {
+                                        $delivery_date->modify('+5 days');
+                                    } elseif ($delivery_type === 'express') {
+                                        $delivery_date->modify('+3 days');
+                                    } elseif ($delivery_type === 'sameday') {
+                                        // Same day - already is today
+                                    }
+
+                                    echo $delivery_date->format('d M Y');
+                                    ?>
+                                </td>
                                 <td><span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $order['order_status'])); ?>"><?php echo $order['order_status']; ?></span></td>
                                 <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
                                 <td>
-                                    <form method="POST" action="admin.php?page=orders" style="display: flex; gap: 8px; align-items: center;">
+                                    <form method="POST" action="admin.php?page=orders" style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; width: 100%;">
                                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                        <select name="new_status" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                        <select name="new_status" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 120px; flex-shrink: 0;">
                                             <option value="Confirmed" <?php echo $order['order_status'] === 'Confirmed' ? 'selected' : ''; ?>>Confirmed</option>
                                             <option value="Shipped" <?php echo $order['order_status'] === 'Shipped' ? 'selected' : ''; ?>>Shipped</option>
                                             <option value="Out for Delivery" <?php echo $order['order_status'] === 'Out for Delivery' ? 'selected' : ''; ?>>Out for Delivery</option>
                                             <option value="Delivered" <?php echo $order['order_status'] === 'Delivered' ? 'selected' : ''; ?>>Delivered</option>
                                             <option value="Cancelled" <?php echo $order['order_status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                         </select>
-                                        <button type="submit" name="update_status" class="btn btn-primary btn-small"><i class="fas fa-check"></i> Update</button>
-                                        <button type="submit" name="delete_order" class="btn btn-danger btn-small" onclick="return confirm('Delete this order?');"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" name="update_status" class="btn btn-primary btn-small" style="flex-shrink: 0; white-space: nowrap;"><i class="fas fa-check"></i> Update</button>
+                                        <button type="submit" name="delete_order" class="btn btn-danger btn-small" style="flex-shrink: 0; white-space: nowrap; padding: 6px 8px;" title="Delete this order" onclick="return confirm('Delete this order?');"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+        <?php endif; ?>
+
+        <!-- CANCELLED ORDERS PAGE -->
+        <?php if ($page === 'cancelled_orders'): ?>
+            <div class="page-section">
+                <form method="GET" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                    <input type="hidden" name="page" value="cancelled_orders">
+                    <input type="text" name="search" placeholder="Search by Order #, Customer, or Pet..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2><i class="fas fa-ban"></i> Cancelled Orders Archive</h2>
+                </div>
+                <?php
+                // Fetch cancelled orders
+                $search_query = $_GET['search'] ?? '';
+                $sql = "SELECT o.id, o.order_number, o.pet_id, o.quantity, o.total_amount, o.order_status, o.delivery_type, o.delivery_date, o.created_at, u.username, u.email, p.name as pet_name 
+                        FROM orders o 
+                        LEFT JOIN users u ON o.user_id = u.id 
+                        LEFT JOIN pets p ON o.pet_id = p.id
+                        WHERE o.order_status = 'Cancelled'";
+
+                $params = [];
+                if (!empty($search_query)) {
+                    $sql .= " AND (o.order_number LIKE ? OR u.username LIKE ? OR p.name LIKE ?)";
+                    $params = ['%' . $search_query . '%', '%' . $search_query . '%', '%' . $search_query . '%'];
+                }
+
+                $sql .= " ORDER BY o.created_at DESC";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $cancelled_orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+
+                <?php if (!empty($cancelled_orders)): ?>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Pet</th>
+                                <th>Qty</th>
+                                <th>Amount</th>
+                                <th>Delivery Type</th>
+                                <th>Cancelled Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($cancelled_orders as $order): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($order['order_number']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($order['username'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($order['pet_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($order['quantity']); ?></td>
+                                    <td>₹<?php echo number_format($order['total_amount']); ?></td>
+                                    <td>
+                                        <?php
+                                        $delivery_type = $order['delivery_type'] ?? 'standard';
+                                        $delivery_labels = [
+                                            'standard' => '📦 Standard (5 days)',
+                                            'express' => '⚡ Express (2-3 days)',
+                                            'sameday' => '🚀 Same Day'
+                                        ];
+                                        echo htmlspecialchars($delivery_labels[$delivery_type] ?? $delivery_type);
+                                        ?>
+                                    </td>
+                                    <td><?php echo date('d M Y', strtotime($order['created_at'])); ?></td>
+                                    <td>
+                                        <form method="POST" action="admin.php?page=cancelled_orders" style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                            <button type="submit" name="restore_order" class="btn btn-primary btn-small" style="flex-shrink: 0; white-space: nowrap;" onclick="return confirm('Restore this order to Confirmed status?');"><i class="fas fa-undo"></i> Restore</button>
+                                            <button type="submit" name="delete_cancelled_order" class="btn btn-danger btn-small" style="flex-shrink: 0; white-space: nowrap; padding: 6px 8px;" title="Permanently delete this order" onclick="return confirm('Permanently delete this cancelled order? This cannot be undone.');"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                        <p>No cancelled orders found. All orders are active! 🎉</p>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 

@@ -592,16 +592,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reference_number'])) 
                         <div class="timeline-content">
                             <h4><?php echo $tracking_data['order_status'] === 'Delivered' ? '✓' : '→'; ?> Out for Delivery</h4>
                             <p>Your pet is on the way to you! 🚗</p>
-                            <?php if ($tracking_data['delivery_date']): ?>
-                                <p style="margin-top: 8px; font-weight: 600; color: #2c1a0e;">
-                                    📅 Expected: <?php echo date('M d, Y', strtotime($tracking_data['delivery_date'])); ?>
-                                </p>
-                            <?php endif; ?>
-                            <?php if ($tracking_data['delivery_time']): ?>
-                                <p style="font-weight: 600; color: #2c1a0e;">
-                                    ⏰ Time Slot: <?php echo htmlspecialchars($tracking_data['delivery_time']); ?>
-                                </p>
-                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -632,24 +622,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reference_number'])) 
                     </div>
                 <?php endif; ?>
 
+                <?php
+                // Calculate estimated delivery date based on delivery_type
+                $delivery_type = $tracking_data['delivery_type'] ?? 'standard';
+                if ($delivery_type === 'express') {
+                    $est_days = 3;
+                    $est_label = '⚡ Express (2-3 days)';
+                } elseif ($delivery_type === 'sameday') {
+                    $est_days = 0;
+                    $est_label = '🚀 Same Day';
+                } else {
+                    $est_days = 5;
+                    $est_label = '📦 Standard (5 days)';
+                }
+                $est_date = new DateTime($tracking_data['created_at']);
+                if ($est_days > 0) {
+                    $est_date->modify('+' . $est_days . ' days');
+                }
+                $est_delivery = $est_date->format('d M Y');
+                ?>
+
                 <!-- Delivery Details -->
                 <div class="delivery-details">
                     <div class="detail-box">
-                        <div class="detail-label">📅 Delivery Date</div>
+                        <div class="detail-label"> Delivery Type</div>
                         <div class="detail-value">
-                            <?php echo $tracking_data['delivery_date'] ? date('M d, Y', strtotime($tracking_data['delivery_date'])) : 'Not scheduled'; ?>
+                            <?php echo $est_label; ?>
                         </div>
                     </div>
                     <div class="detail-box">
-                        <div class="detail-label">⏰ Time Slot</div>
+                        <div class="detail-label">📦 Est. Delivery</div>
                         <div class="detail-value">
-                            <?php echo htmlspecialchars($tracking_data['delivery_time'] ?? 'Not specified'); ?>
-                        </div>
-                    </div>
-                    <div class="detail-box">
-                        <div class="detail-label">🚚 Delivery Type</div>
-                        <div class="detail-value">
-                            <?php echo ucfirst(htmlspecialchars($tracking_data['delivery_type'] ?? 'Standard')); ?>
+                            <?php echo $est_delivery; ?>
                         </div>
                     </div>
                     <div class="detail-box">

@@ -113,6 +113,11 @@ try {
     $items_count = count($cart);
     $current_item = 0;
 
+    // Define delivery type outside loop so it's accessible later
+    $delivery_type = $delivery['type'] ?? 'standard';
+    $deliveryDate = $delivery['date'] ?? date('Y-m-d');
+    $deliveryTime = $delivery['timeSlot'] ?? '9am-12pm';
+
     foreach ($cart as $item) {
         $current_item++;
         $pet_id = $item['id'];
@@ -138,9 +143,6 @@ try {
         ");
 
         // Prepare delivery data
-        $deliveryType = $delivery['type'] ?? 'standard';
-        $deliveryDate = $delivery['date'] ?? date('Y-m-d');
-        $deliveryTime = $delivery['timeSlot'] ?? '9am-12pm';
         $deliveryPrefs = json_encode([
             'callBeforeDelivery' => $delivery['callBeforeDelivery'] ?? false,
             'whatsappNotification' => $delivery['whatsappNotification'] ?? false,
@@ -155,7 +157,7 @@ try {
             $quantity,
             $item_total,
             $shipping_address,
-            $deliveryType,
+            $delivery_type,
             $deliveryDate,
             $deliveryTime,
             $deliveryPrefs
@@ -202,7 +204,7 @@ $message = "
                     <tr>
                         <td style='padding: 40px 30px;'>
                             <h2 style='color: #2c1a0e; margin-top: 0;'>Thank you for your order, " . htmlspecialchars($_SESSION['user']['username'] ?? 'Customer') . "!</h2>
-                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>We're excited to confirm that your order <strong>#" . $order_number . "</strong> has been successfully placed. Your furry friend will be delivered to you within 3-5 business days!</p>
+                            <p style='font-size: 16px; line-height: 1.5; color: #555555;'>We're excited to confirm that your order <strong>#" . $order_number . "</strong> has been successfully placed. Your furry friend will be delivered to you within " . ($delivery_type === 'express' ? '2-3 business days!' : ($delivery_type === 'sameday' ? 'same day (if ordered before 12 PM)!' : '5 business days!')) . "</p>
                             
                             <div style='background-color: #fdfaf6; border: 1px solid #e8e0d4; border-radius: 8px; padding: 20px; margin: 30px 0;'>
                                 <h3 style='margin-top: 0; color: #2c1a0e; border-bottom: 2px solid #b5860d; padding-bottom: 10px;'>Order Summary</h3>
@@ -246,7 +248,8 @@ if (!empty($instance_id) && !empty($token) && strlen($clean_phone) >= 10) {
     if (strlen($clean_phone) == 10) {
         $clean_phone = "91" . $clean_phone;
     }
-    $wa_body = "🐾 *Paws Store*\n\nThank you for your order, *" . htmlspecialchars($_SESSION['user']['username'] ?? 'Customer') . "*! 🎉\n\nYour order *#" . $order_number . "* has been successfully placed.\n\n*Total Paid:* ₹" . number_format($total) . "\n\nYour furry friend will be delivered to you within 3-5 business days. You can track your order status anytime by logging into your account.";
+    $delivery_message = ($delivery_type === 'express' ? '2-3 business days' : ($delivery_type === 'sameday' ? 'same day (if ordered before 12 PM)' : '5 business days'));
+    $wa_body = "🐾 *Paws Store*\n\nThank you for your order, *" . htmlspecialchars($_SESSION['user']['username'] ?? 'Customer') . "*! 🎉\n\nYour order *#" . $order_number . "* has been successfully placed.\n\n*Total Paid:* ₹" . number_format($total) . "\n*Delivery Type:* " . ucfirst($delivery_type) . "\n\nYour furry friend will be delivered to you within " . $delivery_message . ". You can track your order status anytime by logging into your account.";
 
     $curl = curl_init();
     curl_setopt_array($curl, [

@@ -573,6 +573,13 @@ $pet['date'] = date('M d, Y', strtotime('-' . rand(1, 14) . ' days'));
             });
 
             wishBtn.addEventListener('click', function() {
+                // Check if user is logged in
+                if (currentUserId === 'guest') {
+                    alert('❤️ Login to add to wishlist\n\nPlease log in to your account to add items to your wishlist.');
+                    window.location.href = 'auth/login.php?redirect=pet_details.php?id=' + petId;
+                    return;
+                }
+
                 const existingIndex = wishlist.findIndex(item => item.id === petId);
                 if (existingIndex > -1) {
                     wishlist.splice(existingIndex, 1);

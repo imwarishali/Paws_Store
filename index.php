@@ -143,6 +143,29 @@ try {
     </div>
   </div>
 
+  <!-- Promo Marquee Banner -->
+  <div class="promo-marquee-wrapper">
+    <div class="promo-marquee">
+      <span class="marquee-item">✨ FIRST10 → 10% OFF on first purchase</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">📦 BULK5 → 5% OFF on 2+ pets</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">🏥 VET500 → ₹500 OFF on vet consultation</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">⭐ SAVE20 → 20% OFF on selected pets</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">💳 CARD15 → 15% OFF with credit/debit card</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">🎊 SUMMER25 → 25% OFF summer special collection</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">✨ FIRST10 → 10% OFF on first purchase</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">📦 BULK5 → 5% OFF on 2+ pets</span>
+      <span class="marquee-divider">•</span>
+      <span class="marquee-item">🏥 VET500 → ₹500 OFF on vet consultation</span>
+    </div>
+  </div>
+
   <!-- Carousel Banner -->
   <div class="ps-carousel-wrapper">
     <div class="ps-carousel-container" id="ps-carousel-container">

@@ -683,14 +683,24 @@ if (isset($_SESSION["user"])) {
 
 
 
-              <div class="summary-section">
-                <h3>Promo Code</h3>
-                <div style="display: flex; gap: 10px;">
-                  <input type="text" id="promoCodeInput" value="${appliedPromoCode}" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif;">
-                <button type="button" onclick="applyPromoCode(true)" style="padding: 10px 20px; background: #2c1a0e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Apply</button>
+              <div class="summary-section" style="background: linear-gradient(135deg, #faf7f2 0%, #f5f1ec 100%); border: 2px solid #e8d9cc; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(44, 26, 14, 0.08);">
+                <h3 style="color: #2c1a0e; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">🎁 Promo Code</h3>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <input type="text" id="promoCodeInput" value="${appliedPromoCode}" placeholder="Enter promo code" style="flex: 1; padding: 12px 14px; border: 2px solid #ddd; border-radius: 6px; font-family: 'Nunito', sans-serif; font-size: 14px; transition: all 0.3s ease; background: white;" onmouseover="this.style.borderColor='#c9a876'; this.style.boxShadow='0 2px 6px rgba(201, 168, 118, 0.2)';" onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none';" onfocus="this.style.borderColor='#c9a876'; this.style.boxShadow='0 0 0 3px rgba(201, 168, 118, 0.1)';" onblur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">
+                  <button type="button" onclick="applyPromoCode(true)" style="padding: 12px 24px; background: linear-gradient(135deg, #2c1a0e 0%, #1f1107 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(44, 26, 14, 0.2);" onmouseover="this.style.boxShadow='0 4px 8px rgba(44, 26, 14, 0.3)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='0 2px 4px rgba(44, 26, 14, 0.2)'; this.style.transform='translateY(0)';" onmousedown="this.style.transform='translateY(0)';">✓ Apply</button>
                 </div>
-                <div style="margin-top: 8px; font-size: 13px; color: #666;">Try codes: <strong>FIRST10</strong>, <strong>BULK5</strong>, <strong>VET500</strong>, <strong>SAVE20</strong></div>
-                <div id="promoMessage" style="margin-top: 10px; font-size: 14px; font-weight: 600;"></div>
+                <div style="margin-bottom: 10px; padding: 10px; background: rgba(201, 168, 118, 0.1); border-left: 4px solid #c9a876; border-radius: 4px; font-size: 13px; color: #555;">
+                  <strong style="color: #2c1a0e;">💡 Try codes:</strong> 
+                  <span style="display: inline-flex; gap: 8px; margin-left: 6px; flex-wrap: wrap;">
+                    <?php if ($isFirstTime): ?>
+                      <span style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; color: #2c1a0e; font-weight: 600;">🎉 FIRST10</span>
+                    <?php endif; ?>
+                    <span style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; color: #2c1a0e; font-weight: 600;">BULK5</span>
+                    <span style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; color: #2c1a0e; font-weight: 600;">VET500</span>
+                    <span style="background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd; color: #2c1a0e; font-weight: 600;">SAVE20</span>
+                  </span>
+                </div>
+                <div id="promoMessage" style="margin-top: 10px; font-size: 14px; font-weight: 600; min-height: 20px; transition: all 0.3s ease;"></div>
               </div>
 
               <div class="summary-section">
@@ -859,6 +869,20 @@ if (isset($_SESSION["user"])) {
                         msg.textContent = 'SAVE20 requires an order total over ₹10,000.';
                         msg.style.color = '#dc3545';
                     }
+                } else if (appliedPromoCode === 'CARD15') {
+                    appliedPromoType = 'card15';
+                    msg.textContent = 'Promo code applied! 15% off with card payment.';
+                    msg.style.color = '#28a745';
+                } else if (appliedPromoCode === 'SUMMER25') {
+                    if (subtotal >= 3000) {
+                        appliedPromoType = 'summer25';
+                        msg.textContent = 'Promo code applied! 25% off summer special collection.';
+                        msg.style.color = '#28a745';
+                    } else {
+                        appliedPromoType = 'none';
+                        msg.textContent = 'SUMMER25 requires minimum purchase of ₹3,000.';
+                        msg.style.color = '#dc3545';
+                    }
                 } else if (appliedPromoCode === '') {
                     appliedPromoType = 'none';
                     msg.textContent = '';
@@ -883,6 +907,10 @@ if (isset($_SESSION["user"])) {
                     discount += 500;
                 } else if (appliedPromoType === 'save20') {
                     discount += 2000;
+                } else if (appliedPromoType === 'card15') {
+                    discount += Math.round(subtotal * 0.15);
+                } else if (appliedPromoType === 'summer25') {
+                    discount += Math.round(subtotal * 0.25);
                 }
 
                 const shipping = subtotal > 5000 ? 0 : 500;

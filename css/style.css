@@ -1776,6 +1776,53 @@ footer {
   }
 }
 
+/* Promo Marquee Banner */
+.promo-marquee-wrapper {
+  background: linear-gradient(135deg, #2c1a0e 0%, #1f1107 100%);
+  overflow: hidden;
+  position: relative;
+  z-index: 1010;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.promo-marquee {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  animation: scroll-left 25s linear infinite;
+  white-space: nowrap;
+  gap: 0;
+}
+
+.marquee-item {
+  color: #faf7f2;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 20px;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.marquee-divider {
+  color: #c9a876;
+  font-size: 18px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.promo-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* Navbar responsive */
 @media (max-width: 1024px) {
   .ps-nav {

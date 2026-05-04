@@ -1823,6 +1823,36 @@ footer {
   animation-play-state: paused;
 }
 
+/* Coupon clickable styles */
+.marquee-item.coupon-item {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.marquee-item.coupon-item:hover {
+  background-color: rgba(201, 168, 118, 0.2);
+  color: #fff;
+  text-shadow: 0 0 8px rgba(201, 168, 118, 0.4);
+}
+
+.coupon-code {
+  background-color: rgba(201, 168, 118, 0.3);
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 700;
+  font-family: "Courier New", monospace;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.marquee-item.coupon-item:hover .coupon-code {
+  background-color: rgba(201, 168, 118, 0.5);
+  box-shadow: 0 0 8px rgba(201, 168, 118, 0.4);
+}
+
 /* Navbar responsive */
 @media (max-width: 1024px) {
   .ps-nav {
@@ -2084,4 +2114,21 @@ footer {
 .ps-filter-select:focus {
   border-color: #b5860d;
   box-shadow: 0 0 0 2px rgba(181, 134, 13, 0.1);
+}
+
+#reset-filters {
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap;
+}
+
+#reset-filters:hover {
+  background: linear-gradient(135deg, #b5860d 0%, #8b4513 100%) !important;
+  box-shadow: 0 4px 12px rgba(201, 168, 118, 0.3) !important;
+  transform: scale(1.05) !important;
 }

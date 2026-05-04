@@ -146,23 +146,23 @@ try {
   <!-- Promo Marquee Banner -->
   <div class="promo-marquee-wrapper">
     <div class="promo-marquee">
-      <span class="marquee-item">✨ FIRST10 → 10% OFF on first purchase</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('FIRST10', '✨ FIRST10 → 10% OFF on first purchase')">✨ <span class="coupon-code">FIRST10</span> → 10% OFF on first purchase</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">📦 BULK5 → 5% OFF on 2+ pets</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('BULK5', '📦 BULK5 → 5% OFF on 2+ pets')">📦 <span class="coupon-code">BULK5</span> → 5% OFF on 2+ pets</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">🏥 VET500 → ₹500 OFF on vet consultation</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('VET500', '🏥 VET500 → ₹500 OFF on vet consultation')">🏥 <span class="coupon-code">VET500</span> → ₹500 OFF on vet consultation</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">⭐ SAVE20 → 20% OFF on selected pets</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('SAVE20', '⭐ SAVE20 → 20% OFF on selected pets')">⭐ <span class="coupon-code">SAVE20</span> → 20% OFF on selected pets</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">💳 CARD15 → 15% OFF with credit/debit card</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('CARD15', '💳 CARD15 → 15% OFF with credit/debit card')">💳 <span class="coupon-code">CARD15</span> → 15% OFF with credit/debit card</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">🎊 SUMMER25 → 25% OFF summer special collection</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('SUMMER25', '🎊 SUMMER25 → 25% OFF summer special collection')">🎊 <span class="coupon-code">SUMMER25</span> → 25% OFF summer special collection</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">✨ FIRST10 → 10% OFF on first purchase</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('FIRST10', '✨ FIRST10 → 10% OFF on first purchase')">✨ <span class="coupon-code">FIRST10</span> → 10% OFF on first purchase</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">📦 BULK5 → 5% OFF on 2+ pets</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('BULK5', '📦 BULK5 → 5% OFF on 2+ pets')">📦 <span class="coupon-code">BULK5</span> → 5% OFF on 2+ pets</span>
       <span class="marquee-divider">•</span>
-      <span class="marquee-item">🏥 VET500 → ₹500 OFF on vet consultation</span>
+      <span class="marquee-item coupon-item" onclick="copyCoupon('VET500', '🏥 VET500 → ₹500 OFF on vet consultation')">🏥 <span class="coupon-code">VET500</span> → ₹500 OFF on vet consultation</span>
     </div>
   </div>
 
@@ -350,7 +350,7 @@ try {
       </div>
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <select id="location-filter" class="ps-filter-select">
-          <option value="all">Location: All</option>
+          <option value="all">📍 Location: All</option>
           <option value="Ahmedabad">Ahmedabad</option>
           <option value="Bengaluru">Bengaluru</option>
           <option value="Chandigarh">Chandigarh</option>
@@ -363,21 +363,61 @@ try {
           <option value="Mumbai">Mumbai</option>
           <option value="Pune">Pune</option>
         </select>
+        <select id="breed-filter" class="ps-filter-select">
+          <option value="all">🐾 Breed: All</option>
+          <option value="labrador">Labrador</option>
+          <option value="pug">Pug</option>
+          <option value="german-shepherd">German Shepherd</option>
+          <option value="bulldog">Bulldog</option>
+          <option value="shih-tzu">Shih Tzu</option>
+          <option value="pomeranian">Pomeranian</option>
+          <option value="rottweiler">Rottweiler</option>
+          <option value="husky">Husky</option>
+          <option value="british-shorthair">British Shorthair</option>
+          <option value="persian">Persian</option>
+          <option value="maine-coon">Maine Coon</option>
+          <option value="ragdoll">Ragdoll</option>
+          <option value="bengal">Bengal</option>
+          <option value="siamese">Siamese</option>
+          <option value="abyssinian">Abyssinian</option>
+          <option value="goldfish">Goldfish</option>
+          <option value="clownfish">Clownfish</option>
+          <option value="betta">Betta</option>
+          <option value="guppy">Guppy</option>
+          <option value="angelfish">Angelfish</option>
+          <option value="tetra">Tetra</option>
+          <option value="molly">Molly</option>
+          <option value="african-grey">African Grey</option>
+        </select>
+        <select id="health-filter" class="ps-filter-select">
+          <option value="all">💪 Health: All</option>
+          <option value="vaccinated">Vaccinated</option>
+          <option value="dewormed">Dewormed</option>
+          <option value="house-trained">House Trained</option>
+          <option value="healthy">Healthy</option>
+        </select>
+        <select id="age-filter" class="ps-filter-select">
+          <option value="all">⏱️ Age: All</option>
+          <option value="0-3">0-3 Months</option>
+          <option value="3-6">3-6 Months</option>
+          <option value="6plus">6+ Months</option>
+        </select>
         <select id="price-filter" class="ps-filter-select">
-          <option value="all">Price Range: All</option>
+          <option value="all">💰 Price Range: All</option>
           <option value="under-10k">Under ₹10,000</option>
           <option value="10k-20k">₹10,000 - ₹20,000</option>
           <option value="above-20k">Above ₹20,000</option>
         </select>
         <select id="price-sort" class="ps-filter-select">
-          <option value="default">Sort by: Default</option>
+          <option value="default">↕️ Sort by: Default</option>
           <option value="low-high">Price: Low to High</option>
           <option value="high-low">Price: High to Low</option>
         </select>
+        <button id="reset-filters" class="ps-filter-select" style="background: linear-gradient(135deg, #c9a876 0%, #a67c52 100%); color: white; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔄 Reset</button>
       </div>
     </div>
     <div class="ps-pets-grid">
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="1">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="1" data-breed="labrador" data-health-status="vaccinated" data-age-months="2">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Dog/Labrador (Max).jpg" alt="Max" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -394,7 +434,7 @@ try {
         </div>
       </div>
 
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="4">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="4" data-breed="pug" data-health-status="vaccinated" data-age-months="2">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Dog/Pug (Charlie).jpg" alt="Charlie" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -410,7 +450,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="5">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="5" data-breed="german-shepherd" data-health-status="house-trained" data-age-months="4">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Dog/Golden Retriever (Bella).jpg" alt="Bella" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -427,7 +467,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="7">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="7" data-breed="bulldog" data-health-status="vaccinated" data-age-months="2">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Dog/Bulldog(Daisy).jpg" alt="Daisy" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -443,7 +483,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="8">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="8" data-breed="shih-tzu" data-health-status="house-trained" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Dog/Shih_Tzu(Teddy).jpg" alt="Teddy" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -459,7 +499,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="9">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="9" data-breed="pomeranian" data-health-status="dewormed" data-age-months="1">
         <div class="ps-pet-photo" style="background: #eef4f0">
           <img src="Assets/Dog/Pomeranian (Coco).jpg" alt="Coco" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -475,7 +515,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="10">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="10" data-breed="rottweiler" data-health-status="vaccinated" data-age-months="5">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Dog/Rottweiler Puppy (Bruno).jpg" alt="Bruno" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -491,7 +531,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="dogs" data-pet-id="11">
+      <div class="ps-pet-card" data-category="dogs" data-pet-id="11" data-breed="husky" data-health-status="house-trained" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Dog/Siberian Husky Puppy (Milo).jpg" alt="Milo" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -507,7 +547,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="12">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="12" data-breed="british-shorthair" data-health-status="vaccinated" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Cat/British Shorthair (Luna).jpg" alt="Luna" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -523,7 +563,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="13">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="13" data-breed="persian" data-health-status="house-trained" data-age-months="4">
         <div class="ps-pet-photo" style="background: #eef4f0">
           <img src="Assets/Cat/Persian Cat (Whiskers).jpg" alt="Whiskers" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -539,7 +579,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="14">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="14" data-breed="maine-coon" data-health-status="dewormed" data-age-months="2">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Cat/Maine Coon (Shadow).jpg" alt="Shadow" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -555,7 +595,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="15">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="15" data-breed="ragdoll" data-health-status="vaccinated" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Cat/Ragdoll (Misty).jpg" alt="Misty" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -571,7 +611,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="16">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="16" data-breed="bengal" data-health-status="house-trained" data-age-months="4">
         <div class="ps-pet-photo" style="background: #eef4f0">
           <img src="Assets/Cat/Bengal Cat (Tiger).jpg" alt="Tiger" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -587,7 +627,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="17">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="17" data-breed="siamese" data-health-status="dewormed" data-age-months="2">
         <div class="ps-pet-photo" style="background: #f5ecd8">
           <img src="Assets/Cat/Siamese Cat (Smudge).jpg" alt="Smudge" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -603,7 +643,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="cats" data-pet-id="18">
+      <div class="ps-pet-card" data-category="cats" data-pet-id="18" data-breed="abyssinian" data-health-status="vaccinated" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fceee0">
           <img src="Assets/Cat/Abyssinian Cat (Nala).jpg" alt="Nala" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -619,7 +659,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="19">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="19" data-breed="goldfish" data-health-status="healthy" data-age-months="2">
         <div class="ps-pet-photo" style="background: #e0f2ff">
           <img src="Assets/Fish/Goldfish (Goldie).jpg" alt="Goldie" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -635,7 +675,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="20">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="20" data-breed="clownfish" data-health-status="healthy" data-age-months="1">
         <div class="ps-pet-photo" style="background: #e8f5e9">
           <img src="Assets/Fish/Clownfish (Nemo).jpg" alt="Nemo" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -651,7 +691,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="21">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="21" data-breed="betta" data-health-status="healthy" data-age-months="3">
         <div class="ps-pet-photo" style="background: #fff3e0">
           <img src="Assets/Fish/Betta Fish (Bubbles).jpg" alt="Bubbles" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -667,7 +707,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="22">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="22" data-breed="guppy" data-health-status="healthy" data-age-months="2">
         <div class="ps-pet-photo" style="background: #e0f2ff">
           <img src="Assets/Fish/Guppy (Finley).jpg" alt="Finley" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -683,7 +723,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="23">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="23" data-breed="angelfish" data-health-status="healthy" data-age-months="4">
         <div class="ps-pet-photo" style="background: #e8f5e9">
           <img src="Assets/Fish/Angelfish (Coral).jpg" alt="Coral" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -699,7 +739,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="24">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="24" data-breed="tetra" data-health-status="healthy" data-age-months="1">
         <div class="ps-pet-photo" style="background: #fff3e0">
           <img src="Assets/Fish/Tetra Fish (Splash).jpg" alt="Splash" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -715,7 +755,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="fish" data-pet-id="25">
+      <div class="ps-pet-card" data-category="fish" data-pet-id="25" data-breed="molly" data-health-status="healthy" data-age-months="3">
         <div class="ps-pet-photo" style="background: #e0f2ff">
           <img src="Assets/Fish/Molly Fish (Pearl).jpg" alt="Pearl" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -731,7 +771,7 @@ try {
           </div>
         </div>
       </div>
-      <div class="ps-pet-card" data-category="birds" data-pet-id="26">
+      <div class="ps-pet-card" data-category="birds" data-pet-id="26" data-breed="african-grey" data-health-status="healthy" data-age-months="12">
         <div class="ps-pet-photo" style="background: #fff8e1">
           <img src="Assets/Birds/African Grey Parrot (Rio).jpg" alt="Rio" loading="lazy" width="300" height="300" style="width: 100%; height: 100%; object-fit: cover;">
           <div class="ps-pet-wish">♡</div>
@@ -1146,6 +1186,24 @@ try {
         }, 3000);
       }
 
+      // COPY COUPON FUNCTION
+      window.copyCoupon = function(code, fullText) {
+        // Copy code to clipboard
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          // Store in localStorage for cart to auto-fill
+          localStorage.setItem('copiedCoupon', code);
+          showToast(`Copied: ${code}. Open cart to apply! 🎉`, '📋');
+        } catch (err) {
+          showToast('Failed to copy coupon code', '❌');
+        }
+        document.body.removeChild(textArea);
+      }
+
       // PHP SESSION CART SYSTEM
       function updateCartCount(count) {
         const cartCountElement = document.getElementById('cart-count');
@@ -1281,24 +1339,26 @@ try {
       let currentSearchTerm = '';
 
       const locationFilter = document.getElementById('location-filter');
+      const breedFilter = document.getElementById('breed-filter');
+      const healthFilter = document.getElementById('health-filter');
+      const ageFilter = document.getElementById('age-filter');
       const priceFilter = document.getElementById('price-filter');
+      const resetButton = document.getElementById('reset-filters');
 
       function applyFilters() {
         let visibleCount = 0;
         const noPetsMsg = document.getElementById('no-pets-msg');
         const locationVal = locationFilter ? locationFilter.value : 'all';
+        const breedVal = breedFilter ? breedFilter.value : 'all';
+        const healthVal = healthFilter ? healthFilter.value : 'all';
+        const ageVal = ageFilter ? ageFilter.value : 'all';
         const priceVal = priceFilter ? priceFilter.value : 'all';
-
-        console.log('[Search Debug] Applying filters:', {
-          searchTerm: currentSearchTerm,
-          category: currentCategory,
-          location: locationVal,
-          price: priceVal,
-          totalCards: petCards.length
-        });
 
         petCards.forEach(card => {
           const cardCategory = card.getAttribute('data-category');
+          const cardBreed = card.getAttribute('data-breed');
+          const cardHealth = card.getAttribute('data-health-status');
+          const cardAge = parseInt(card.getAttribute('data-age-months')) || 0;
           const petName = card.querySelector('.ps-pet-name').textContent.toLowerCase();
           const petLoc = card.querySelector('.ps-pet-loc').textContent;
           const petPrice = parseInt(card.querySelector('.ps-pet-price').textContent.replace(/[^0-9]/g, '')) || 0;
@@ -1309,9 +1369,8 @@ try {
           // Search match
           let matchSearch = true;
           if (currentSearchTerm !== '') {
-            // Enhanced search: split search term by spaces and check if all parts match
             const searchTerms = currentSearchTerm.split(/\s+/).filter(term => term.length > 0);
-            const searchText = `${petName} ${cardCategory}`;
+            const searchText = `${petName} ${cardCategory} ${cardBreed}`;
             matchSearch = searchTerms.every(term => searchText.includes(term));
           }
 
@@ -1319,6 +1378,30 @@ try {
           let matchLocation = true;
           if (locationVal !== 'all') {
             matchLocation = petLoc.includes(locationVal);
+          }
+
+          // Breed match
+          let matchBreed = true;
+          if (breedVal !== 'all') {
+            matchBreed = (cardBreed === breedVal);
+          }
+
+          // Health status match
+          let matchHealth = true;
+          if (healthVal !== 'all') {
+            matchHealth = (cardHealth === healthVal);
+          }
+
+          // Age match
+          let matchAge = true;
+          if (ageVal !== 'all') {
+            if (ageVal === '0-3') {
+              matchAge = cardAge <= 3;
+            } else if (ageVal === '3-6') {
+              matchAge = cardAge > 3 && cardAge <= 6;
+            } else if (ageVal === '6plus') {
+              matchAge = cardAge > 6;
+            }
           }
 
           // Price match
@@ -1331,7 +1414,7 @@ try {
             matchPrice = petPrice > 20000;
           }
 
-          if (matchCategory && matchSearch && matchLocation && matchPrice) {
+          if (matchCategory && matchSearch && matchLocation && matchBreed && matchHealth && matchAge && matchPrice) {
             card.style.display = 'block';
             visibleCount++;
           } else {
@@ -1339,19 +1422,31 @@ try {
           }
         });
 
-        console.log('[Search Debug] Results:', {
-          visibleCount,
-          totalCards: petCards.length
-        });
-
         if (noPetsMsg) {
           noPetsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
         }
       }
 
+      // Reset filters function
+      function resetAllFilters() {
+        currentCategory = 'all';
+        currentSearchTerm = '';
+        if (locationFilter) locationFilter.value = 'all';
+        if (breedFilter) breedFilter.value = 'all';
+        if (healthFilter) healthFilter.value = 'all';
+        if (ageFilter) ageFilter.value = 'all';
+        if (priceFilter) priceFilter.value = 'all';
+        if (searchInput) searchInput.value = '';
+        applyFilters();
+      }
+
       // Filter Event Listeners
       if (locationFilter) locationFilter.addEventListener('change', applyFilters);
+      if (breedFilter) breedFilter.addEventListener('change', applyFilters);
+      if (healthFilter) healthFilter.addEventListener('change', applyFilters);
+      if (ageFilter) ageFilter.addEventListener('change', applyFilters);
       if (priceFilter) priceFilter.addEventListener('change', applyFilters);
+      if (resetButton) resetButton.addEventListener('click', resetAllFilters);
 
       categoryCards.forEach(card => {
         card.addEventListener('click', function() {

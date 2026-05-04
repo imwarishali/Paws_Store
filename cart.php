@@ -612,6 +612,23 @@ if (isset($_SESSION["user"])) {
 
             const isFirstTime = <?php echo $isFirstTime ? 'true' : 'false'; ?>;
 
+            // Auto-fill coupon from marquee if copied
+            const copiedCoupon = localStorage.getItem('copiedCoupon');
+            if (copiedCoupon) {
+                const promoInput = document.getElementById('promoCodeInput');
+                if (promoInput) {
+                    promoInput.value = copiedCoupon;
+                    // Clear localStorage after use
+                    localStorage.removeItem('copiedCoupon');
+                    // Auto-apply if cart has items
+                    setTimeout(() => {
+                        if (cart.length > 0) {
+                            applyPromoCode(false);
+                        }
+                    }, 100);
+                }
+            }
+
             // TOAST NOTIFICATION FUNCTION
             function showToast(message, icon = '✅') {
                 let container = document.getElementById('toast-container');
